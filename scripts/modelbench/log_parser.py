@@ -1,10 +1,7 @@
-"""process.py
-Generate a report for review from specified two directories of test results.
+"""log_parser.py
+Generate report from two specified inductor logs.
 Usage:
-  python process.py --lr WW48.2 --tr WW48.4
-
-  lr: last round
-  tr: this round
+  python log_parser.py --reference WW48.2 --target WW48.4
 
 """
 
@@ -14,9 +11,9 @@ import pandas as pd
 from pandas import ExcelWriter
 import os
 
-parser = argparse.ArgumentParser(description="Generate report from recently two round inductor_log")
-parser.add_argument('-l','--lr',type=str,help='last round log file')
-parser.add_argument('-t','--tr',type=str,help='this round log file')
+parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
+parser.add_argument('-t','--target',type=str,help='target log file')
+parser.add_argument('-r','--reference',type=str,help='reference log file')
 args=parser.parse_args()
 
 def getfolder(round,thread):
@@ -28,12 +25,12 @@ def getfolder(round,thread):
             if thread in (os.path.join(root, f)):
                 return os.path.join(root, f)                 
 
-lr_mt=getfolder(args.lr,'multi_threads_cf_logs')
-lr_st=getfolder(args.lr,'single_thread_cf_logs')
-tr_mt=getfolder(args.tr,'multi_threads_cf_logs')
-tr_st=getfolder(args.tr,'single_thread_cf_logs')
+reference_mt=getfolder(args.reference,'multi_threads_cf_logs')
+reference_st=getfolder(args.reference,'single_thread_cf_logs')
+target_mt=getfolder(args.target,'multi_threads_cf_logs')
+target_st=getfolder(args.target,'single_thread_cf_logs')
 
-def update_summary(writer,lr,tr):
+def update_summary(writer,reference,target):
     data = {
         'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
         'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
@@ -44,36 +41,36 @@ def update_summary(writer,lr,tr):
         'timm_models ':[' ', ' ', ' ', ' ',' ',' ',' ',' ']
     }
     summary=pd.DataFrame(data)
-    # read last round test results
-    lr_mt_pr_data=pd.read_csv(lr_mt+'/passrate.csv',index_col=0)
-    lr_mt_gm_data=pd.read_csv(lr_mt+'/geomean.csv',index_col=0)
-    lr_st_pr_data=pd.read_csv(lr_st+'/passrate.csv',index_col=0)
-    lr_st_gm_data=pd.read_csv(lr_st+'/geomean.csv',index_col=0)
+    # read reference round test results
+    reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+    reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
+    reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+    reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
     # update
-    summary.iloc[0:1,4:7]=lr_mt_pr_data.iloc[0:2,1:7]
-    summary.iloc[2:3,4:7]=lr_mt_gm_data.iloc[0:2,1:7]
-    summary.iloc[4:5,4:7]=lr_st_pr_data.iloc[0:2,1:7]
-    summary.iloc[6:7,4:7]=lr_st_gm_data.iloc[0:2,1:7]
+    summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
+    summary.iloc[2:3,4:7]=reference_mt_gm_data.iloc[0:2,1:7]
+    summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
+    summary.iloc[6:7,4:7]=reference_st_gm_data.iloc[0:2,1:7]
 
-    summary.iloc[0:1,2]=lr
-    summary.iloc[2:3,2]=lr
-    summary.iloc[4:5,2]=lr
-    summary.iloc[6:7,2]=lr
-    # read this round test results
-    tr_mt_pr_data=pd.read_csv(tr_mt+'/passrate.csv',index_col=0)
-    tr_mt_gm_data=pd.read_csv(tr_mt+'/geomean.csv',index_col=0)
-    tr_st_pr_data=pd.read_csv(tr_st+'/passrate.csv',index_col=0)
-    tr_st_gm_data=pd.read_csv(tr_st+'/geomean.csv',index_col=0)
+    summary.iloc[0:1,2]=reference
+    summary.iloc[2:3,2]=reference
+    summary.iloc[4:5,2]=reference
+    summary.iloc[6:7,2]=reference
+    # read target round test results
+    target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+    target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
+    target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+    target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
     # update
-    summary.iloc[1:2,4:7]=tr_mt_pr_data.iloc[0:2,1:7]
-    summary.iloc[3:4,4:7]=tr_mt_gm_data.iloc[0:2,1:7]
-    summary.iloc[5:6,4:7]=tr_st_pr_data.iloc[0:2,1:7]
-    summary.iloc[7:8,4:7]=tr_st_gm_data.iloc[0:2,1:7]
+    summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+    summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
+    summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
+    summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
 
-    summary.iloc[1:2,2]=tr
-    summary.iloc[3:4,2]=tr
-    summary.iloc[5:6,2]=tr
-    summary.iloc[7:8,2]=tr
+    summary.iloc[1:2,2]=target
+    summary.iloc[3:4,2]=target
+    summary.iloc[5:6,2]=target
+    summary.iloc[7:8,2]=target
 
     summary.to_excel(writer,sheet_name='Summary', index=False)  
 
@@ -85,8 +82,8 @@ def update_swinfo(writer):
 def update_failures(writer):
     tmp=[]
     for suite in 'torchbench','huggingface','timm_models':
-        perf_path=tr_mt+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
-        acc_path=tr_mt+'/inductor_'+suite+'_float32_inference_cpu_accuracy.csv'
+        perf_path=target_mt+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
+        acc_path=target_mt+'/inductor_'+suite+'_float32_inference_cpu_accuracy.csv'
 
         perf_data=pd.read_csv(perf_path,index_col=0)
         acc_data=pd.read_csv(acc_path,index_col=0)
@@ -107,19 +104,19 @@ def update_failures(writer):
 
 
 def process_suite(suite,thread):
-    lr_file_path=getfolder(args.lr,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
-    tr_file_path=getfolder(args.tr,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
+    reference_file_path=getfolder(args.reference,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
+    target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
 
-    lr_ori_data=pd.read_csv(lr_file_path,index_col=0)
-    tr_ori_data=pd.read_csv(tr_file_path,index_col=0)
+    reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
+    target_ori_data=pd.read_csv(target_file_path,index_col=0)
 
-    lr_data=lr_ori_data[['name','batch_size','speedup']]
-    tr_data=tr_ori_data[['name','batch_size','speedup']]
+    reference_data=reference_ori_data[['name','batch_size','speedup']]
+    target_data=target_ori_data[['name','batch_size','speedup']]
 
-    lr_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
-    tr_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
+    reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
+    target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
     
-    data=pd.merge(tr_data,lr_data,on=['name'],how= 'outer')
+    data=pd.merge(target_data,reference_data,on=['name'],how= 'outer')
     return data
 
 def process_thread(thread):
@@ -164,10 +161,10 @@ def str_to_dict(contents):
     return res_dict
 
 def process_absolute_data(thread):
-    tr_log=getfolder(args.tr,thread)
-    lr_log=getfolder(args.lr,thread)
-    new_res = parse_log(tr_log)
-    old_res = parse_log(lr_log)
+    target_log=getfolder(args.target,thread)
+    reference_log=getfolder(args.reference,thread)
+    new_res = parse_log(target_log)
+    old_res = parse_log(reference_log)
     new_res_dict = str_to_dict(new_res)
     old_res_dict = str_to_dict(old_res)
     results = ["name, Eager(new), Inductor(new), Eager(old), Inductor(old), Eager Ratio(old/new), Inductor Ratio(old/new)\n"]
@@ -199,7 +196,7 @@ def process_absolute_data(thread):
     return results
 
 def update_details(writer):
-    header = {"A": '', "B": args.tr, "C": '', "D": '',"E": '', "F": args.lr, "G": '', "H": '',"I": '',"J": 'Result Comp',"K": '',"L": ''}
+    header = {"A": '', "B": args.target, "C": '', "D": '',"E": '', "F": args.reference, "G": '', "H": '',"I": '',"J": 'Result Comp',"K": '',"L": ''}
     h = pd.DataFrame(header, index=[0])
     h.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
     h.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False,startrow=0,header=False)
@@ -208,11 +205,18 @@ def update_details(writer):
     mt=process_thread('multi_threads_cf_logs')
     st=process_thread('single_thread_cf_logs')
 
-    mt[['name','batch_size_x','speedup_x']].to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=0)
-    mt[['batch_size_y','speedup_y']].to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=5)
+    mt_old=mt[['name','batch_size_x','speedup_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new'})
+    mt_new=mt[['batch_size_y','speedup_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old'})
 
-    st[['name','batch_size_x','speedup_x']].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=0)
-    st[['batch_size_y','speedup_y']].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=5)         
+    mt_old.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=0)
+    mt_new.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=5)
+
+    st_old=st[['name','batch_size_x','speedup_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new'})
+    st_new=st[['batch_size_y','speedup_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old'})    
+
+    st_old.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=0)
+    st_new.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=5)
+
 
     mt_ratio = pd.DataFrame(mt['speedup_x'] / mt['speedup_y'],columns=['Ratio Speedup(New/old)'])
     st_ratio = pd.DataFrame(st['speedup_x'] / st['speedup_y'],columns=['Ratio Speedup(New/old)'])
@@ -238,12 +242,12 @@ def update_details(writer):
     s_abs[[3,4]].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=False, startrow=1, startcol=7)
     s_abs[[5,6]].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=False, startrow=1, startcol=10)
 
-def generate_report(lr,tr):
-    with ExcelWriter('Inductor Dashboard Regression Check '+tr+'.xlsx') as writer:
-        update_summary(writer,lr,tr)
+def generate_report(reference,target):
+    with ExcelWriter('Inductor Dashboard Regression Check '+target+'.xlsx') as writer:
+        update_summary(writer,reference,target)
         update_swinfo(writer)
         update_failures(writer)
         update_details(writer)
 
 if __name__ == '__main__':
-    generate_report(args.lr, args.tr)
+    generate_report(args.reference, args.target)
