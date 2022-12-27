@@ -53,7 +53,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         pybind11 \
         pyyaml \
         setuptools && \
-    /opt/conda/bin/conda install -c conda-forge jemalloc openssl=3.0.7 -y && \
+    /opt/conda/bin/conda install -c conda-forge jemalloc openssl=3.0.7 weasyprint -y && \
     /opt/conda/bin/conda clean -ya
 
 FROM dev-base AS build
