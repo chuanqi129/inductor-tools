@@ -4,7 +4,7 @@ Usage:
   python log_parser.py --reference WW48.2 --target WW48.4
 
 """
-
+# Not ready for updated benchmarks for nightly
 
 import argparse
 import pandas as pd
@@ -75,7 +75,7 @@ def update_summary(writer,reference,target):
     summary.to_excel(writer,sheet_name='Summary', index=False)  
 
 def update_swinfo(writer):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','dynamo/benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' '],'Master/Main commit':[' ', ' ', ' ', ' ',' ',' ']}
+    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' '],'Master/Main commit':[' ', ' ', ' ', ' ',' ',' ']}
     swinfo=pd.DataFrame(data)
     swinfo.to_excel(writer, sheet_name='SW', index=False)
 
@@ -88,7 +88,7 @@ def update_failures(writer):
         perf_data=pd.read_csv(perf_path,index_col=0)
         acc_data=pd.read_csv(acc_path,index_col=0)
         
-        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['accuracy'] ==0),:]
+        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
         tmp.append(acc_data)
 
         perf_data=perf_data.loc[perf_data['speedup'] ==0,:]
@@ -110,8 +110,8 @@ def process_suite(suite,thread):
     reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
 
-    reference_data=reference_ori_data[['name','batch_size','speedup']]
-    target_data=target_ori_data[['name','batch_size','speedup']]
+    reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency']]
+    target_data=target_ori_data[['name','batch_size','speedup','abs_latency']]
 
     reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
@@ -126,74 +126,6 @@ def process_thread(thread):
         tmp.append(data)
     return pd.concat(tmp)
  
-all_models = []
-
-def parse_log(file):
-    result = []
-    suite = []
-    with open(file, 'r') as reader:
-        contents = reader.readlines()
-        model = ""
-        for line in contents:
-            if "Time cost" in line:
-                model = line.split(" Time cost")[0].split(" ")[-1].strip()
-                if model not in suite:
-                    suite.append(model)
-            elif line.startswith("eager: "):
-                result.append(model+", "+ line)
-            elif "cpu  eval" in line:
-                m = line.split("cpu  eval")[-1].strip().split(" ")[0].strip()
-                if m not in suite:
-                    suite.append(m)
-            elif line.startswith("compression_ratio"):
-                suite.sort(key=str.lower)
-                all_models.extend(suite)
-                suite.clear()
-    return result
-
-def str_to_dict(contents):
-    res_dict = {}
-    for line in contents:
-        model = line.split(",")[0]
-        eager = float(line.split(",")[1].strip().split(":")[-1])
-        inductor = float(line.split(",")[2].strip().split(":")[-1])
-        res_dict[model] = [eager, inductor]
-    return res_dict
-
-def process_absolute_data(thread):
-    target_log=getfolder(args.target,thread)
-    reference_log=getfolder(args.reference,thread)
-    new_res = parse_log(target_log)
-    old_res = parse_log(reference_log)
-    new_res_dict = str_to_dict(new_res)
-    old_res_dict = str_to_dict(old_res)
-    results = ["name, Eager(new), Inductor(new), Eager(old), Inductor(old), Eager Ratio(old/new), Inductor Ratio(old/new)\n"]
-
-    unique_models = []
-    for item in all_models:
-        if item not in unique_models:
-            unique_models.append(item)
-
-    for key in unique_models:
-        line = key+", "
-        if key in new_res_dict:
-            for item in new_res_dict[key]:
-                line += str(item) +", "
-        else:
-            line += "NA, NA, "
-        if key in old_res_dict:
-            for item in old_res_dict[key]:
-                line += str(item) +", "
-        else:
-            line += "NA, NA, "
-        if key in old_res_dict and key in new_res_dict:
-            line+=str(round(old_res_dict[key][0]/new_res_dict[key][0], 2)) + ", "
-            line+=str(round(old_res_dict[key][1]/new_res_dict[key][1], 2))
-        else:
-            line += "NA, NA, "
-        line += "\n"
-        results.append(line)
-    return results
 
 def update_details(writer):
     header = {"A": '', "B": args.target, "C": '', "D": '',"E": '', "F": args.reference, "G": '', "H": '',"I": '',"J": 'Result Comp',"K": '',"L": ''}
@@ -205,42 +137,44 @@ def update_details(writer):
     mt=process_thread('multi_threads_cf_logs')
     st=process_thread('single_thread_cf_logs')
 
-    mt_old=mt[['name','batch_size_x','speedup_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new'})
-    mt_new=mt[['batch_size_y','speedup_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old'})
+    mt_new=mt[['name','batch_size_x','speedup_x','abs_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new'})
+    mt_old=mt[['batch_size_y','speedup_y','abs_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old'})
+    mt_new['inductor_new']=mt_new['inductor_new'].astype(float).div(1000)
+    mt_old['inductor_old']=mt_old['inductor_old'].astype(float).div(1000)
+    mt_new.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=0)
+    mt_old.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=5)
 
-    mt_old.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=0)
-    mt_new.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, startrow=1, startcol=5)
+    st_new=st[['name','batch_size_x','speedup_x','abs_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new'})
+    st_old=st[['batch_size_y','speedup_y','abs_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old'})    
+    st_new['inductor_new']=st_new['inductor_new'].astype(float).div(1000)
+    st_old['inductor_old']=st_old['inductor_old'].astype(float).div(1000)
+    st_new.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=0)
+    st_old.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=5)
 
-    st_old=st[['name','batch_size_x','speedup_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new'})
-    st_new=st[['batch_size_y','speedup_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old'})    
-
-    st_old.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=0)
-    st_new.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, startrow=1, startcol=5)
-
+    mt_eager_new = pd.DataFrame(mt_new['speed_up_new'] * mt_new['inductor_new'],columns=['eager_new'])
+    mt_eager_old = pd.DataFrame(mt_old['speed_up_old'] * mt_old['inductor_old'],columns=['eager_old'])
+    st_eager_new = pd.DataFrame(st_new['speed_up_new'] * st_new['inductor_new'],columns=['eager_new'])
+    st_eager_old = pd.DataFrame(st_old['speed_up_old'] * st_old['inductor_old'],columns=['eager_old'])    
 
     mt_ratio = pd.DataFrame(mt['speedup_x'] / mt['speedup_y'],columns=['Ratio Speedup(New/old)'])
     st_ratio = pd.DataFrame(st['speedup_x'] / st['speedup_y'],columns=['Ratio Speedup(New/old)'])
 
+    mt_eager_ratio = pd.DataFrame(mt_eager_old['eager_old'] / mt_eager_new['eager_new'],columns=['Eager Ratio(old/new)'])
+    mt_inductor_ratio = pd.DataFrame(mt_old['inductor_old'] / mt_new['inductor_new'],columns=['Inductor Ratio(old/new)'])
+    st_eager_ratio = pd.DataFrame(st_eager_old['eager_old'] / st_eager_new['eager_new'],columns=['Eager Ratio(old/new)'])   
+    st_inductor_ratio = pd.DataFrame(st_old['inductor_old'] / st_new['inductor_new'],columns=['Inductor Ratio(old/new)'])    
+
+    mt_eager_new.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=True, startrow=1, startcol=4)
+    mt_eager_old.to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=True, startrow=1, startcol=8)
     mt_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=True, startrow=1, startcol=9)
+    mt_eager_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=True, startrow=1, startcol=10) 
+    mt_inductor_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=True, startrow=1, startcol=11)   
+     
+    st_eager_new.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=True, startrow=1, startcol=4)
+    st_eager_old.to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=True, startrow=1, startcol=8)      
     st_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=True, startrow=1, startcol=9)
-
-    # update abs data
-    mt_abs_data=process_absolute_data('multi_threads_model_bench_log')
-    st_abs_data=process_absolute_data('single_thread_model_bench_log')
-    
-    mt_abs=pd.DataFrame(mt_abs_data)
-    st_abs=pd.DataFrame(st_abs_data)
-    
-    m_abs=pd.DataFrame(mt_abs[0].str.split(', ',expand=True))
-    s_abs=pd.DataFrame(st_abs[0].str.split(', ',expand=True))
-
-    m_abs[[1,2]].to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=False, startrow=1, startcol=3)
-    m_abs[[3,4]].to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=False, startrow=1, startcol=7)
-    m_abs[[5,6]].to_excel(writer, sheet_name='Single-Socket Multi-threads', index=False, header=False, startrow=1, startcol=10)
-
-    s_abs[[1,2]].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=False, startrow=1, startcol=3)
-    s_abs[[3,4]].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=False, startrow=1, startcol=7)
-    s_abs[[5,6]].to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=False, startrow=1, startcol=10)
+    st_eager_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=True, startrow=1, startcol=10) 
+    st_inductor_ratio.round(2).to_excel(writer, sheet_name='Single-Socket Single-thread', index=False, header=True, startrow=1, startcol=11)     
 
 def generate_report(reference,target):
     with ExcelWriter('Inductor Dashboard Regression Check '+target+'.xlsx') as writer:
