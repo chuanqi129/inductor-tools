@@ -113,4 +113,3 @@ COPY --from=build /opt/conda /opt/conda
 COPY --from=build /workspace/pytorch /workspace/pytorch
 COPY --from=build /workspace/benchmark /workspace/benchmark
 WORKDIR /workspace/pytorch
-COPY ./inductor_test.sh /workspace/pytorch/
