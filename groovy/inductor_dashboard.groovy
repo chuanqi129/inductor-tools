@@ -24,27 +24,27 @@ def AdditionalInfo() {
                           </tr>
                           <tr>
                             <td>StockPT:&nbsp;</td>
-                            <td>${_VERSION} nightly release</td>
+                            <td><a href="https://github.com/pytorch/pytorch/commits/nightly">${_VERSION} nightly release</a></td>
                           </tr>
                           <tr>
                             <td>TORCH_VISION:&nbsp;</td>
-                            <td>${_VERSION} nightly release</td>
+                            <td><a href="https://github.com/pytorch/vision/commits/nightly/">${_VERSION} nightly release</a></td>
                           </tr>
                           <tr>
                             <td>TORCH_TEXT:&nbsp;</td>
-                            <td>${_VERSION} nightly release</td>
+                            <td><a href="https://github.com/pytorch/text/commits/nightly/">${_VERSION} nightly release</a></td>
                           </tr>
                           <tr>
                             <td>TORCH_AUDIO:&nbsp;</td>
-                            <td>${_VERSION} nightly release</td>
+                            <td><a href="https://github.com/pytorch/audio/commits/nightly/">${_VERSION} nightly release</a></td>
                           </tr>
                           <tr>
                             <td>TORCH_DATA:&nbsp;</td>
-                            <td>${_VERSION} nightly release</td>
+                            <td><a href="https://github.com/pytorch/data/commits/nightly/">${_VERSION} nightly release</a></td>
                           </tr>
                           <tr>
                             <td>TORCH_BENCH:&nbsp;</td>
-                            <td>main branch</td>
+                            <td><a href="https://github.com/pytorch/benchmark/commits/main">${_VERSION} torchbench</a></td>
                           </tr>
                         </tbody>
                         <colgroup>
