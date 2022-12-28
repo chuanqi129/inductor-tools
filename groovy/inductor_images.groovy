@@ -27,13 +27,8 @@ node(NODE_LABEL){
         echo 'Building image......'
         sh '''
         #!/usr/bin/env bash
-        old_image_id=`docker images|grep /pytorch/pt_inductor|grep nightly |awk '{print $3}'`
-        old_image=`echo $old_image_id| awk '{print $1}'`
-        if [ -n "${old_image}" ]; then
-            docker tag ${old_image} ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_previously
-            docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-        fi
-        DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly -f Dockerfile --target image .
+        docker system prune -af
+        DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
         '''
     }
 
@@ -42,8 +37,7 @@ node(NODE_LABEL){
         sh '''
         #!/usr/bin/env bash
         docker login ccr-registry.caas.intel.com -u yudongsi -p 110250+SYD
-        docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-        docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_previously
+        docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
         # Todo: remove none tag images in cass
         '''
     }
