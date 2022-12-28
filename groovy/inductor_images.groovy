@@ -18,8 +18,8 @@ node(NODE_LABEL){
             mv tmp/docker/Dockerfile ./
             mv tmp/scripts/microbench/microbench_parser.py ./
             mv tmp/scripts/microbench/microbench.sh ./
-            mv tmp/modelbench/inductor_test.sh ./         
-            mv tmp/modelbench/log_parser.py ./
+            mv tmp/scripts/modelbench/inductor_test.sh ./         
+            mv tmp/scripts/modelbench/log_parser.py ./
             rm -rf tmp
         '''
     }
