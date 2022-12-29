@@ -60,6 +60,8 @@ def report_generate(file):
     
     r=pd.DataFrame(results)
     data=pd.DataFrame(r[0].str.split(", ",expand=True))
+    for i in range(4):
+        data[i]= pd.to_numeric(data[i],errors='ignore')
     data.sort_values(by=[3],inplace=True)
     return data
 
