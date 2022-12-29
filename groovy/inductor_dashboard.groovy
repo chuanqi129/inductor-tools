@@ -14,6 +14,16 @@ env._VERSION = get_time()
 
 def AdditionalInfo() {
     return """<p>Torchinductor OP microbench Nightly Report
+                  <p>job info:</p>
+                  <ol>
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td>Build url:&nbsp;</td>
+                          <td>${BUILD_URL}</td>
+                        </tr>
+                    </table>       
+                  </ol>     
                   <p>SW Info:</p>
                    <ol>
                       <table>
@@ -114,7 +124,6 @@ def AdditionalInfo() {
            """
 }    
 
-
 node(NODE_LABEL){
     stage("get image"){
         echo 'get image......'
@@ -155,7 +164,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log/build_num_$BUILD_NUMBER:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py --workday build_num_$BUILD_NUMBER;rm microbench_parser.py"
+            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py --workday ${_VERSION};rm microbench_parser.py"
             '''
         }else {
             sh '''
@@ -178,7 +187,7 @@ node(NODE_LABEL){
         emailext(
             subject: "Torchinductor OP microbench Nightly Report",
             mimeType: "text/html",
-            attachmentsPattern: "**/opbench_log/build_num_$BUILD_NUMBER/*",
+            attachmentsPattern: "**/opbench_log/build_num_$BUILD_NUMBER/*.xlsx",
             from: "Inductor_op_microbench_nightly@intel.com",
             to: maillist,
             body: AdditionalInfo()
