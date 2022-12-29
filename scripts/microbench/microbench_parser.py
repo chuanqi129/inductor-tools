@@ -50,21 +50,23 @@ def report_generate(file):
                 if op not in success_ops.keys():
                     success_ops[op] = speedups
                     # print(op+", "+speedups)
-
-    results = ["op_name, speedup_0.2, speedup_0.5, speedup_0.8\n"]
+    results = []
     for op in sorted(success_ops):
         results.append(op + ", " + success_ops[op]+ "\n")
     for op in sorted(skipped_ops):
         results.append(op + ", " + skipped_ops[op]+ "\n")
     for op in sorted(error_ops):
         results.append(op + ", " + error_ops[op]+ "\n")
-
+    
     r=pd.DataFrame(results)
     data=pd.DataFrame(r[0].str.split(", ",expand=True))
+    data.sort_values(by=[3],inplace=True)
     return data
 
-
-with ExcelWriter('microbench_'+args.workday+'.xlsx') as writer:
+header=["op_name", "speedup_0.2", "speedup_0.5", "speedup_0.8"]
+h = pd.DataFrame(columns=header)
+with ExcelWriter(args.workday+'.xlsx') as writer:
     for file in torchbench,huggingface,timm:
-        if os.path.exists(file):
-            report_generate(file).to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,header=False,startrow=0, startcol=0)
+        if os.path.exists(file):         
+            h.to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,startrow=0, startcol=0)
+            report_generate(file).to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,header=False,startrow=1, startcol=0)
