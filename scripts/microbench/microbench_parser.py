@@ -68,7 +68,7 @@ def report_generate(file):
 
 header=["op_name", "speedup_0.2", "speedup_0.5", "speedup_0.8"]
 h = pd.DataFrame(columns=header)
-with ExcelWriter(args.workday+'.xlsx') as writer:
+with ExcelWriter('op-microbench-'+args.workday+'.xlsx') as writer:
     for file in torchbench,huggingface,timm:
         if os.path.exists(file):         
             h.to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,startrow=0, startcol=0)
