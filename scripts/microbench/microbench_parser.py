@@ -62,7 +62,8 @@ def report_generate(file):
     data=pd.DataFrame(r[0].str.split(", ",expand=True))
     for i in range(4):
         data[i]= pd.to_numeric(data[i],errors='ignore')
-    data.sort_values(by=[3],inplace=True)
+    data.sort_values(by=[3],inplace=True)  
+    data=data.style.highlight_between(subset=[3], axis=0, left=0, right=1, inclusive='both', props='color:black;background-color:#FFDEAD')
     return data
 
 header=["op_name", "speedup_0.2", "speedup_0.5", "speedup_0.8"]
