@@ -23,6 +23,17 @@ node(NODE_LABEL){
             rm -rf tmp
         '''
     }
+    stage("nightly_pre"){
+        sh '''
+        #!/usr/bin/env bash
+        docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
+        docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+        docker login ccr-registry.caas.intel.com -u yudongsi -p 110250+SYD
+        docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+        docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+        docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
+        '''
+    }    
     stage("build image"){
         echo 'Building image......'
         sh '''
@@ -36,9 +47,8 @@ node(NODE_LABEL){
         echo 'push image......'
         sh '''
         #!/usr/bin/env bash
-        docker login ccr-registry.caas.intel.com -u yudongsi -p 110250+SYD
         docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
-        # Todo: remove none tag images in cass
+        docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
         '''
     }
-}            
+}
