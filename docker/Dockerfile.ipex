@@ -35,7 +35,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         astunparse \
         cffi \
         cython \
-        cmake \
+        cmake>=3.13.0 \
         dataclasses \   
         future \
         git-lfs \
@@ -52,8 +52,11 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         pkg-config \
         pybind11 \
         pyyaml \
-        setuptools && \
-    /opt/conda/bin/conda install -c conda-forge jemalloc openssl=3.0.7 weasyprint -y && \
+        setuptools \
+        jemalloc \
+        openssl=3.0.7 \
+        weasyprint \
+        -c anaconda -c conda-forge && \
     /opt/conda/bin/conda clean -ya
 
 FROM dev-base AS build
