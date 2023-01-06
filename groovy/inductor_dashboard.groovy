@@ -11,6 +11,7 @@ def get_time(){
     return new Date().format('yyyy-MM-dd')
 }
 env._VERSION = get_time()
+println(env._VERSION)
 
 def AdditionalInfo() {
     return """<p>Torchinductor OP microbench Nightly Report
