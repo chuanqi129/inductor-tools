@@ -29,7 +29,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
             docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 110250+SYD
+            docker login ccr-registry.caas.intel.com -u yudongsi -p 0608+SYD
             docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
             docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
             docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
