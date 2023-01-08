@@ -4,7 +4,7 @@ set -x
 SUITE=${1:-huggingface}
 MODEL=${2:-GoogleFnet}
 LOG_DIR=${3:-debug}
-export TORCHINDUCTOR_TRACE=1
+export TORCH_COMPILE_DEBUG=1
 
 if [[ $USER == "" ]]; then
     USER=root
