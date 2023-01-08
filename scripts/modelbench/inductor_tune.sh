@@ -21,11 +21,11 @@ multi_threads_tune() {
         if [[ $CHANNELS == "first" ]]; then
             # channels first
             echo "Channels first testing...."
-            python benchmarks/dynamo/runner.py --dashboard-archive-path=${log_path}/archive --devices=cpu --dtypes=float32 --inference --suite=${SUITE} --compilers=inductor --batch_size=${BS} --output-dir=${log_path}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${log_path}/multi_threads_${SUITE}_model_bench_bs_${BS}_log_${timestamp}.log
+            python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${log_path}/archive --devices=cpu --dtypes=float32 --inference --suite=${SUITE} --compilers=inductor --batch_size=${BS} --output-dir=${log_path}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${log_path}/multi_threads_${SUITE}_model_bench_bs_${BS}_log_${timestamp}.log
         elif [[ $CHANNELS == "last" ]]; then
             # channels last
             echo "Channels last testing...."
-            python benchmarks/dynamo/runner.py --dashboard-archive-path=${log_path}/archive --devices=cpu --dtypes=float32 --inference --suite=${SUITE} --compilers=inductor --channels-last --batch_size=${BS} --output-dir=${log_path}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${log_path}/multi_threads_${SUITE}_model_bench_bs_${BS}_log_${timestamp}.log
+            python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${log_path}/archive --devices=cpu --dtypes=float32 --inference --suite=${SUITE} --compilers=inductor --channels-last --batch_size=${BS} --output-dir=${log_path}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${log_path}/multi_threads_${SUITE}_model_bench_bs_${BS}_log_${timestamp}.log
         else
             echo "Please check channels foramt with first / last."
         fi
