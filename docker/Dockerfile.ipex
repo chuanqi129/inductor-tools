@@ -31,12 +31,14 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
     sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
+    /opt/conda/bin/conda config --set channel_priority strict && \
+    /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
         cffi \
         cython \
         cmake>=3.13.0 \
-        dataclasses \   
+        dataclasses \
         future \
         git-lfs \
         intel-openmp \
@@ -54,9 +56,8 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         pyyaml \
         setuptools \
         jemalloc \
-        openssl=3.0.7 \
-        weasyprint \
-        -c anaconda -c conda-forge && \
+        openssl \
+        weasyprint && \
     /opt/conda/bin/conda clean -ya
 
 FROM dev-base AS build
