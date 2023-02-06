@@ -11,8 +11,8 @@ cspdarknet53,64
 deit_base_distilled_patch16_224,64
 dm_nfnet_f0,128
 dpn107,32
-eca_botnext26ts_256,256
-eca_halonext26ts,256
+eca_botnext26ts_256,128
+eca_halonext26ts,128
 ese_vovnet19b_dw,128
 fbnetc_100,32
 fbnetv3_b,32
@@ -44,7 +44,7 @@ res2next50,128
 resmlp_12_224,128
 resnest101e,64
 rexnet_100,128
-sebotnet33ts_256,256
+sebotnet33ts_256,64
 selecsls42b,128
 spnasnet_100,32
 swin_base_patch4_window7_224,64
