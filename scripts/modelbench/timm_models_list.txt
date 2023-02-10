@@ -4,7 +4,7 @@ botnet26t_256,128
 cait_m36_384,4
 coat_lite_mini,32
 convit_base,64
-convmixer_768_32,2
+convmixer_768_32,32
 convnext_base,64
 crossvit_9_240,32
 cspdarknet53,64
@@ -25,13 +25,13 @@ gmlp_s16_224,128
 hrnet_w18,128
 inception_v3,128
 jx_nest_base,32
-lcnet_050,64
+lcnet_050,128
 mixer_b16_224,128
 mixnet_l,128
 mnasnet_100,32
 mobilenetv2_100,32
-mobilenetv3_large_100,32
-mobilevit_s,256
+mobilenetv3_large_100,128
+mobilevit_s,64
 nfnet_l0,128
 pit_b_224,64
 pnasnet5large,16
