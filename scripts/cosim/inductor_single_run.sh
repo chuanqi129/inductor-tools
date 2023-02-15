@@ -9,5 +9,17 @@ export OMP_NUM_THREADS=$CORES
 
 SUITE=${1:-huggingface}
 MODEL=${2:-GoogleFnet}
+CHANNELS=${3:-first}
+BS=${4:-0}
 
-numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --float32 -dcpu -n50 --no-skip --dashboard --only "${MODEL}" --channels-last --backend=inductor
+Channels_extra=""
+if [[ ${CHANNELS} == "last" ]]; then
+    Channels_extra="--channels-last "
+fi
+
+BS_extra=""
+if [[ ${BS} -gt 0 ]]; then
+    BS_extra="--batch_size=${BS} "
+fi
+
+numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --float32 -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} --backend=inductor
