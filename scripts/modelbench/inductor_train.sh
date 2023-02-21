@@ -6,6 +6,10 @@ CHANNELS=${1:-first}
 LOG_DIR=${2:-inductor_log_train}
 mkdir -p $LOG_DIR
 
+Channels_extra=""
+if [[ ${CHANNELS} == "last" ]]; then
+    Channels_extra="--channels-last "
+fi
 
 torchbench="mobilenet_v2,doctr_reco_predictor"
 huggingface="MobileBertForQuestionAnswering,Speech2Text2ForCausalLM,BlenderbotSmallForCausalLM,MobileBertForMaskedLM"
@@ -18,36 +22,27 @@ timm_model_list=($(echo "${timm}" |sed 's/,/ /g'))
 CORES=$(lscpu | grep Core | awk '{print $4}')
 export OMP_NUM_THREADS=$CORES
 timestamp=$(date +%Y%m%d_%H%M%S)
-if [[ $CHANNELS == "first" ]]; then
-    # channels first
-    echo "Channels first testing...."
-    for torchbench_model in ${torchbench_model_list[@]}
-    do
-        # Commands for torchbench for device=cpu, dtype=float32 for training and for performance testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/torchbench.py --performance --float32 -dcpu  --training --inductor   --no-skip --dashboard --only ${torchbench_model} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
-        # Commands for torchbench for device=cpu, dtype=float32 for training and for accuracy testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/torchbench.py --accuracy --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${torchbench_model} --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log             
-    done
 
-    for huggingface_model in ${huggingface_model_list[@]}
-    do
-        # Commands for huggingface for device=cpu, dtype=float32 for training and for performance testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/huggingface.py --performance --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${huggingface_model} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
-        # Commands for huggingface for device=cpu, dtype=float32 for training and for accuracy testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/huggingface.py --accuracy --float32 -dcpu  --training --inductor   --no-skip --dashboard --only ${huggingface_model}  --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
-    done
+for torchbench_model in ${torchbench_model_list[@]}
+do
+    # Commands for torchbench for device=cpu, dtype=float32 for training and for performance testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/torchbench.py --performance --float32 -dcpu  --training --inductor   --no-skip --dashboard --only ${torchbench_model} ${Channels_extra} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+    # Commands for torchbench for device=cpu, dtype=float32 for training and for accuracy testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/torchbench.py --accuracy --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${torchbench_model} ${Channels_extra} --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log             
+done
 
-    for timm_model in ${timm_model_list[@]}
-    do
-        # Commands for timm_models for device=cpu, dtype=float32 for training and for performance testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/timm_models.py --performance --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${timm_model} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
-        # Commands for timm_models for device=cpu, dtype=float32 for training and for accuracy testing
-        python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/timm_models.py --accuracy --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${timm_model} --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
-    done       
-    
-elif [[ $CHANNELS == "last" ]]; then
-    # channels last
-    echo "Skip Channels last testing...."
-else
-    echo "Please check channels foramt with first / last."
-fi
+for huggingface_model in ${huggingface_model_list[@]}
+do
+    # Commands for huggingface for device=cpu, dtype=float32 for training and for performance testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/huggingface.py --performance --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${huggingface_model} ${Channels_extra} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+    # Commands for huggingface for device=cpu, dtype=float32 for training and for accuracy testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/huggingface.py --accuracy --float32 -dcpu  --training --inductor   --no-skip --dashboard --only ${huggingface_model}  ${Channels_extra} --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+done
+
+for timm_model in ${timm_model_list[@]}
+do
+    # Commands for timm_models for device=cpu, dtype=float32 for training and for performance testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/timm_models.py --performance --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${timm_model} ${Channels_extra} --cold_start_latency --output=${LOG_DIR}/multi_threads_cf_${timestamp}_perf.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+    # Commands for timm_models for device=cpu, dtype=float32 for training and for accuracy testing
+    python -m torch.backends.xeon.run_cpu --node_id 0 benchmarks/dynamo/timm_models.py --accuracy --float32 -dcpu --training --inductor   --no-skip --dashboard --only ${timm_model} ${Channels_extra} --output=${LOG_DIR}/multi_threads_cf_${timestamp}_acc.csv 2>&1 | tee -a ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+done 
