@@ -1,7 +1,8 @@
 """microbench_parser.py
-Generate html report.
+Generate report.
 Usage:
-  python microbench_parser.py -w 20221228 -l https://inteltf-jenk.sh.intel.com/job/inductor_dashboard/100/ -n mlp-validate-icx24-ubuntu
+  python microbench_parser.py -o 20221228 -l https://inteltf-jenk.sh.intel.com/job/inductor_dashboard/100/ -n mlp-validate-icx24-ubuntu
+  python microbench_parser.py -o 20221228 -l https://inteltf-jenk.sh.intel.com/job/inductor_dashboard/100/ -n mlp-validate-icx24-ubuntu --html_off
 """
 
 import argparse
@@ -10,24 +11,26 @@ import subprocess
 import pandas as pd
 from pandas import ExcelWriter
 
-parser = argparse.ArgumentParser(description='PyTorch models inference')
-parser.add_argument('-w', '--workday', type=str, help='workday of refresh')
+parser = argparse.ArgumentParser(description='Torchinductor Microbench Log Parser')
+parser.add_argument('-p', '--log_path', type=str, help='log path')
+parser.add_argument('-o', '--output', type=str, help='string included in reports name')
 parser.add_argument('-l', '--url', type=str, help='jenkins build url')
 parser.add_argument('-n', '--node', type=str, help='jenkin node lable')
+parser.add_argument('--html_off', action='store_true', help='turn off html report generate')
 args = parser.parse_args()
 
-path=os.getcwd()
+path = args.log_path if args.log_path else os.getcwd()
 files = os.listdir(path)
 torchbench=""
 huggingface=""
 timm=""
 for file in files:
     if file.startswith("multi_threads_opbench_torchbench"):
-        torchbench=file
+        torchbench=path+'/'+file
     elif file.startswith('multi_threads_opbench_huggingface'):
-        huggingface=file
+        huggingface=path+'/'+file
     elif file.startswith('multi_threads_opbench_timm'):
-        timm=file
+        timm=path+'/'+file
 
 def report_generate(file):
     success_ops = {}
@@ -77,7 +80,7 @@ def report_generate(file):
 
 
 for file in torchbench,huggingface,timm:
-    if os.path.exists(file):
+    if not file.isspace():
         try:
             data=report_generate(file)        
         except:
@@ -85,25 +88,12 @@ for file in torchbench,huggingface,timm:
 
 header=["op_name", "speedup_0.2", "speedup_0.5", "speedup_0.8"]
 h = pd.DataFrame(columns=header)
-with ExcelWriter('op-microbench-'+args.workday+'.xlsx',mode="w") as writer:
+with ExcelWriter('op-microbench-'+args.output+'.xlsx',mode="w") as writer:
     for file in torchbench,huggingface,timm:
-        if os.path.exists(file):
+        if not file.isspace():
             report_generate(file).to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,header=False,startrow=1, startcol=0)
             h.to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,startrow=0, startcol=0) 
             
-
-result=[]         
-for file in torchbench,huggingface,timm:
-    if os.path.exists(file):
-        df = pd.read_excel('op-microbench-'+args.workday+'.xlsx',sheet_name=file.split("_")[3])
-        dt=df[df["speedup_0.8"]<1]
-        suite_title = {"model suite": file.split("_")[3]}
-        result.append(dt)
-        result.append(pd.DataFrame(suite_title, index=[0]))
-
-
-data=pd.concat(result).fillna('*')
-data.to_html('ops.html',header = True,index = False, justify='center')
 
 
 commit_list=[]
@@ -145,6 +135,19 @@ def AdditionalInfo():
                     <tr><td>Python:</td><td>Python 3.8.3</td></tr> \
                 </tbody></table></ol> \
             <p>You can find details from attachments, Thanks</p>'
-with open("ops.html",mode = "a") as f:
-    f.write(AdditionalInfo())
-f.close()
+
+
+if not args.html_off:
+    result=[]         
+    for file in torchbench,huggingface,timm:
+        if not file.isspace():
+            df = pd.read_excel('op-microbench-'+args.output+'.xlsx',sheet_name=file.split("_")[3])
+            dt=df[df["speedup_0.8"]<1]
+            suite_title = {"model suite": file.split("_")[3]}
+            result.append(dt)
+            result.append(pd.DataFrame(suite_title, index=[0]))
+    data=pd.concat(result).fillna('*')
+    data.to_html('ops.html',header = True,index = False, justify='center')
+    with open("ops.html",mode = "a") as f:
+        f.write(AdditionalInfo())
+    f.close()
