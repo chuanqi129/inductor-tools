@@ -19,6 +19,7 @@ parser.add_argument('-n', '--node', type=str, help='jenkin node lable')
 parser.add_argument('--html_off', action='store_true', help='turn off html report generate')
 args = parser.parse_args()
 
+report_name = 'op-microbench-'+args.output
 path = args.log_path if args.log_path else os.getcwd()
 files = os.listdir(path)
 torchbench=""
@@ -88,7 +89,7 @@ for file in torchbench,huggingface,timm:
 
 header=["op_name", "speedup_0.2", "speedup_0.5", "speedup_0.8"]
 h = pd.DataFrame(columns=header)
-with ExcelWriter('op-microbench-'+args.output+'.xlsx',mode="w") as writer:
+with ExcelWriter(report_name+'.xlsx',mode="w") as writer:
     for file in torchbench,huggingface,timm:
         if not file.isspace():
             report_generate(file).to_excel(writer, sheet_name=str(file.split("_")[3]), index=False,header=False,startrow=1, startcol=0)
@@ -141,7 +142,7 @@ if not args.html_off:
     result=[]         
     for file in torchbench,huggingface,timm:
         if not file.isspace():
-            df = pd.read_excel('op-microbench-'+args.output+'.xlsx',sheet_name=file.split("_")[3])
+            df = pd.read_excel(report_name+'.xlsx',sheet_name=file.split("_")[3])
             dt=df[df["speedup_0.8"]<1]
             suite_title = {"model suite": file.split("_")[3]}
             result.append(dt)
