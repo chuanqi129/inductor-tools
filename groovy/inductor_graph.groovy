@@ -82,7 +82,6 @@ echo "inductor_tools_branch: $inductor_tools_branch"
 
 node(NODE_LABEL){
     stage("get scripts and target image") {
-        deleteDir()
         checkout scm
         branch = "$inductor_tools_branch"
         refspec = "+refs/heads/*:refs/remotes/origin/*"
