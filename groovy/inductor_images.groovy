@@ -152,7 +152,30 @@ if ('tag' in params) {
 }
 echo "tag: $tag"
 
+def cleanup() {
+
+
+    try {
+        sh '''#!/bin/bash -x
+        cd $WORKSPACE
+        sudo rm -rf *             
+        '''
+    } catch(e) {
+        echo "==============================================="
+        echo "ERROR: Exception caught in cleanup()           "
+        echo "ERROR: ${e}"
+        echo "==============================================="
+
+
+        echo ' '
+        echo "Error while doing cleanup"
+    }  // catch
+
+
+}
+
 node(NODE_LABEL){
+    cleanup()
     deleteDir()
     stage("get dockerfile"){
         echo 'get dockerfile......'

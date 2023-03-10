@@ -79,8 +79,30 @@ if ('inductor_tools_branch' in params) {
 }
 echo "inductor_tools_branch: $inductor_tools_branch"
 
+def cleanup() {
 
+
+    try {
+        sh '''#!/bin/bash -x
+        cd $WORKSPACE
+        sudo rm -rf *             
+        '''
+    } catch(e) {
+        echo "==============================================="
+        echo "ERROR: Exception caught in cleanup()           "
+        echo "ERROR: ${e}"
+        echo "==============================================="
+
+
+        echo ' '
+        echo "Error while doing cleanup"
+    }  // catch
+
+
+}
 node(NODE_LABEL){
+    cleanup()
+    deleteDir()
     stage("get scripts and target image") {
         checkout scm
         branch = "$inductor_tools_branch"
