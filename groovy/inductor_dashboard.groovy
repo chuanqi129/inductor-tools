@@ -214,6 +214,17 @@ if ('inductor_tools_branch' in params) {
 }
 echo "inductor_tools_branch: $inductor_tools_branch"
 
+
+image_tag = ''
+if ('image_tag' in params) {
+    echo "image_tag in params"
+    if (params.image_tag != '') {
+        image_tag = params.image_tag
+    }
+}
+echo "image_tag: $image_tag"
+
+
 def get_time(){
     return new Date().format('yyyy-MM-dd')
 }
@@ -244,23 +255,26 @@ node(NODE_LABEL){
                 [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
                 [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
                 [$class: 'StringParameterValue', name: 'inductor_tools_branch', value: "${inductor_tools_branch}"],
-                [$class: 'StringParameterValue', name: 'tag', value: 'nightly'],
+                [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
             ]
             task_status = image_build_job.result
             task_number = image_build_job.number
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
                 sh '''#!/bin/bash
-                    old_container=`docker ps |grep pt_inductor:nightly |awk '{print $1}'`
+                    tag=${image_tag}
+                    old_container=`docker ps |grep pt_inductor:${tag} |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
                         docker rm $old_container
                         docker container prune -f
                     fi
-                    old_image_id=`docker images|grep pt_inductor|grep nightly|awk '{print $3}'`
+                    old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
                     old_image=`echo $old_image_id| awk '{print $1}'`
                     if [ -n "${old_image}" ]; then
                         docker rmi -f $old_image
                     fi
+
+
                     cd ${WORKSPACE}
                     deleteDir()
                     checkout([
@@ -270,22 +284,24 @@ node(NODE_LABEL){
                             [url: 'https://github.com/chuanqi129/inductor-tools.git']
                             ]
                     ])
+
+
                     if [ ${task_status} == "SUCCESS" ]; then
                         docker login ccr-registry.caas.intel.com
-                        docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
+                        docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
                     fi
                 '''
             }           
         }else {
             sh '''
             #!/usr/bin/env bash
-            old_container=`docker ps |grep pt_inductor:nightly |awk '{print $1}'`
+            old_container=`docker ps |grep pt_inductor:${tag} |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
                 docker container prune -f
             fi
-            old_image_id=`docker images|grep pt_inductor|grep nightly|awk '{print $3}'`
+            old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
             old_image=`echo $old_image_id| awk '{print $1}'`
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
@@ -300,20 +316,19 @@ node(NODE_LABEL){
                     ]
             ])
             mv inductor-tools/docker/Dockerfile ./
-            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly -f Dockerfile --target image .
+            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
             '''
         } 
     }
     stage('login container & prepare scripts & run') {
         echo 'login container & prepare scripts & run......'
-
         if ("${isOP}" == "true") {
             sh '''
             #!/usr/bin/env bash
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
             docker cp tmp/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
             docker cp tmp/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
-            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -w ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
+            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }else {
             sh '''
