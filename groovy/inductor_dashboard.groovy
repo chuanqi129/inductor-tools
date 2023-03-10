@@ -1,3 +1,4 @@
+GIT_CREDENTIAL = "ESI-SYD-Github-Credentials"
 NODE_LABEL = 'mlp-validate-icx24-ubuntu'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
@@ -234,9 +235,25 @@ println(env._VERSION)
 env._NODE = "$NODE_LABEL"
 
 node(NODE_LABEL){
-    checkout scm
+    deleteDir()
     stage("get image and inductor-tools repo"){
         echo 'get image and inductor-tools repo......'
+        checkout scm
+        branch = "$inductor_tools_branch"
+        refspec = "+refs/heads/*:refs/remotes/origin/*"
+        GIT_NAME = "inductor-tools"
+        GIT_URL = "https://github.com/chuanqi129/inductor-tools.git"
+        checkout([$class                           : 'GitSCM',
+                branches                         : [[name: "$branch"]],
+                browser                          : [$class: 'AssemblaWeb', repoUrl: ''],
+                doGenerateSubmoduleConfigurations: false,
+                extensions                       : [[$class: 'RelativeTargetDirectory',
+                                                        relativeTargetDir: "$GIT_NAME"]],
+                submoduleCfg                     : [],
+                userRemoteConfigs                : [[credentialsId: "$GIT_CREDENTIAL",
+                                                        refspec: "${refspec}",
+                                                        name: GIT_NAME,
+                                                        url: "$GIT_URL"]]])
         if ("${Build_Image}" == "true") {
             def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
                 [$class: 'StringParameterValue', name: 'NODE_LABEL', value: 'Docker'],
@@ -273,19 +290,6 @@ node(NODE_LABEL){
                     if [ -n "${old_image}" ]; then
                         docker rmi -f $old_image
                     fi
-
-
-                    cd ${WORKSPACE}
-                    deleteDir()
-                    checkout([
-                        $class: 'GitSCM', 
-                        branches: [[name: ${inductor_tools_branch}]],
-                        userRemoteConfigs: [
-                            [url: 'https://github.com/chuanqi129/inductor-tools.git']
-                            ]
-                    ])
-
-
                     if [ ${task_status} == "SUCCESS" ]; then
                         docker login ccr-registry.caas.intel.com
                         docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
@@ -295,6 +299,7 @@ node(NODE_LABEL){
         }else {
             sh '''
             #!/usr/bin/env bash
+            tag=${image_tag}
             old_container=`docker ps |grep pt_inductor:${tag} |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
@@ -306,15 +311,6 @@ node(NODE_LABEL){
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
             fi
-            cd ${WORKSPACE}
-            deleteDir()            
-            checkout([
-                $class: 'GitSCM', 
-                branches: [[name: ${inductor_tools_branch}]],
-                userRemoteConfigs: [
-                    [url: 'https://github.com/chuanqi129/inductor-tools.git']
-                    ]
-            ])
             mv inductor-tools/docker/Dockerfile ./
             DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
             '''
@@ -325,17 +321,17 @@ node(NODE_LABEL){
         if ("${isOP}" == "true") {
             sh '''
             #!/usr/bin/env bash
-            docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-            docker cp tmp/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
-            docker cp tmp/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
+            docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
+            docker cp inductor-tools/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
+            docker cp inductor-tools/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
             docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }else {
             sh '''
             #!/usr/bin/env bash
-            docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-            docker cp tmp/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
-            docker cp tmp/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
+            docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
+            docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
+            docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
             docker exec -i pt_inductor bash inductor_test.sh ${THREAD} ${CHANNELS} inductor_log ${MODEL_SUITE}
             '''
         }
