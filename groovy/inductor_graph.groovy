@@ -1,5 +1,5 @@
 GIT_CREDENTIAL = "ESI-SYD-Github-Credentials"
-NODE_LABEL = 'images_build_inductor_dashboard'
+NODE_LABEL = 'mlp-validate-icx24-ubuntu'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
@@ -81,6 +81,7 @@ echo "inductor_tools_branch: $inductor_tools_branch"
 
 node(NODE_LABEL){
     stage("get scripts and target image") {
+        deleteDir()
         checkout scm
         branch = "$inductor_tools_branch"
         refspec = "+refs/heads/*:refs/remotes/origin/*"
@@ -120,7 +121,7 @@ node(NODE_LABEL){
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i inductor_${reference_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${bs} ${target_tag}"
+            docker exec -i inductor_${target_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${bs} ${target_tag}"
         done        
         exit
         '''
