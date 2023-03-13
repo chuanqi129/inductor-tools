@@ -225,28 +225,6 @@ if ('image_tag' in params) {
 }
 echo "image_tag: $image_tag"
 
-def cleanup() {
-
-
-    try {
-        sh '''#!/bin/bash -x
-        cd $WORKSPACE
-        sudo rm -rf *             
-        '''
-    } catch(e) {
-        echo "==============================================="
-        echo "ERROR: Exception caught in cleanup()           "
-        echo "ERROR: ${e}"
-        echo "==============================================="
-
-
-        echo ' '
-        echo "Error while doing cleanup"
-    }  // catch
-
-
-}
-
 def get_time(){
     return new Date().format('yyyy-MM-dd')
 }
@@ -256,10 +234,9 @@ println(env._VERSION)
 env._NODE = "$NODE_LABEL"
 
 node(NODE_LABEL){
-    cleanup()
-    deleteDir()
     stage("get image and inductor-tools repo"){
         echo 'get image and inductor-tools repo......'
+        deleteDir()
         checkout scm
         branch = "$inductor_tools_branch"
         refspec = "+refs/heads/*:refs/remotes/origin/*"

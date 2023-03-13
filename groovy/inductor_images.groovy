@@ -152,33 +152,10 @@ if ('tag' in params) {
 }
 echo "tag: $tag"
 
-def cleanup() {
-
-
-    try {
-        sh '''#!/bin/bash -x
-        cd $WORKSPACE
-        rm -rf *             
-        '''
-    } catch(e) {
-        echo "==============================================="
-        echo "ERROR: Exception caught in cleanup()           "
-        echo "ERROR: ${e}"
-        echo "==============================================="
-
-
-        echo ' '
-        echo "Error while doing cleanup"
-    }  // catch
-
-
-}
-
 node(NODE_LABEL){
-    cleanup()
-    deleteDir()
     stage("get dockerfile"){
         echo 'get dockerfile......'
+        deleteDir()
         checkout scm
         branch = "$inductor_tools_branch"
         refspec = "+refs/heads/*:refs/remotes/origin/*"
