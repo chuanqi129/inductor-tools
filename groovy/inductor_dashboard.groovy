@@ -1,4 +1,3 @@
-GIT_CREDENTIAL = "ESI-SYD-Github-Credentials"
 NODE_LABEL = 'mlp-validate-icx24-ubuntu'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
@@ -238,21 +237,6 @@ node(NODE_LABEL){
         echo 'get image and inductor-tools repo......'
         deleteDir()
         checkout scm
-        branch = "$inductor_tools_branch"
-        refspec = "+refs/heads/*:refs/remotes/origin/*"
-        GIT_NAME = "inductor-tools"
-        GIT_URL = "https://github.com/chuanqi129/inductor-tools.git"
-        checkout([$class                           : 'GitSCM',
-                branches                         : [[name: "$branch"]],
-                browser                          : [$class: 'AssemblaWeb', repoUrl: ''],
-                doGenerateSubmoduleConfigurations: false,
-                extensions                       : [[$class: 'RelativeTargetDirectory',
-                                                        relativeTargetDir: "$GIT_NAME"]],
-                submoduleCfg                     : [],
-                userRemoteConfigs                : [[credentialsId: "$GIT_CREDENTIAL",
-                                                        refspec: "${refspec}",
-                                                        name: GIT_NAME,
-                                                        url: "$GIT_URL"]]])
         if ("${Build_Image}" == "true") {
             def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
                 [$class: 'StringParameterValue', name: 'NODE_LABEL', value: 'Docker'],
@@ -331,7 +315,7 @@ node(NODE_LABEL){
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
             docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
-            docker exec -i pt_inductor bash inductor_test.sh ${THREAD} ${CHANNELS} inductor_log ${MODEL_SUITE}
+            docker exec -i pt_inductor bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log
             '''
         }
     }
