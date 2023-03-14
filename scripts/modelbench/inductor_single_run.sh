@@ -9,8 +9,9 @@ export OMP_NUM_THREADS=$CORES
 
 SUITE=${1:-huggingface}
 MODEL=${2:-GoogleFnet}
-CHANNELS=${3:-first}
-BS=${4:-0}
+DT=${3:-float32}
+CHANNELS=${4:-first}
+BS=${5:-0}
 
 Channels_extra=""
 if [[ ${CHANNELS} == "last" ]]; then
@@ -22,6 +23,6 @@ if [[ ${BS} -gt 0 ]]; then
     BS_extra="--batch_size=${BS} "
 fi
 
-numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --float32 -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} --backend=inductor  --output=/tmp/inductor_single_test.csv
+numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} --backend=inductor  --output=/tmp/inductor_single_test.csv
 
 cat /tmp/inductor_single_test.csv && rm /tmp/inductor_single_test.csv

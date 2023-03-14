@@ -9,14 +9,15 @@ export OMP_NUM_THREADS=$CORES
 LOG_DIR=${1:-dynamo_opbench}
 suite=${2:-all}
 repeats=${3:-30}
+dt=${4:-float32}
 mkdir -p $LOG_DIR
 
 
 timestamp=`date +%Y%m%d_%H%M%S`
 if [ ${suite} == "all" ]; then
-    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite torchbench --op all --dtype float32 --repeats ${repeats} --device cpu 2>&1 | tee ${LOG_DIR}/multi_threads_opbench_torchbench_${timestamp}.log
-    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite huggingface --op all --dtype float32 --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_huggingface_${timestamp}.log
-    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite timm --op all --dtype float32 --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_timm_${timestamp}.log
+    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite torchbench --op all --dtype ${dt} --repeats ${repeats} --device cpu 2>&1 | tee ${LOG_DIR}/multi_threads_opbench_torchbench_${timestamp}.log
+    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite huggingface --op all --dtype ${dt} --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_huggingface_${timestamp}.log
+    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite timm --op all --dtype ${dt} --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_timm_${timestamp}.log
 else
-    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite ${suite} --op all --dtype float32 --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_${suite}_${timestamp}.log
+    numactl -C 0-$end_core --membind 0 python benchmarks/dynamo/microbenchmarks/operatorbench.py --suite ${suite} --op all --dtype ${dt} --repeats ${repeats} --device cpu  2>&1 | tee ${LOG_DIR}/multi_threads_opbench_${suite}_${timestamp}.log
 fi
