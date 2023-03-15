@@ -304,6 +304,7 @@ node(NODE_LABEL){
         if ("${isOP}" == "true") {
             sh '''
             #!/usr/bin/env bash
+            tag=${image_tag}
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp inductor-tools/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
             docker cp inductor-tools/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
@@ -312,6 +313,7 @@ node(NODE_LABEL){
         }else {
             sh '''
             #!/usr/bin/env bash
+            tag=${image_tag}
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
             docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
