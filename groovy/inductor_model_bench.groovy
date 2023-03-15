@@ -274,6 +274,7 @@ node(NODE_LABEL){
                         docker rmi -f $old_image
                     fi
                     if [ ${task_status} == "SUCCESS" ]; then
+                        docker system prune -f
                         docker login ccr-registry.caas.intel.com
                         docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
                     fi
@@ -294,6 +295,7 @@ node(NODE_LABEL){
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
             fi
+            docker system prune -f
             docker login ccr-registry.caas.intel.com
             docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             '''
