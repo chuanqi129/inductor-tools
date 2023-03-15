@@ -315,7 +315,7 @@ node(NODE_LABEL){
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
             docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
-            docker exec -i pt_inductor bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log
+            docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log"
             '''
         }
     }
