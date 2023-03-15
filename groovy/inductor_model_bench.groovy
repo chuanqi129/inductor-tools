@@ -306,8 +306,8 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             tag=${image_tag}
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
-            docker cp inductor-tools/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
-            docker cp inductor-tools/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
+            docker cp scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
+            docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
             docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }else {
@@ -315,8 +315,8 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             tag=${image_tag}
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
-            docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
-            docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
+            docker cp scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
+            docker cp scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
             docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log"
             '''
         }
