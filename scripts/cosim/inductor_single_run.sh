@@ -11,7 +11,12 @@ SUITE=${1:-huggingface}
 MODEL=${2:-GoogleFnet}
 CHANNELS=${3:-first}
 DT=${4:-float32}
-BS=${5:-0}
+SHAPE=${5:-static}
+BS=${6:-0}
+
+if [[ $SHAPE == "dynamic" ]]; then
+    export TORCHDYNAMO_DYNAMIC_SHAPES=1
+fi
 
 Channels_extra=""
 if [[ ${CHANNELS} == "last" ]]; then
