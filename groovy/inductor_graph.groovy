@@ -1,4 +1,3 @@
-GIT_CREDENTIAL = "ESI-SYD-Github-Credentials"
 NODE_LABEL = 'mlp-validate-icx24-ubuntu'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
@@ -82,22 +81,7 @@ echo "inductor_tools_branch: $inductor_tools_branch"
 node(NODE_LABEL){
     stage("get scripts and target image") {
         deleteDir()
-        checkout scm
-        branch = "$inductor_tools_branch"
-        refspec = "+refs/heads/*:refs/remotes/origin/*"
-        GIT_NAME = "inductor-tools"
-        GIT_URL = "https://github.com/chuanqi129/inductor-tools.git"
-        checkout([$class                           : 'GitSCM',
-                branches                         : [[name: "$branch"]],
-                browser                          : [$class: 'AssemblaWeb', repoUrl: ''],
-                doGenerateSubmoduleConfigurations: false,
-                extensions                       : [[$class: 'RelativeTargetDirectory',
-                                                        relativeTargetDir: "$GIT_NAME"]],
-                submoduleCfg                     : [],
-                userRemoteConfigs                : [[credentialsId: "$GIT_CREDENTIAL",
-                                                        refspec: "${refspec}",
-                                                        name: GIT_NAME,
-                                                        url: "$GIT_URL"]]])        
+        checkout scm       
         echo 'get scripts and target image......'
         sh '''
         #!/usr/bin/env bash
@@ -115,9 +99,9 @@ node(NODE_LABEL){
         sh '''
         #!/usr/bin/env bash
         docker run -tid --name inductor_${target_tag} --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${target_tag}:/workspace/pytorch/${target_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${target_tag}
-        docker cp inductor-tools/scripts/cosim/inductor_cosim.sh inductor_${target_tag}:/workspace/pytorch
-        docker cp inductor-tools/scripts/cosim/inductor_cosim.py inductor_${target_tag}:/workspace/pytorch
-        docker cp inductor-tools/scripts/cosim/inductor_single_run.sh inductor_${target_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.sh inductor_${target_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.py inductor_${target_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_single_run.sh inductor_${target_tag}:/workspace/pytorch
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
@@ -139,9 +123,9 @@ node(NODE_LABEL){
         fi        
         docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
         docker run -tid --name inductor_${reference_tag} --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${reference_tag}:/workspace/pytorch/${reference_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
-        docker cp inductor-tools/scripts/cosim/inductor_cosim.sh inductor_${reference_tag}:/workspace/pytorch
-        docker cp inductor-tools/scripts/cosim/inductor_cosim.py inductor_${reference_tag}:/workspace/pytorch
-        docker cp inductor-tools/scripts/cosim/inductor_single_run.sh inductor_${reference_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.sh inductor_${reference_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.py inductor_${reference_tag}:/workspace/pytorch
+        docker cp scripts/cosim/inductor_single_run.sh inductor_${reference_tag}:/workspace/pytorch
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do

@@ -178,6 +178,15 @@ if ('op_repeats' in params) {
 }
 echo "op_repeats: $op_repeats"
 
+DT = ''
+if ('DT' in params) {
+    echo "DT in params"
+    if (params.DT != '') {
+        DT = params.DT
+    }
+}
+echo "DT: $DT"
+
 THREAD = ''
 if ('THREAD' in params) {
     echo "THREAD in params"
@@ -274,6 +283,7 @@ node(NODE_LABEL){
                         docker rmi -f $old_image
                     fi
                     if [ ${task_status} == "SUCCESS" ]; then
+                        docker system prune -f
                         docker login ccr-registry.caas.intel.com
                         docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
                     fi
@@ -294,7 +304,8 @@ node(NODE_LABEL){
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
             fi
-            mv inductor-tools/docker/Dockerfile ./
+            docker system prune -f
+            mv docker/Dockerfile ./
             DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
             '''
         } 
@@ -305,16 +316,16 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
-            docker cp inductor-tools/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
-            docker cp inductor-tools/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
-            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
+            docker cp scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
+            docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
+            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }else {
             sh '''
             #!/usr/bin/env bash
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
-            docker cp inductor-tools/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
-            docker cp inductor-tools/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
+            docker cp scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
+            docker cp scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
             docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log"
             '''
         }
