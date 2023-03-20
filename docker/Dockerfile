@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=ubuntu:20.04
+ARG BASE_IMAGE=public.ecr.aws/lts/ubuntu:20.04
 FROM ${BASE_IMAGE} AS dev-base
 RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
