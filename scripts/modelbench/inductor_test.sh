@@ -7,8 +7,14 @@ THREAD=${1:-all}
 CHANNELS=${2:-first}
 # float32 / bfloat16
 DT=${3:-float32}
-LOG_DIR=${4:-inductor_log}
+# static / dynamic
+SHAPE=${4:-static}
+LOG_DIR=${5:-inductor_log}
 mkdir -p $LOG_DIR
+
+if [[ $SHAPE == "dynamic" ]]; then
+    export TORCHDYNAMO_DYNAMIC_SHAPES=1
+fi
 
 # multi-threads
 multi_threads_test() {
