@@ -25,6 +25,15 @@ if ('Build_Image' in params) {
 }
 echo "Build_Image: $Build_Image"
 
+BASE_IMAGE = ''
+if ('BASE_IMAGE' in params) {
+    echo "BASE_IMAGE in params"
+    if (params.BASE_IMAGE != '') {
+        BASE_IMAGE = params.BASE_IMAGE
+    }
+}
+echo "BASE_IMAGE: $BASE_IMAGE"
+
 isOP = ''
 if ('isOP' in params) {
     echo "isOP in params"
@@ -187,6 +196,15 @@ if ('DT' in params) {
 }
 echo "DT: $DT"
 
+SHAPE = ''
+if ('SHAPE' in params) {
+    echo "SHAPE in params"
+    if (params.SHAPE != '') {
+        SHAPE = params.SHAPE
+    }
+}
+echo "SHAPE: $SHAPE"
+
 THREAD = ''
 if ('THREAD' in params) {
     echo "THREAD in params"
@@ -249,6 +267,7 @@ node(NODE_LABEL){
         if ("${Build_Image}" == "true") {
             def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
                 [$class: 'StringParameterValue', name: 'NODE_LABEL', value: 'Docker'],
+                [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
                 [$class: 'StringParameterValue', name: 'PT_REPO', value: "${PT_REPO}"],
                 [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${PT_BRANCH}"],
                 [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${PT_COMMIT}"],
@@ -306,7 +325,7 @@ node(NODE_LABEL){
             fi
             docker system prune -f
             mv docker/Dockerfile ./
-            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
+            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE}--build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
             '''
         } 
     }
@@ -315,6 +334,7 @@ node(NODE_LABEL){
         if ("${isOP}" == "true") {
             sh '''
             #!/usr/bin/env bash
+            tag=${image_tag}
             docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
             docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
@@ -323,10 +343,11 @@ node(NODE_LABEL){
         }else {
             sh '''
             #!/usr/bin/env bash
+            tag=${image_tag}
             docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
             docker cp scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
             docker cp scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
-            docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} inductor_log"
+            docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log"
             '''
         }
     }

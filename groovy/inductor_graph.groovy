@@ -69,6 +69,24 @@ if ('bs' in params) {
 }
 echo "bs: $bs"
 
+DT = ''
+if ('DT' in params) {
+    echo "DT in params"
+    if (params.DT != '') {
+        DT = params.DT
+    }
+}
+echo "DT: $DT"
+
+SHAPE = ''
+if ('SHAPE' in params) {
+    echo "SHAPE in params"
+    if (params.SHAPE != '') {
+        SHAPE = params.SHAPE
+    }
+}
+echo "SHAPE: $SHAPE"
+
 inductor_tools_branch = ''
 if ('inductor_tools_branch' in params) {
     echo "inductor_tools_branch in params"
@@ -105,7 +123,7 @@ node(NODE_LABEL){
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i inductor_${target_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${bs} ${target_tag}"
+            docker exec -i inductor_${target_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${target_tag}"
         done        
         exit
         '''
@@ -129,7 +147,7 @@ node(NODE_LABEL){
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i inductor_${reference_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${bs} ${reference_tag}"
+            docker exec -i inductor_${reference_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${reference_tag}"
         done
         exit
         '''
