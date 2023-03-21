@@ -232,16 +232,6 @@ if ('MODEL_SUITE' in params) {
 }
 echo "MODEL_SUITE: $MODEL_SUITE"
 
-inductor_tools_branch = ''
-if ('inductor_tools_branch' in params) {
-    echo "inductor_tools_branch in params"
-    if (params.inductor_tools_branch != '') {
-        inductor_tools_branch = params.inductor_tools_branch
-    }
-}
-echo "inductor_tools_branch: $inductor_tools_branch"
-
-
 image_tag = ''
 if ('image_tag' in params) {
     echo "image_tag in params"
@@ -282,7 +272,6 @@ node(NODE_LABEL){
                 [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
                 [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
                 [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
-                [$class: 'StringParameterValue', name: 'inductor_tools_branch', value: "${inductor_tools_branch}"],
                 [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
             ]
             task_status = image_build_job.result
