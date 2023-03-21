@@ -171,7 +171,6 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             docker system prune -af
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 0608+SYD
             docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
             docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
             docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
@@ -182,7 +181,6 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             docker system prune -af
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 0608+SYD
             '''
         }
     }   
