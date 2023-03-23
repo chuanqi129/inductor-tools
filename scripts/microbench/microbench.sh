@@ -12,6 +12,22 @@ repeats=${3:-30}
 dt=${4:-float32}
 mkdir -p $LOG_DIR
 
+# collect sw info
+curdir=`pwd`
+touch ${curdir}/${LOG_DIR}/version.txt
+cd /workspace/benchmark
+echo torchbench : `git rev-parse --short HEAD` >> ${curdir}/${LOG_DIR}/version.txt
+cd /workspace/pytorch
+python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
+        print("torch : ", torch.__version__); \
+        print("torchvision : ", torchvision.__version__); \
+        print("torchtext : ", torchtext.__version__); \
+        print("torchaudio : ", torchaudio.__version__); \
+        print("torchdata : ", torchdata.__version__)''' >> ${curdir}/${LOG_DIR}/version.txt
+
+
+# workaround https://github.com/pytorch/pytorch/pull/95556
+sed -i 's/if inductor_config.triton.convolution == "aten" and "convolution" in str(operator):/if "convolution" in str(operator):/' benchmarks/dynamo/microbenchmarks/operatorbench.py
 
 timestamp=`date +%Y%m%d_%H%M%S`
 if [ ${suite} == "all" ]; then

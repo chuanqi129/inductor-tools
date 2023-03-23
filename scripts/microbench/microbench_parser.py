@@ -7,7 +7,6 @@ Usage:
 
 import argparse
 import os
-import subprocess
 import pandas as pd
 from pandas import ExcelWriter
 
@@ -27,11 +26,11 @@ huggingface=""
 timm=""
 for file in files:
     if file.startswith("multi_threads_opbench_torchbench"):
-        torchbench=path+'/'+file
+        torchbench=file
     elif file.startswith('multi_threads_opbench_huggingface'):
-        huggingface=path+'/'+file
+        huggingface=file
     elif file.startswith('multi_threads_opbench_timm'):
-        timm=path+'/'+file
+        timm=file
 
 def report_generate(file):
     success_ops = {}
@@ -97,16 +96,28 @@ with ExcelWriter(report_name+'.xlsx',mode="w") as writer:
             
 
 
+result=[]         
+for file in torchbench,huggingface,timm:
+    if not file.isspace():
+        df = pd.read_excel(report_name+'.xlsx',sheet_name=file.split("_")[3])
+        dt=df[df["speedup_0.8"]<1]
+        suite_title = {"model suite": file.split("_")[3]}
+        result.append(dt)
+        result.append(pd.DataFrame(suite_title, index=[0]))
+
+
+data=pd.concat(result).fillna('*')
+data.to_html('ops.html',header = True,index = False, justify='center')
+
 commit_list=[]
 url_list=[]
-for item in ["pytorch","vision","text","audio","data","benchmark"]:
-    get_commit_cmd=f"git ls-remote https://github.com/pytorch/{item}.git refs/heads/nightly"+" | awk '{ print $1 }'" if item != "benchmark" \
-        else f"git ls-remote https://github.com/pytorch/{item}.git refs/heads/main"+" | awk '{ print $1 }'"
-    commit=subprocess.getstatusoutput(get_commit_cmd)[1].strip()
-    commit_short=commit[0:7]
-    item_url=f'https://github.com/pytorch/{item}/commit/'+commit
-    commit_list.append(commit_short)
-    url_list.append(item_url)
+version = pd.read_table('version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+componment = ["benchmark","pytorch","vision","text","audio","data"]
+for item in componment:
+    sha_short = version.loc[componment.index(item), "commit"][-7:] if item != "benchmark" \
+        else version.loc[componment.index(item),"commit"][-8:]
+    commit_list.append(sha_short)    
+    url_list.append(f"https://github.com/pytorch/{item}/commit/"+sha_short) 
 
 def AdditionalInfo():
     return f'<p>job info:</p> \
@@ -114,12 +125,12 @@ def AdditionalInfo():
             <p>SW Info:</p><ol><table> \
                 <tbody> \
                     <tr><td>docker image:&nbsp;</td><td>ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly</td></tr> \
-                    <tr><td>StockPT:&nbsp;</td><td><a href={url_list[0]}> {commit_list[0]}</a></td></tr> \
-                    <tr><td>TORCH_VISION:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]} </a></td></tr> \
-                    <tr><td>TORCH_TEXT:&nbsp;</td><td><a href={url_list[2]}> {commit_list[2]} </a></td></tr> \
-                    <tr><td>TORCH_AUDIO:&nbsp;</td><td><a href={url_list[3]}> {commit_list[3]} </a></td></tr> \
-                    <tr><td>TORCH_DATA:&nbsp;</td><td><a href={url_list[4]}> {commit_list[4]} </a></td></tr> \
-                    <tr><td>TORCH_BENCH:&nbsp;</td><td><a href={url_list[5]}> {commit_list[5]} </a></td></tr> \
+                    <tr><td>StockPT:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> \
+                    <tr><td>TORCH_VISION:&nbsp;</td><td><a href={url_list[2]}> {commit_list[2]} </a></td></tr> \
+                    <tr><td>TORCH_TEXT:&nbsp;</td><td><a href={url_list[3]}> {commit_list[3]} </a></td></tr> \
+                    <tr><td>TORCH_AUDIO:&nbsp;</td><td><a href={url_list[4]}> {commit_list[4]} </a></td></tr> \
+                    <tr><td>TORCH_DATA:&nbsp;</td><td><a href={url_list[5]}> {commit_list[5]} </a></td></tr> \
+                    <tr><td>TORCH_BENCH:&nbsp;</td><td><a href={url_list[0]}> {commit_list[0]} </a></td></tr> \
                 </tbody></table></ol> \
             <p>HW info:</p><ol><table> \
                 <tbody> \
