@@ -279,7 +279,7 @@ node(NODE_LABEL){
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
                 sh '''#!/bin/bash
                     tag=${image_tag}
-                    old_container=`docker ps |grep pt_inductor:${tag} |awk '{print $1}'`
+                    old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
                         docker rm $old_container
@@ -301,7 +301,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            old_container=`docker ps |grep pt_inductor:${tag} |awk '{print $1}'`
+            old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
