@@ -75,6 +75,10 @@ WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive 
 RUN cd pytorch && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
+ARG TRITON_BRANCH=main
+ARG TRITON_COMMIT=${TRITON_BRANCH}
+RUN git clone -b ${TRITON_BRANCH} https://github.com/openai/triton.git && \
+    cd triton/python && python setup.py bdist_wheel && pip install dist/*.whl
 ARG TORCH_VISION_BRANCH=nightly
 ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
 ARG TORCH_DATA_BRANCH=nightly
