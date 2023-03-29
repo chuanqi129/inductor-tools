@@ -7,7 +7,7 @@ if ('NODE_LABEL' in params) {
 }
 echo "NODE_LABEL: $NODE_LABEL"
 
-BASE_IMAGE = ''
+BASE_IMAGE = 'ubuntu:20.04'
 if ('BASE_IMAGE' in params) {
     echo "BASE_IMAGE in params"
     if (params.BASE_IMAGE != '') {
@@ -16,7 +16,7 @@ if ('BASE_IMAGE' in params) {
 }
 echo "BASE_IMAGE: $BASE_IMAGE"
 
-PT_REPO = ''
+PT_REPO = 'https://github.com/pytorch/pytorch.git'
 if ('PT_REPO' in params) {
     echo "PT_REPO in params"
     if (params.PT_REPO != '') {
@@ -25,7 +25,7 @@ if ('PT_REPO' in params) {
 }
 echo "PT_REPO: $PT_REPO"
 
-PT_BRANCH = ''
+PT_BRANCH = 'nightly'
 if ('PT_BRANCH' in params) {
     echo "PT_BRANCH in params"
     if (params.PT_BRANCH != '') {
@@ -34,7 +34,7 @@ if ('PT_BRANCH' in params) {
 }
 echo "PT_BRANCH: $PT_BRANCH"
 
-PT_COMMIT = ''
+PT_COMMIT = 'nightly'
 if ('PT_COMMIT' in params) {
     echo "PT_COMMIT in params"
     if (params.PT_COMMIT != '') {
@@ -43,7 +43,7 @@ if ('PT_COMMIT' in params) {
 }
 echo "PT_COMMIT: $PT_COMMIT"
 
-TORCH_VISION_BRANCH = ''
+TORCH_VISION_BRANCH = 'nightly'
 if ('TORCH_VISION_BRANCH' in params) {
     echo "TORCH_VISION_BRANCH in params"
     if (params.TORCH_VISION_BRANCH != '') {
@@ -52,7 +52,7 @@ if ('TORCH_VISION_BRANCH' in params) {
 }
 echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
 
-TORCH_VISION_COMMIT = ''
+TORCH_VISION_COMMIT = 'nightly'
 if ('TORCH_VISION_COMMIT' in params) {
     echo "TORCH_VISION_COMMIT in params"
     if (params.TORCH_VISION_COMMIT != '') {
@@ -61,7 +61,7 @@ if ('TORCH_VISION_COMMIT' in params) {
 }
 echo "TORCH_VISION_COMMIT: $TORCH_VISION_COMMIT"
 
-TORCH_TEXT_BRANCH = ''
+TORCH_TEXT_BRANCH = 'nightly'
 if ('TORCH_TEXT_BRANCH' in params) {
     echo "TORCH_TEXT_BRANCH in params"
     if (params.TORCH_TEXT_BRANCH != '') {
@@ -70,7 +70,7 @@ if ('TORCH_TEXT_BRANCH' in params) {
 }
 echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
-TORCH_TEXT_COMMIT = ''
+TORCH_TEXT_COMMIT = 'nightly'
 if ('TORCH_TEXT_COMMIT' in params) {
     echo "TORCH_TEXT_COMMIT in params"
     if (params.TORCH_TEXT_COMMIT != '') {
@@ -79,7 +79,7 @@ if ('TORCH_TEXT_COMMIT' in params) {
 }
 echo "TORCH_TEXT_COMMIT: $TORCH_TEXT_COMMIT"
 
-TORCH_AUDIO_BRANCH = ''
+TORCH_AUDIO_BRANCH = 'nightly'
 if ('TORCH_AUDIO_BRANCH' in params) {
     echo "TORCH_AUDIO_BRANCH in params"
     if (params.TORCH_AUDIO_BRANCH != '') {
@@ -88,7 +88,7 @@ if ('TORCH_AUDIO_BRANCH' in params) {
 }
 echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
 
-TORCH_AUDIO_COMMIT = ''
+TORCH_AUDIO_COMMIT = 'nightly'
 if ('TORCH_AUDIO_COMMIT' in params) {
     echo "TORCH_AUDIO_COMMIT in params"
     if (params.TORCH_AUDIO_COMMIT != '') {
@@ -97,7 +97,7 @@ if ('TORCH_AUDIO_COMMIT' in params) {
 }
 echo "TORCH_AUDIO_COMMIT: $TORCH_AUDIO_COMMIT"
 
-TORCH_BENCH_BRANCH = ''
+TORCH_BENCH_BRANCH = 'main'
 if ('TORCH_BENCH_BRANCH' in params) {
     echo "TORCH_BENCH_BRANCH in params"
     if (params.TORCH_BENCH_BRANCH != '') {
@@ -106,7 +106,7 @@ if ('TORCH_BENCH_BRANCH' in params) {
 }
 echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
-TORCH_BENCH_COMMIT = ''
+TORCH_BENCH_COMMIT = 'main'
 if ('TORCH_BENCH_COMMIT' in params) {
     echo "TORCH_BENCH_COMMIT in params"
     if (params.TORCH_BENCH_COMMIT != '') {
@@ -115,7 +115,7 @@ if ('TORCH_BENCH_COMMIT' in params) {
 }
 echo "TORCH_BENCH_COMMIT: $TORCH_BENCH_COMMIT"
 
-TORCH_DATA_BRANCH = ''
+TORCH_DATA_BRANCH = 'nightly'
 if ('TORCH_DATA_BRANCH' in params) {
     echo "TORCH_DATA_BRANCH in params"
     if (params.TORCH_DATA_BRANCH != '') {
@@ -124,7 +124,7 @@ if ('TORCH_DATA_BRANCH' in params) {
 }
 echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
 
-TORCH_DATA_COMMIT = ''
+TORCH_DATA_COMMIT = 'nightly'
 if ('TORCH_DATA_COMMIT' in params) {
     echo "TORCH_DATA_COMMIT in params"
     if (params.TORCH_DATA_COMMIT != '') {
@@ -133,7 +133,7 @@ if ('TORCH_DATA_COMMIT' in params) {
 }
 echo "TORCH_DATA_COMMIT: $TORCH_DATA_COMMIT"
 
-BENCH_COMMIT = ''
+BENCH_COMMIT = 'nightly'
 if ('BENCH_COMMIT' in params) {
     echo "BENCH_COMMIT in params"
     if (params.BENCH_COMMIT != '') {
@@ -142,16 +142,7 @@ if ('BENCH_COMMIT' in params) {
 }
 echo "BENCH_COMMIT: $BENCH_COMMIT"
 
-inductor_tools_branch = ''
-if ('inductor_tools_branch' in params) {
-    echo "inductor_tools_branch in params"
-    if (params.inductor_tools_branch != '') {
-        inductor_tools_branch = params.inductor_tools_branch
-    }
-}
-echo "inductor_tools_branch: $inductor_tools_branch"
-
-tag = ''
+tag = 'test'
 if ('tag' in params) {
     echo "tag in params"
     if (params.tag != '') {

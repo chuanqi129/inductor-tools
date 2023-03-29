@@ -33,7 +33,7 @@ if ('reference' in params) {
 }
 echo "reference: $reference"
 
-channels = ''
+channels = 'first'
 if ('channels' in params) {
     echo "channels in params"
     if (params.channels != '') {
@@ -42,7 +42,7 @@ if ('channels' in params) {
 }
 echo "channels: $channels"
 
-suite = ''
+suite = 'torchbench'
 if ('suite' in params) {
     echo "suite in params"
     if (params.suite != '') {
@@ -60,7 +60,7 @@ if ('model' in params) {
 }
 echo "model: $model"
 
-bs = ''
+bs = '0'
 if ('bs' in params) {
     echo "bs in params"
     if (params.bs != '') {
@@ -69,7 +69,7 @@ if ('bs' in params) {
 }
 echo "bs: $bs"
 
-DT = ''
+DT = 'float32'
 if ('DT' in params) {
     echo "DT in params"
     if (params.DT != '') {
@@ -78,7 +78,7 @@ if ('DT' in params) {
 }
 echo "DT: $DT"
 
-SHAPE = ''
+SHAPE = 'static'
 if ('SHAPE' in params) {
     echo "SHAPE in params"
     if (params.SHAPE != '') {
@@ -86,15 +86,6 @@ if ('SHAPE' in params) {
     }
 }
 echo "SHAPE: $SHAPE"
-
-inductor_tools_branch = ''
-if ('inductor_tools_branch' in params) {
-    echo "inductor_tools_branch in params"
-    if (params.inductor_tools_branch != '') {
-        inductor_tools_branch = params.inductor_tools_branch
-    }
-}
-echo "inductor_tools_branch: $inductor_tools_branch"
 
 node(NODE_LABEL){
     stage("get scripts and target image") {
