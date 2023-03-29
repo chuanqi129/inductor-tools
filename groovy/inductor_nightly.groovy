@@ -349,9 +349,9 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            docker run -tid --name llm_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench.log:/workspace/pytorch/llm_bench.log ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker run -tid --name llm_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/llmbench/run_dynamo_gptj.py llm_pt_inductor:/workspace/pytorch
-            docker exec -i llm_pt_inductor bash -c "python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench.log"
+            docker exec -i llm_pt_inductor bash -c "python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log"
             '''
         }
     }
@@ -362,7 +362,7 @@ node(NODE_LABEL){
             archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
             archiveArtifacts artifacts: "**/Inductor Dashboard Regression Check inductor_log.xlsx", fingerprint: true
         }else if ("${LLMBench}" == "true") {
-            archiveArtifacts artifacts: "**/llm_bench.log", fingerprint: true
+            archiveArtifacts artifacts: "**/llm_bench/**", fingerprint: true
         }
     }
     stage("Sent Email"){
@@ -416,7 +416,7 @@ node(NODE_LABEL){
                 emailext(
                     subject: "Torchinductor LLMBench Nightly Report",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/llm_bench.log",
+                    attachmentsPattern: "**/llm_bench/**",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
                     body: 'LLM model bench build success, see detail in ${BUILD_URL}'
