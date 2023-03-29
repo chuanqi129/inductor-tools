@@ -34,7 +34,7 @@ if ('BASE_IMAGE' in params) {
 }
 echo "BASE_IMAGE: $BASE_IMAGE"
 
-OPBench = 'true'
+OPBench = 'false'
 if ('OPBench' in params) {
     echo "OPBench in params"
     if (params.OPBench != '') {
