@@ -25,6 +25,15 @@ if ('IMAGE_BUILD_NODE' in params) {
 }
 echo "IMAGE_BUILD_NODE: $IMAGE_BUILD_NODE"
 
+Build_Image = 'True'
+if ('Build_Image' in params) {
+    echo "Build_Image in params"
+    if (params.Build_Image != '') {
+        Build_Image = params.Build_Image
+    }
+}
+echo "Build_Image: $Build_Image"
+
 BASE_IMAGE = 'ubuntu:20.04'
 if ('BASE_IMAGE' in params) {
     echo "BASE_IMAGE in params"
@@ -282,47 +291,68 @@ node(NODE_LABEL){
         echo 'get image and inductor-tools repo......'
         deleteDir()
         checkout scm
-        def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
-            [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
-            [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
-            [$class: 'StringParameterValue', name: 'PT_REPO', value: "${PT_REPO}"],
-            [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${PT_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${PT_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${TORCH_VISION_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TORCH_TEXT_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${TORCH_DATA_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${TORCH_AUDIO_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
-            [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
-            [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
-        ]
-        task_status = image_build_job.result
-        task_number = image_build_job.number
-        withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
-            sh '''#!/bin/bash
-                tag=${image_tag}
-                old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
-                if [ -n "${old_container}" ]; then
-                    docker stop $old_container
-                    docker rm $old_container
-                    docker container prune -f
-                fi
-                old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
-                old_image=`echo $old_image_id| awk '{print $1}'`
-                if [ -n "${old_image}" ]; then
-                    docker rmi -f $old_image
-                fi
-                if [ ${task_status} == "SUCCESS" ]; then
-                    docker system prune -f
-                    docker login ccr-registry.caas.intel.com -u yudongsi -p 0608+SYD
-                    docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
-                fi
-            '''          
+        if ("${Build_Image}" == "true") {
+            def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
+                [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
+                [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
+                [$class: 'StringParameterValue', name: 'PT_REPO', value: "${PT_REPO}"],
+                [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${PT_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${PT_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${TORCH_VISION_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TORCH_TEXT_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${TORCH_DATA_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${TORCH_AUDIO_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
+                [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
+            ]
+            task_status = image_build_job.result
+            task_number = image_build_job.number
+            withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
+                sh '''#!/bin/bash
+                    tag=${image_tag}
+                    old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
+                    if [ -n "${old_container}" ]; then
+                        docker stop $old_container
+                        docker rm $old_container
+                        docker container prune -f
+                    fi
+                    old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
+                    old_image=`echo $old_image_id| awk '{print $1}'`
+                    if [ -n "${old_image}" ]; then
+                        docker rmi -f $old_image
+                    fi
+                    if [ ${task_status} == "SUCCESS" ]; then
+                        docker system prune -f
+                        docker login ccr-registry.caas.intel.com
+                        docker pull {DOCKER_IMAGE_NAMESPACE}:${tag}
+                    fi
+                '''
+            }           
+        }else {
+            sh '''
+            #!/usr/bin/env bash
+            tag=${image_tag}
+            old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
+            if [ -n "${old_container}" ]; then
+                docker stop $old_container
+                docker rm $old_container
+                docker container prune -f
+            fi
+            old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
+            old_image=`echo $old_image_id| awk '{print $1}'`
+            if [ -n "${old_image}" ]; then
+                docker rmi -f $old_image
+            fi
+            docker system prune -f
+            docker login ccr-registry.caas.intel.com
+            docker pull {DOCKER_IMAGE_NAMESPACE}:{tag}
+            '''        
         }
     }
     stage('login container & prepare scripts & run') {
@@ -336,7 +366,7 @@ node(NODE_LABEL){
             docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
             docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
-        }else if ("${ModelBench}" == "true") {
+        }if ("${ModelBench}" == "true") {
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
@@ -345,23 +375,36 @@ node(NODE_LABEL){
             docker cp scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
             docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log;python log_parser.py --target inductor_log"
             '''
-        }else if ("${LLMBench}" == "true") {
+        }
+    }
+    stage("LLMBench"){
+        retry(3){
+            if ("${LLMBench}" == "true") {
+            echo 'LLMBench......'
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
+            old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
+            if [ -n "${old_container}" ]; then
+                docker stop $old_container
+                docker rm $old_container
+                docker container prune -f
+            fi
             docker run -tid --name llm_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker cp scripts/llmbench/env_collect.sh llm_pt_inductor:/workspace/pytorch
             docker cp scripts/llmbench/run_dynamo_gptj.py llm_pt_inductor:/workspace/pytorch
-            docker exec -i llm_pt_inductor bash -c "python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log"
+            docker exec -i llm_pt_inductor bash -c "bash env_collect.sh;python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log"
             '''
+            }
         }
     }
     stage('archiveArtifacts') {
         if ("${OPBench}" == "true"){
             archiveArtifacts artifacts: "**/opbench_log/**", fingerprint: true
-        }else if ("${ModelBench}" == "true"){
+        }if ("${ModelBench}" == "true"){
             archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
             archiveArtifacts artifacts: "**/Inductor Dashboard Regression Check inductor_log.xlsx", fingerprint: true
-        }else if ("${LLMBench}" == "true") {
+        }if ("${LLMBench}" == "true") {
             archiveArtifacts artifacts: "**/llm_bench/**", fingerprint: true
         }
     }
@@ -412,18 +455,18 @@ node(NODE_LABEL){
             }
         }//ModelBench
         if ("${LLMBench}" == "true"){
-            if (fileExists("${WORKSPACE}/llm_bench.log") == true){
+            if (fileExists("${WORKSPACE}/llm_bench/llm_report.html") == true){
                 emailext(
-                    subject: "Torchinductor LLMBench Nightly Report",
+                    subject: "Torchinductor LLMBench Report",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/llm_bench/**",
+                    attachmentsPattern: "**/llm_bench/llm_bench.log",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: 'LLM model bench build success, see detail in ${BUILD_URL}'
+                    body: '${FILE,path="llm_bench/llm_report.html"}'
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor LLMBench Nightly",
+                    subject: "Failure occurs in Torchinductor LLMBench",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
