@@ -366,7 +366,8 @@ node(NODE_LABEL){
             docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
             docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
-        }if ("${ModelBench}" == "true") {
+        }
+        if ("${ModelBench}" == "true") {
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
@@ -401,10 +402,12 @@ node(NODE_LABEL){
     stage('archiveArtifacts') {
         if ("${OPBench}" == "true"){
             archiveArtifacts artifacts: "**/opbench_log/**", fingerprint: true
-        }if ("${ModelBench}" == "true"){
+        }
+        if ("${ModelBench}" == "true"){
             archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
             archiveArtifacts artifacts: "**/Inductor Dashboard Regression Check inductor_log.xlsx", fingerprint: true
-        }if ("${LLMBench}" == "true") {
+        }
+        if ("${LLMBench}" == "true") {
             archiveArtifacts artifacts: "**/llm_bench/**", fingerprint: true
         }
     }
