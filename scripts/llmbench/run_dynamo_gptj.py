@@ -49,7 +49,7 @@ else:
 # install transformers
 subprocess.run(['pip', 'uninstall', 'transformers', '-y'],shell=True)
 subprocess.run(f'pip install transformers=={args.transformers_version}',shell=True)
-subprocess.run(f'pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cpu.html',shell=True)
+subprocess.run('pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cpu.html',shell=True)
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # load model
