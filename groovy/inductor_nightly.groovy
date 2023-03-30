@@ -393,7 +393,7 @@ node(NODE_LABEL){
             docker run -tid --name llm_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/llmbench/env_collect.sh llm_pt_inductor:/workspace/pytorch
             docker cp scripts/llmbench/run_dynamo_gptj.py llm_pt_inductor:/workspace/pytorch
-            docker exec -i llm_pt_inductor bash -c "bash env_collect.sh;python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log"
+            docker exec -i llm_pt_inductor bash -c "bash env_collect.sh;python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log;cp llm_report.html llm_bench"
             '''
             }
         }
