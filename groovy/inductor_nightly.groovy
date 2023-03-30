@@ -351,7 +351,7 @@ node(NODE_LABEL){
             fi
             docker system prune -f
             docker login ccr-registry.caas.intel.com
-            docker pull ${DOCKER_IMAGE_NAMESPACE}:{tag}
+            docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
             '''        
         }
     }
