@@ -316,7 +316,7 @@ node(NODE_LABEL){
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
                 sh '''#!/bin/bash
                     tag=${image_tag}
-                    old_container=`docker ps |grep $USER |awk '{print $1}'`
+                    old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
                         docker rm $old_container
@@ -338,7 +338,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            old_container=`docker ps |grep $USER |awk '{print $1}'`
+            old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
@@ -361,20 +361,20 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/microbench/microbench_parser.py $USER:/workspace/pytorch
-            docker cp scripts/microbench/microbench.sh $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
+            docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker cp scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
+            docker cp scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
+            docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }
         if ("${ModelBench}" == "true") {
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log -v ${WORKSPACE}/Inductor Dashboard Regression Check inductor_log.xlsx:/workspace/pytorch/Inductor Dashboard Regression Check inductor_log.xlsx ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch         
-            docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch           
-            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log;python log_parser.py --target inductor_log"
+            docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log -v ${WORKSPACE}/Inductor Dashboard Regression Check inductor_log.xlsx:/workspace/pytorch/Inductor Dashboard Regression Check inductor_log.xlsx ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker cp scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
+            docker cp scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
+            docker exec -i pt_inductor bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log;python log_parser.py --target inductor_log"
             '''
         }
     }
@@ -385,16 +385,16 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            old_container=`docker ps |grep $USER |awk '{print $1}'`
+            old_container=`docker ps |grep pt_inductor |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
                 docker container prune -f
             fi
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/llmbench/env_collect.sh $USER:/workspace/pytorch
-            docker cp scripts/llmbench/run_dynamo_gptj.py $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash env_collect.sh;python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log;cp llm_report.html llm_bench"
+            docker run -tid --name llm_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker cp scripts/llmbench/env_collect.sh llm_pt_inductor:/workspace/pytorch
+            docker cp scripts/llmbench/run_dynamo_gptj.py llm_pt_inductor:/workspace/pytorch
+            docker exec -i llm_pt_inductor bash -c "bash env_collect.sh;python run_dynamo_gptj.py --transformers_version ${transformers} --use_dynamo --precision ${DT} --greedy 2>&1 | tee /workspace/pytorch/llm_bench/llm_bench.log;cp llm_report.html llm_bench"
             '''
             }
         }
