@@ -286,9 +286,26 @@ println(env._VERSION)
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env._NODE = "$NODE_LABEL"
 
+def cleanup(){
+    try {
+        sh '''#!/bin/bash 
+        set -x
+        docker container prune -f
+        docker system prune -f
+        '''
+    } catch(e) {
+        echo "==============================================="
+        echo "ERROR: Exception caught in cleanup()           "
+        echo "ERROR: ${e}"
+        echo "==============================================="
+        echo "Error while doing cleanup"
+    }
+}
+
 node(NODE_LABEL){
     stage("get image and inductor-tools repo"){
         echo 'get image and inductor-tools repo......'
+        cleanup()
         deleteDir()
         checkout scm
         if ("${Build_Image}" == "true") {
