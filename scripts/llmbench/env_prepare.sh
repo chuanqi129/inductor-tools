@@ -12,30 +12,32 @@ pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cpu.html
 pip install transformers==${transformers_version}
 
 # collect sw info
-cd ${LOG_DIR}
-if [ -f "result.txt" ]; then
-    rm result.txt
+curdir=`pwd`
+FILE=${curdir}/${LOG_DIR}/result.txt
+if [ -f ${FILE} ]; then
+    rm ${FILE}
 fi
-touch result.txt
+touch ${FILE}
 
 cd /workspace/benchmark
-echo torchbench : $(git rev-parse --short HEAD) >>${LOG_DIR}/result.txt
+echo torchbench : $(git rev-parse --short HEAD) >>${FILE}
 cd /workspace/pytorch
 python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
         print("torch : ", torch.__version__); \
         print("torchvision : ", torchvision.__version__); \
         print("torchtext : ", torchtext.__version__); \
         print("torchaudio : ", torchaudio.__version__); \
-        print("torchdata : ", torchdata.__version__)''' >>${LOG_DIR}/result.txt
-echo transformers : ${transformers_version} >>${LOG_DIR}/result.txt
-echo precision : ${precision} >>${LOG_DIR}/result.txt
+        print("torchdata : ", torchdata.__version__)''' >>${FILE}
+echo transformers : ${transformers_version} >>${FILE}
+echo precision : ${precision} >>${FILE}
 
 # run benchmark
 timestamp=$(date +%Y%m%d_%H%M%S)
 python run_dynamo_gptj.py --use_dynamo --precision ${precision} --greedy 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
-latency=$(grep "Inference latency :" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//g')
-echo latency : ${latency} >>${LOG_DIR}/result.txt
+latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
+echo latency : ${latency} >>${FILE}
 
 # generate html report
+cp generate_report.py ${curdir}/${LOG_DIR}
+cd ${curdir}/${LOG_DIR}
 python generate_report.py
-cp llm_report.html ${LOG_DIR}

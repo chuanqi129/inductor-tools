@@ -9,6 +9,9 @@ for item in componment:
         else result.loc[componment.index(item),"commit"][-8:]
     commit_list.append(sha_short)    
     url_list.append(f"https://github.com/pytorch/{item}/commit/"+sha_short) 
+precision = result.loc[7,"commit"]
+latency = result.loc[8,"commit"]
+transformers = result.loc[6,"commit"]
 
 report_content=f'''<!DOCTYPE html> \
 <html> \
@@ -25,17 +28,17 @@ report_content=f'''<!DOCTYPE html> \
             <th>throughput</th> \
         </tr> \
         <tr> \
-            <td><p style="text-align:center">{result.loc[componment.index("precision"),"commit"]}</p></td> \
+            <td><p style="text-align:center">{precision}</p></td> \
             <td><p style="text-align:center">32</p></td> \
             <td><p style="text-align:center">True</p></td> \
             <td><p style="text-align:center">True</p></td> \
-            <td><p style="text-align:center">{result.loc[componment.index("latency"),"commit"]} ms</p></td> \                                   
+            <td><p style="text-align:center">{latency}</p></td> \                                   
         </tr> \
     </table> \
     <table border="1"> \
     <p>SW Info:</p> \
         <tr><td>Pytorch:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> \
-        <tr><td>transformers:&nbsp;</td><td>{result.loc[componment.index("transformers"),"commit"]}</td></tr> \
+        <tr><td>transformers:&nbsp;</td><td>{transformers}</td></tr> \
         <tr><td>TORCH_VISION:&nbsp;</td><td><a href={url_list[2]}> {commit_list[2]} </a></td></tr> \
         <tr><td>TORCH_TEXT:&nbsp;</td><td><a href={url_list[3]}> {commit_list[3]} </a></td></tr> \
         <tr><td>TORCH_AUDIO:&nbsp;</td><td><a href={url_list[4]}> {commit_list[4]} </a></td></tr> \

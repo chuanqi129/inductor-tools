@@ -480,7 +480,7 @@ node(NODE_LABEL){
                 emailext(
                     subject: "Torchinductor LLMBench Report",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/llm_bench/llm_bench.log",
+                    attachmentsPattern: "**/llm_bench/result.txt",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
                     body: '${FILE,path="llm_bench/llm_report.html"}'
