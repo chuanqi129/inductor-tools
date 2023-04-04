@@ -94,7 +94,7 @@ node(NODE_LABEL){
         echo 'get scripts and target image......'
         sh '''
         #!/usr/bin/env bash
-        old_container=`docker ps |grep inductor_${target_tag}|awk '{print $1}'`
+        old_container=`docker ps |grep $USER |awk '{print $1}'`
         if [ -n "${old_container}" ]; then
             docker stop $old_container
             docker rm $old_container
@@ -107,14 +107,14 @@ node(NODE_LABEL){
         echo 'running......'
         sh '''
         #!/usr/bin/env bash
-        docker run -tid --name inductor_${target_tag} --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${target_tag}:/workspace/pytorch/${target_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${target_tag}
-        docker cp scripts/cosim/inductor_cosim.sh inductor_${target_tag}:/workspace/pytorch
-        docker cp scripts/cosim/inductor_cosim.py inductor_${target_tag}:/workspace/pytorch
-        docker cp scripts/cosim/inductor_single_run.sh inductor_${target_tag}:/workspace/pytorch
+        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${target_tag}:/workspace/pytorch/${target_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${target_tag}
+        docker cp scripts/cosim/inductor_cosim.sh $USER:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.py $USER:/workspace/pytorch
+        docker cp scripts/cosim/inductor_single_run.sh $USER:/workspace/pytorch
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i inductor_${target_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${target_tag}"
+            docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${target_tag}"
         done        
         exit
         '''
@@ -124,21 +124,21 @@ node(NODE_LABEL){
         if ("${reference}" == "true") {
         sh '''
         #!/usr/bin/env bash
-        old_container=`docker ps |grep inductor_${reference_tag}|awk '{print $1}'`
+        old_container=`docker ps |grep $USER |awk '{print $1}'`
         if [ -n "${old_container}" ]; then
             docker stop $old_container
             docker rm $old_container
             docker container prune -f
         fi        
         docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
-        docker run -tid --name inductor_${reference_tag} --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${reference_tag}:/workspace/pytorch/${reference_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
-        docker cp scripts/cosim/inductor_cosim.sh inductor_${reference_tag}:/workspace/pytorch
-        docker cp scripts/cosim/inductor_cosim.py inductor_${reference_tag}:/workspace/pytorch
-        docker cp scripts/cosim/inductor_single_run.sh inductor_${reference_tag}:/workspace/pytorch
+        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/graph/${reference_tag}:/workspace/pytorch/${reference_tag} ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
+        docker cp scripts/cosim/inductor_cosim.sh $USER:/workspace/pytorch
+        docker cp scripts/cosim/inductor_cosim.py $USER:/workspace/pytorch
+        docker cp scripts/cosim/inductor_single_run.sh $USER:/workspace/pytorch
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i inductor_${reference_tag} bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${reference_tag}"
+            docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${reference_tag}"
         done
         exit
         '''
