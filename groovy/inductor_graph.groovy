@@ -93,6 +93,8 @@ def cleanup(){
         set -x
         docker container prune -f
         docker system prune -f
+        sudo chmod 777  ${WORKSPACE}
+        rm -rf ${WORKSPACE}/graph/        
         '''
     } catch(e) {
         echo "==============================================="
