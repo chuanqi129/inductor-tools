@@ -87,8 +87,25 @@ if ('SHAPE' in params) {
 }
 echo "SHAPE: $SHAPE"
 
+def cleanup(){
+    try {
+        sh '''#!/bin/bash 
+        set -x
+        docker container prune -f
+        docker system prune -f
+        '''
+    } catch(e) {
+        echo "==============================================="
+        echo "ERROR: Exception caught in cleanup()           "
+        echo "ERROR: ${e}"
+        echo "==============================================="
+        echo "Error while doing cleanup"
+    }
+}
+
 node(NODE_LABEL){
     stage("get scripts and target image") {
+        cleanup()        
         deleteDir()
         checkout scm       
         echo 'get scripts and target image......'
