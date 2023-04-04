@@ -134,6 +134,7 @@ node(NODE_LABEL){
             docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${target_tag}"
         done        
         exit
+        docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${target_tag}
         '''
     }    
 
@@ -158,6 +159,7 @@ node(NODE_LABEL){
             docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${channels} ${DT} ${SHAPE} ${bs} ${reference_tag}"
         done
         exit
+        docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}
         '''
         }else {
             echo 'skip collection in reference image'
