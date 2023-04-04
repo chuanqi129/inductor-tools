@@ -408,7 +408,7 @@ node(NODE_LABEL){
                 docker rm $old_container
                 docker container prune -f
             fi
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/huggingface:/workspace/huggingface -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
             docker cp scripts/llmbench/run_dynamo_gptj.py $USER:/workspace/pytorch
             docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch

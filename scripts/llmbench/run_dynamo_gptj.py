@@ -46,7 +46,7 @@ else:
 
 
 # load model
-model_id = "EleutherAI/gpt-j-6B"
+model_id = "/workspace/huggingface/gpt-j/gptj6B"
 model = AutoModelForCausalLM.from_pretrained(model_id, low_cpu_mem_usage=True)
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = model.eval()
