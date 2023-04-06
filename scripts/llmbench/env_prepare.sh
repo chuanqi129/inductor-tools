@@ -41,3 +41,4 @@ echo latency : ${latency} >>${FILE}
 cp generate_report.py ${curdir}/${LOG_DIR}
 cd ${curdir}/${LOG_DIR}
 python generate_report.py
+rm generate_report.py
