@@ -35,8 +35,8 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">{latency}</p></td>                                    
         </tr> 
     </table> 
-    <table border="1"> 
     <p>SW Info:</p> 
+    <table border="1"> 
         <tr><td>Pytorch:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> 
         <tr><td>transformers:&nbsp;</td><td>{transformers}</td></tr> 
         <tr><td>TORCH_VISION:&nbsp;</td><td><a href={url_list[2]}> {commit_list[2]} </a></td></tr> 
