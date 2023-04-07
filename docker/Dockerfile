@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=ubuntu:20.04
+ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE} AS dev-base
 RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
@@ -10,7 +10,7 @@ RUN apt-get update && \
         curl \
         ffmpeg \
         git \
-        libgoogle-perftools-dev \
+        libtcmalloc-minimal4 \
         libjpeg-dev \
         libpng-dev \
         libsm6 \
@@ -58,11 +58,13 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         jemalloc \
         openssl \
         weasyprint && \
-    /opt/conda/bin/conda clean -ya
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
 
 FROM dev-base AS build
-ARG PT_REPO=https://github.com/blzheng/pytorch
-ARG PT_BRANCH=beilei/nightly_nov_9
+ARG PT_REPO=https://github.com/pytorch/pytorch
+ARG PT_BRANCH=master
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
 ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
