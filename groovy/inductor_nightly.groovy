@@ -367,7 +367,7 @@ node(NODE_LABEL){
                 docker rmi -f $old_image
             fi
             docker system prune -f
-            docker login ccr-registry.caas.intel.com
+            docker login ccr-registry.caas.intel.com -u yudongsi -p 1996+SYD
             docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
             '''        
         }
