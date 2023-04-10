@@ -290,6 +290,7 @@ def cleanup(){
     try {
         sh '''#!/bin/bash 
         set -x
+        docker stop $(docker ps -a -q)
         docker container prune -f
         docker system prune -f
         '''
