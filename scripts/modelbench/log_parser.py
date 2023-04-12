@@ -61,7 +61,7 @@ def update_summary(excel,reference,target):
     }    
     if reference is not None:
         summary=pd.DataFrame(data)
-        if args.mode == "multiple" or args.mode is None:
+        if args.mode == "multiple" or args.mode == "all":
             reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
             summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
@@ -74,7 +74,7 @@ def update_summary(excel,reference,target):
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target            
-        if args.mode == "single" or args.mode is None:
+        if args.mode == "single" or args.mode == "all":
             reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
             summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
@@ -91,14 +91,14 @@ def update_summary(excel,reference,target):
         sf.apply_style_by_indexes(sf.index[[1,3,5,7]], styler_obj=target_style)         
     else:
         summary=pd.DataFrame(data_target)
-        if args.mode == "multiple" or args.mode is None:
+        if args.mode == "multiple" or args.mode == "all":
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
             summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
             summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
-        if args.mode == "single" or args.mode is None:
+        if args.mode == "single" or args.mode == "all":
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
             summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
@@ -292,7 +292,7 @@ def update_details(writer):
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
 
-    if args.mode == "multiple" or args.mode is None:
+    if args.mode == "multiple" or args.mode == "all":
         # mt
         head.to_excel(excel_writer=writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
         mt=process_thread('multi_threads_cf_logs')
@@ -316,7 +316,7 @@ def update_details(writer):
         s= pd.Series(suite_list)
         s.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=0)
         mt_data.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=1)    
-    if args.mode == "single" or args.mode is None:
+    if args.mode == "single" or args.mode == "all":
         # st
         head.to_excel(excel_writer=writer, sheet_name='Single-Core Single-thread', index=False,startrow=0,header=False) 
         st=process_thread('single_thread_cf_logs')
@@ -339,9 +339,9 @@ def update_details(writer):
 def generate_report(excel,reference,target):
     update_summary(excel,reference,target)
     update_swinfo(excel)
-    if args.mode == 'multiple' or args.mode is None:
+    if args.mode == 'multiple' or args.mode == "all":
         update_failures(excel,target_mt)
-    if args.mode =='single' or args.mode is None:
+    if args.mode =='single' or args.mode == "all":
         update_failures(excel,target_st)
     update_details(excel)
 
@@ -359,7 +359,7 @@ def excel_postprocess(file):
     else:
         ws.merge_cells(start_row=2,end_row=3,start_column=1,end_column=1)
         ws.merge_cells(start_row=4,end_row=5,start_column=1,end_column=1)
-    if args.mode == "multiple" or args.mode is None:  
+    if args.mode == "multiple" or args.mode == "all":  
         # Single-Socket Multi-threads
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
@@ -369,7 +369,7 @@ def excel_postprocess(file):
         wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=6)
         wmt.merge_cells(start_row=1,end_row=1,start_column=7,end_column=10)
         wmt.merge_cells(start_row=1,end_row=1,start_column=11,end_column=13)
-    if args.mode == "single" or args.mode is None:         
+    if args.mode == "single" or args.mode == "all":         
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
