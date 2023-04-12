@@ -392,7 +392,7 @@ node(NODE_LABEL){
             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log -v ${WORKSPACE}/Inductor Dashboard Regression Check inductor_log.xlsx:/workspace/pytorch/Inductor Dashboard Regression Check inductor_log.xlsx ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch         
             docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch           
-            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log;python log_parser.py --target inductor_log"
+            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};python log_parser.py --target inductor_log"
             '''
         }
     }
