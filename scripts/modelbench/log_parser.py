@@ -382,6 +382,6 @@ def excel_postprocess(file):
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter('inductor dashboard regression check.xlsx')
+    excel = StyleFrame.ExcelWriter('inductor_dashboard_regression_check.xlsx')
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
