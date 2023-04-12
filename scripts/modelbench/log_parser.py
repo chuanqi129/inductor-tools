@@ -4,11 +4,12 @@ Usage:
   python log_parser.py --reference WW48.2 --target WW48.4 -m multiple
 """
 
-
 import argparse
 from styleframe import StyleFrame, Styler, utils
 import pandas as pd
 import os
+import requests
+from bs4 import BeautifulSoup
 
 parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
@@ -34,6 +35,7 @@ target_st=getfolder(args.target,'single_thread_cf_logs')
 target_style = Styler(bg_color='#DCE6F1', font_color=utils.colors.black)
 red_style = Styler(bg_color='#FF0000', font_color=utils.colors.black)
 regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
+improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
@@ -108,9 +110,37 @@ def update_summary(excel,reference,target):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
+def hyperlink_fun(input,short_id):
+    return f'=HYPERLINK("{input}{short_id}","{short_id}")'
+
+def get_master_commit(item,nightly_commit):
+    input_url="https://github.com/pytorch/"+item+"/commit/"+nightly_commit
+    page=requests.get(input_url)
+    soup = BeautifulSoup(page.text,features="html.parser")
+    item = str(soup.find('title'))
+    output=(item.split('(')[1].split(')')[0])[:7]
+    return output
+
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Master/Main commit':[' ', ' ', ' ', ' ',' ',' ',' ']}
+    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' '],'Master/Main commit':[' ', ' ', ' ', ' ',' ',' ']}
     swinfo=pd.DataFrame(data)
+    try:
+        version = pd.read_table(args.target+'/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+        swinfo.loc[0,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/pytorch/commit/",version.loc[ 1, "commit"][-7:])
+        swinfo.loc[1,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/benchmark/commit/",version.loc[ 0, "commit"][-8:])
+        swinfo.loc[2,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/audio/commit/",version.loc[ 4, "commit"][-7:])
+        swinfo.loc[3,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/text/commit/",version.loc[ 3, "commit"][-7:])
+        swinfo.loc[4,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/vision/commit/",version.loc[ 2, "commit"][-7:])
+        swinfo.loc[5,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/data/commit/",version.loc[ 5, "commit"][-7:])
+
+        swinfo.loc[0,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/pytorch/commit/",get_master_commit("pytorch",version.loc[ 1, "commit"][-7:]))
+        swinfo.loc[2,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/audio/commit/",get_master_commit("audio",version.loc[ 4, "commit"][-7:]))
+        swinfo.loc[3,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/text/commit/",get_master_commit("text",version.loc[ 3, "commit"][-7:]))
+        swinfo.loc[4,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/vision/commit/",get_master_commit("vision",version.loc[ 2, "commit"][-7:]))
+        swinfo.loc[5,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/data/commit/",get_master_commit("data",version.loc[ 5, "commit"][-7:]))        
+    except :
+        print("version.txt not found")
+        pass
 
     sf = StyleFrame(swinfo)
     sf.set_column_width(1, 25)
@@ -142,14 +172,12 @@ def update_failures(excel,target_thread):
     
     failures=failures.rename(columns={'name':'name','accuracy':'accuracy','speedup':'perf'})
     failures=failures.groupby('name').sum().reset_index()
-    failures['perf'].replace([0],["v"],inplace=True)
-    failures['accuracy'].replace([0],["v"],inplace=True)
+    failures['perf'].replace([0],["√"],inplace=True)
+    failures['accuracy'].replace([0],["√"],inplace=True)
 
     sf = StyleFrame({'name': list(failures['name']),
                  'accuracy': list(failures['accuracy']),
-                 'perf': list(failures['perf']),
-                 'reason':[''] * len(list(failures['name'])),
-                 'repro cmd':[''] * len(list(failures['name']))})
+                 'perf': list(failures['perf'])})
     
     sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "X"],
                             cols_to_style='accuracy',
@@ -159,21 +187,19 @@ def update_failures(excel,target_thread):
                             cols_to_style='perf',
                             styler_obj=failed_style,
                             overwrite_default_style=False)
-    sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "v"],
+    sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "√"],
                             cols_to_style='accuracy',
                             styler_obj=passed_style,
                             overwrite_default_style=False)
-    sf.apply_style_by_indexes(indexes_to_style=sf[sf['perf'] == "v"],
+    sf.apply_style_by_indexes(indexes_to_style=sf[sf['perf'] == "√"],
                             cols_to_style='perf',
                             styler_obj=passed_style,
                             overwrite_default_style=False)    
     sf.set_column_width(1, 30)
     sf.set_column_width(2, 15)
-    sf.set_column_width(3, 15)    
-    sf.set_column_width(4, 100) 
-    sf.set_column_width(5, 150)              
+    sf.set_column_width(3, 15)              
 
-    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('/')[2].strip(),excel_writer=excel,index=False)
+    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite,thread):
     target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
@@ -238,6 +264,7 @@ def process(input):
         data.set_column_width(12, 28) 
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] < 0.9],styler_obj=regression_style)
+        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)    
     else:
         data_new=input[['name','batch_size','speedup','abs_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor'})
@@ -309,19 +336,6 @@ def update_details(writer):
         s.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
         st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=1)   
 
-def update_md_file(target):
-    if args.mode is None:
-        for thread in ['multi_threads_cf_logs','single_thread_cf_logs']:
-            result=open(thread.split('_')[0]+'_'+target+'.md','a+')
-            folder = getfolder(target,thread)
-            title=folder+'/gh_title.txt'
-            summary=folder+'/gh_executive_summary.txt'
-            inference=folder+'/gh_inference.txt'
-
-            for file in title,summary,inference:
-                for line in open(file,'r'):
-                    result.writelines(line)
-
 def generate_report(excel,reference,target):
     update_summary(excel,reference,target)
     update_swinfo(excel)
@@ -330,7 +344,6 @@ def generate_report(excel,reference,target):
     if args.mode =='single' or args.mode is None:
         update_failures(excel,target_st)
     update_details(excel)
-    update_md_file(target)
 
 def excel_postprocess(file):
     wb=file.book
@@ -369,6 +382,6 @@ def excel_postprocess(file):
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter('Inductor Dashboard Regression Check '+args.target+'.xlsx')
+    excel = StyleFrame.ExcelWriter('inductor dashboard regression check.xlsx')
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)

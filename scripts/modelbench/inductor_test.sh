@@ -18,6 +18,19 @@ if [[ $SHAPE == "dynamic" ]]; then
     export TORCHDYNAMO_DYNAMIC_SHAPES=1
 fi
 
+# collect sw info
+curdir=`pwd`
+touch ${curdir}/${LOG_DIR}/version.txt
+cd /workspace/benchmark
+echo torchbench : `git rev-parse --short HEAD` >> ${curdir}/${LOG_DIR}/version.txt
+cd /workspace/pytorch
+python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
+        print("torch : ", torch.__version__); \
+        print("torchvision : ", torchvision.__version__); \
+        print("torchtext : ", torchtext.__version__); \
+        print("torchaudio : ", torchaudio.__version__); \
+        print("torchdata : ", torchdata.__version__)''' >> ${curdir}/${LOG_DIR}/version.txt
+
 # multi-threads
 multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
