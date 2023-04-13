@@ -17,6 +17,7 @@ parser.add_argument('-r','--reference',type=str,help='reference log file')
 parser.add_argument('-m','--mode',type=str,help='multiple or single mode')
 args=parser.parse_args()
 
+
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
         for d in dirs:
@@ -110,8 +111,6 @@ def update_summary(excel,reference,target):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
-def hyperlink_fun(input,short_id):
-    return f'=HYPERLINK("{input}{short_id}","{short_id}")'
 
 def get_master_commit(item,nightly_commit):
     input_url="https://github.com/pytorch/"+item+"/commit/"+nightly_commit
@@ -126,18 +125,18 @@ def update_swinfo(excel):
     swinfo=pd.DataFrame(data)
     try:
         version = pd.read_table(args.target+'/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        swinfo.loc[0,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/pytorch/commit/",version.loc[ 1, "commit"][-7:])
-        swinfo.loc[1,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/benchmark/commit/",version.loc[ 0, "commit"][-8:])
-        swinfo.loc[2,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/audio/commit/",version.loc[ 4, "commit"][-7:])
-        swinfo.loc[3,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/text/commit/",version.loc[ 3, "commit"][-7:])
-        swinfo.loc[4,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/vision/commit/",version.loc[ 2, "commit"][-7:])
-        swinfo.loc[5,"Nightly commit"]=hyperlink_fun("https://github.com/pytorch/data/commit/",version.loc[ 5, "commit"][-7:])
+        swinfo.loc[0,"Nightly commit"]=version.loc[ 1, "commit"][-7:]
+        swinfo.loc[1,"Master/Main commit"]=version.loc[ 0, "commit"][-8:]
+        swinfo.loc[2,"Nightly commit"]=version.loc[ 4, "commit"][-7:]
+        swinfo.loc[3,"Nightly commit"]=version.loc[ 3, "commit"][-7:]
+        swinfo.loc[4,"Nightly commit"]=version.loc[ 2, "commit"][-7:]
+        swinfo.loc[5,"Nightly commit"]=version.loc[ 5, "commit"][-7:]
 
-        swinfo.loc[0,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/pytorch/commit/",get_master_commit("pytorch",version.loc[ 1, "commit"][-7:]))
-        swinfo.loc[2,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/audio/commit/",get_master_commit("audio",version.loc[ 4, "commit"][-7:]))
-        swinfo.loc[3,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/text/commit/",get_master_commit("text",version.loc[ 3, "commit"][-7:]))
-        swinfo.loc[4,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/vision/commit/",get_master_commit("vision",version.loc[ 2, "commit"][-7:]))
-        swinfo.loc[5,"Master/Main commit"]=hyperlink_fun("https://github.com/pytorch/data/commit/",get_master_commit("data",version.loc[ 5, "commit"][-7:]))        
+        swinfo.loc[0,"Master/Main commit"]=get_master_commit("pytorch",version.loc[ 1, "commit"][-7:])
+        swinfo.loc[2,"Master/Main commit"]=get_master_commit("audio",version.loc[ 4, "commit"][-7:])
+        swinfo.loc[3,"Master/Main commit"]=get_master_commit("text",version.loc[ 3, "commit"][-7:])
+        swinfo.loc[4,"Master/Main commit"]=get_master_commit("vision",version.loc[ 2, "commit"][-7:])
+        swinfo.loc[5,"Master/Main commit"]=get_master_commit("data",version.loc[ 5, "commit"][-7:])    
     except :
         print("version.txt not found")
         pass
@@ -381,7 +380,110 @@ def excel_postprocess(file):
         wst.merge_cells(start_row=1,end_row=1,start_column=11,end_column=13)
     wb.save(file)
 
+def html_head():
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Inductor Model Bench Report</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="css/animate.css">
+<link rel="stylesheet" type="text/css" href="css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
+<link rel="stylesheet" type="text/css" href="css/util.css">
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<meta name="robots" content="noindex, follow">
+</head>
+<body>
+  <div class="limiter">
+  <div class="container-table100">
+  <div class="wrap-table100">
+  <div class="table100">
+  <p><h3>Inductor Model Bench Report</p></h3> '''
+
+def html_tail():
+    return '''<p>HW info:</p>
+  <table border="1">
+        <ol>
+        <table>
+            <tbody>
+            <tr>
+                <td>Machine name:&nbsp;</td>
+                <td>mlp-validate-icx24-ubuntu</td>
+            </tr>
+            <tr>
+                <td>Manufacturer:&nbsp;</td>
+                <td>Intel Corporation</td>
+            </tr>
+            <tr>
+                <td>Kernel:</td>
+                <td>5.4.0-131-generic</td>
+            </tr>
+            <tr>
+                <td>Microcode:</td>
+                <td>0xd000375</td>
+            </tr>
+            <tr>
+                <td>Installed Memory:</td>
+                <td>503GB</td>
+            </tr>
+            <tr>
+                <td>OS:</td>
+                <td>Ubuntu 18.04.6 LTS</td>
+            </tr>
+            <tr>
+                <td>CPU Model:</td>
+                <td>Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz</td>
+            </tr>
+            <tr>
+                <td>GCC:</td>
+                <td>gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0</td>
+            </tr>
+            <tr>
+                <td>GLIBC:</td>
+                <td>ldd (Ubuntu GLIBC 2.27-3ubuntu1.5) 2.27</td>
+            </tr>
+            <tr>
+                <td>Binutils:</td>
+                <td>GNU ld (GNU Binutils for Ubuntu) 2.30</td>
+            </tr>
+            <tr>
+                <td>Python:</td>
+                <td>Python 3.8.3</td>
+            </tr>
+            </tbody>
+        </table>
+        </ol>
+    <p>You can find details from attachments, Thanks</p>
+  </table>
+  </div>
+  </div>
+  </div>
+  </div>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/popper.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/select2/select2.min.js"></script>
+<script src="js/main.js"></script>
+</body>'''
+
+def html_generate():
+    try:
+        content = pd.read_excel('inductor_dashboard_regression_check.xlsx',sheet_name=[0,1,2])
+        summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
+        swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
+        failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+        with open("inductor_model_bench.html",mode = "a") as f:
+            f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Failures</p>"+failures+html_tail())
+        f.close()
+    except:
+        print("html_generate_failed")
+        pass
+
 if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter('inductor_dashboard_regression_check.xlsx')
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
+    html_generate()

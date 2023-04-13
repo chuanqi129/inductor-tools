@@ -392,7 +392,7 @@ node(NODE_LABEL){
             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/.cache:/root/.cache -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
             docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log"
+            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log;cp inductor_model_bench.html inductor_log"
             '''
         }
     }
@@ -458,16 +458,16 @@ node(NODE_LABEL){
         if ("${ModelBench}" == "true"){
             if (fileExists("${WORKSPACE}/inductor_log/inductor_dashboard_regression_check.xlsx") == true){
                 emailext(
-                    subject: "Torchinductor ModelBench Nightly Report",
+                    subject: "Torchinductor ModelBench Report",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: 'html generation to do'
+                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor ModelBench Nightly",
+                    subject: "Failure occurs in Torchinductor ModelBench",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
