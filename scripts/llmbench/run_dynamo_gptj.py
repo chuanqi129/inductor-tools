@@ -21,7 +21,8 @@ config.profiler_mark_wrapper_call=True
 #import itt
 #itt.pause()
 torch._dynamo.config.verbose=True
-torch._dynamo.config.log_level='DEBUG'
+# _dynamo.config changed https://github.com/pytorch/pytorch/pull/96455
+#torch._dynamo.config.log_level='DEBUG'
 torch._dynamo.config.suppress_errors = True
 
 parser = argparse.ArgumentParser('GPT-J generation script', add_help=False)

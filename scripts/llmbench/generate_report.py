@@ -1,4 +1,9 @@
+import argparse
 import pandas as pd
+
+parser = argparse.ArgumentParser(description='Torchinductor LLMbench Report Generate')
+parser.add_argument('-l', '--url', type=str, help='jenkins build url')
+args = parser.parse_args()
 
 commit_list=[]
 url_list=[]
@@ -58,7 +63,11 @@ report_content=f'''<!DOCTYPE html>
             <tr><td>GLIBC:</td><td>ldd (Ubuntu GLIBC 2.27-3ubuntu1.5) 2.27</td></tr> 
             <tr><td>Binutils:</td><td>GNU ld (GNU Binutils for Ubuntu) 2.30</td></tr> 
             <tr><td>Python:</td><td>Python 3.8.3</td></tr> 
-        </tbody></table></ol>     
+        </tbody></table></ol>
+    <p>job info:</p><ol><table>
+        <tbody>
+            <tr><td>Build url:&nbsp;</td><td>{args.url}</td></tr>
+        </tbody></table></ol>             
     <h4>Thanks.</h4> 
 </body> 
 </html> 

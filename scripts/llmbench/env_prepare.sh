@@ -4,6 +4,7 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 transformers_version=${1:-4.24.0}
 precision=${2:-float32}
 LOG_DIR=${3:-llm_bench}
+jks_url=${4:-jks}
 mkdir -p $LOG_DIR
 
 # install transformers
@@ -40,5 +41,5 @@ echo latency : ${latency} >>${FILE}
 # generate html report
 cp generate_report.py ${curdir}/${LOG_DIR}
 cd ${curdir}/${LOG_DIR}
-python generate_report.py
+python generate_report.py --url ${jks_url}
 rm generate_report.py
