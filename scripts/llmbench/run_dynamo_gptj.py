@@ -8,6 +8,7 @@ Usage:
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import time
 import argparse
+import logging
 import torch
 import torch._dynamo as dynamo
 #torch._dynamo.config.verbose=True
@@ -21,8 +22,8 @@ config.profiler_mark_wrapper_call=True
 #import itt
 #itt.pause()
 torch._dynamo.config.verbose=True
-# _dynamo.config changed https://github.com/pytorch/pytorch/pull/96455
-#torch._dynamo.config.log_level='DEBUG'
+# _dynamo.config changed https://github.com/pytorch/pytorch/pull/99224
+torch._logging.set_logs(dynamo=logging.DEBUG)
 torch._dynamo.config.suppress_errors = True
 
 parser = argparse.ArgumentParser('GPT-J generation script', add_help=False)
