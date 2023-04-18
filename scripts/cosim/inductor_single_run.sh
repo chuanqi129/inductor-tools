@@ -13,6 +13,13 @@ CHANNELS=${3:-first}
 DT=${4:-float32}
 SHAPE=${5:-static}
 BS=${6:-0}
+MODE=${7:-inference}
+
+Mode_extra="--inference "
+if [[ $MODE == "training" ]]; then
+    echo "Testing with training mode."
+    Mode_extra="--training "
+fi
 
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
@@ -30,4 +37,4 @@ if [[ ${BS} -gt 0 ]]; then
     BS_extra="--batch_size=${BS} "
 fi
 
-numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} --backend=inductor
+numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Mode_extra} --backend=inductor
