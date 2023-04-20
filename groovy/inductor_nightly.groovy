@@ -411,9 +411,9 @@ node(NODE_LABEL){
             fi
             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/huggingface:/workspace/huggingface -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
-            docker cp scripts/llmbench/run_dynamo_gptj.py $USER:/workspace/pytorch
+            docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
             docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash env_prepare.sh ${transformers} ${DT} llm_bench ${BUILD_URL}"
+            docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench ${BUILD_URL}"
             '''
             }
         }

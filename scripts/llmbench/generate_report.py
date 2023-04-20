@@ -16,16 +16,19 @@ for item in componment:
     url_list.append(f"https://github.com/pytorch/{item}/commit/"+sha_short) 
 precision = result.loc[7,"commit"]
 latency = result.loc[8,"commit"]
+latency_gptj = latency.split('ms.')[0]
+latency_llama = latency.split('ms.')[1]
 transformers = result.loc[6,"commit"]
 
 report_content=f'''<!DOCTYPE html>
 <html>
 <head><title>LLM Model Report</title></head>
 <body>
-    <h3> LLM Model(GPT-J) Inductor Benchmark Report </h3>
+    <h3> LLM Model(GPTJ & LLAMA) Inductor Benchmark Report </h3>
     <p>Result:</p>
     <table border="1">
         <tr>
+            <th>Model</th>
             <th>precision</th>
             <th>max-new-tokens</th> 
             <th>greedy</th> 
@@ -33,12 +36,21 @@ report_content=f'''<!DOCTYPE html>
             <th>latency</th> 
         </tr> 
         <tr> 
+            <td><p style="text-align:center">gptj6B</p></td> 
             <td><p style="text-align:center">{precision}</p></td> 
             <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">{latency}</p></td>                                    
+            <td><p style="text-align:center">{latency_gptj}ms</p></td>                                    
         </tr> 
+        <tr> 
+            <td><p style="text-align:center">llama7B</p></td> 
+            <td><p style="text-align:center">{precision}</p></td> 
+            <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
+            <td><p style="text-align:center">True</p></td> 
+            <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
+        </tr>         
     </table> 
     <p>SW Info:</p> 
     <table border="1"> 
@@ -63,11 +75,11 @@ report_content=f'''<!DOCTYPE html>
             <tr><td>GLIBC:</td><td>ldd (Ubuntu GLIBC 2.27-3ubuntu1.5) 2.27</td></tr> 
             <tr><td>Binutils:</td><td>GNU ld (GNU Binutils for Ubuntu) 2.30</td></tr> 
             <tr><td>Python:</td><td>Python 3.8.3</td></tr> 
-        </tbody></table></ol>
+        </tbody></table></ol> 
     <p>job info:</p><ol><table>
         <tbody>
             <tr><td>Build url:&nbsp;</td><td>{args.url}</td></tr>
-        </tbody></table></ol>             
+        </tbody></table></ol>         
     <h4>Thanks.</h4> 
 </body> 
 </html> 

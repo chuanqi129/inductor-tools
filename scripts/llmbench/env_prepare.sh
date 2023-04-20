@@ -1,16 +1,16 @@
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 
-transformers_version=${1:-4.24.0}
-precision=${2:-float32}
-LOG_DIR=${3:-llm_bench}
-jks_url=${4:-jks}
+precision=${1:-float32}
+LOG_DIR=${2:-llm_bench}
+jks_url=${3:-jks}
 mkdir -p $LOG_DIR
 
 # install transformers
-pip uninstall transformers -y
-pip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+cpu.html
-pip install transformers==${transformers_version}
+pip uninstall transformers -y && pip install git+https://github.com/huggingface/transformers.git
+
+# use offline mode for network issues
+export TRANSFORMERS_OFFLINE=1
 
 # collect sw info
 curdir=`pwd`
@@ -23,18 +23,18 @@ touch ${FILE}
 cd /workspace/benchmark
 echo torchbench : $(git rev-parse --short HEAD) >>${FILE}
 cd /workspace/pytorch
-python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
+python -c '''import torch,torchvision,torchtext,torchaudio,torchdata,transformers; \
         print("torch : ", torch.__version__); \
         print("torchvision : ", torchvision.__version__); \
         print("torchtext : ", torchtext.__version__); \
         print("torchaudio : ", torchaudio.__version__); \
-        print("torchdata : ", torchdata.__version__)''' >>${FILE}
-echo transformers : ${transformers_version} >>${FILE}
+        print("torchdata : ", torchdata.__version__); \
+        print("transformers : ", transformers.__version__)''' >>${FILE}
 echo precision : ${precision} >>${FILE}
 
 # run benchmark
 timestamp=$(date +%Y%m%d_%H%M%S)
-python run_dynamo_gptj.py --use_dynamo --precision ${precision} --greedy 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
+python run_dynamo_gptj.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
 latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
 echo latency : ${latency} >>${FILE}
 
