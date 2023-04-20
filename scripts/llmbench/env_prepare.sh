@@ -34,7 +34,7 @@ echo precision : ${precision} >>${FILE}
 
 # run benchmark
 timestamp=$(date +%Y%m%d_%H%M%S)
-python run_dynamo_gptj.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
+python run_dynamo_llm.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
 latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
 echo latency : ${latency} >>${FILE}
 
