@@ -64,7 +64,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
 
 FROM dev-base AS build
 ARG PT_REPO=https://github.com/pytorch/pytorch
-ARG PT_BRANCH=master
+ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
 ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
