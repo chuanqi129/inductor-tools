@@ -1,20 +1,39 @@
-"""log_parser.py
+"""
 Generate report or data compare report from specified inductor logs.
 Usage:
-  python log_parser.py --reference WW48.2 --target WW48.4 -m multiple
+  python report.py -r WW48.2 -t WW48.4 -m all --html_off --md_off
+  python report.py -r WW48.2 -t WW48.4 -m all --gh_token github_pat_xxxxx
+Dependencies:
+    styleframe
+    PyGithub
 """
-
 
 import argparse
 from styleframe import StyleFrame, Styler, utils
 import pandas as pd
 import os
+import requests
+from bs4 import BeautifulSoup
 
 parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
 parser.add_argument('-r','--reference',type=str,help='reference log file')
 parser.add_argument('-m','--mode',type=str,help='multiple or single mode')
+parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
+parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
+parser.add_argument('--gh_token', type=str, help='github token for issue comment creation')
 args=parser.parse_args()
+
+# known failure @20230423
+known_failures ={
+    "hf_T5_base":"TIMEOUT",
+    "gat":"ImportError: 'NeighborSampler' requires either 'pyg-lib' or 'torch-sparse'",
+    "gcn":"ImportError: 'NeighborSampler' requires either 'pyg-lib' or 'torch-sparse'",
+    "sage":"ImportError: 'NeighborSampler' requires either 'pyg-lib' or 'torch-sparse'",
+    "torchrec_dlrm":"AttributeError: '_OpNamespace' 'fbgemm' object has no attribute 'jagged_2d_to_dense'",
+    "MBartForConditionalGeneration":"DataDependentOutputException: aten._local_scalar_dense.default",
+    "PLBartForConditionalGeneration":"DataDependentOutputException: aten._local_scalar_dense.default"
+}
 
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
@@ -34,6 +53,7 @@ target_st=getfolder(args.target,'single_thread_cf_logs')
 target_style = Styler(bg_color='#DCE6F1', font_color=utils.colors.black)
 red_style = Styler(bg_color='#FF0000', font_color=utils.colors.black)
 regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
+improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
@@ -59,7 +79,7 @@ def update_summary(excel,reference,target):
     }    
     if reference is not None:
         summary=pd.DataFrame(data)
-        if args.mode == "multiple" or args.mode is None:
+        if args.mode == "multiple" or args.mode == 'all':
             reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
             summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
@@ -72,7 +92,7 @@ def update_summary(excel,reference,target):
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target            
-        if args.mode == "single" or args.mode is None:
+        if args.mode == "single" or args.mode == 'all':
             reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
             summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
@@ -89,14 +109,14 @@ def update_summary(excel,reference,target):
         sf.apply_style_by_indexes(sf.index[[1,3,5,7]], styler_obj=target_style)         
     else:
         summary=pd.DataFrame(data_target)
-        if args.mode == "multiple" or args.mode is None:
+        if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
             summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
             summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
-        if args.mode == "single" or args.mode is None:
+        if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
             summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
@@ -108,9 +128,36 @@ def update_summary(excel,reference,target):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
+def get_main_commit(item,nightly_commit):
+    input_url="https://github.com/pytorch/"+item+"/commit/"+nightly_commit
+    page=requests.get(input_url)
+    soup = BeautifulSoup(page.text,features="html.parser")
+    item = str(soup.find('title'))
+    output=(item.split('(')[1].split(')')[0])[:7]
+    return output
+
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Master/Main commit':[' ', ' ', ' ', ' ',' ',' ',' ']}
+    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
     swinfo=pd.DataFrame(data)
+    try:
+        version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+        swinfo.loc[0,"Nightly commit"]=version.loc[ 1, "commit"][-7:]
+        swinfo.loc[1,"Master/Main commit"]=version.loc[ 0, "commit"][-8:]
+        swinfo.loc[2,"Nightly commit"]=version.loc[ 4, "commit"][-7:]
+        swinfo.loc[3,"Nightly commit"]=version.loc[ 3, "commit"][-7:]
+        swinfo.loc[4,"Nightly commit"]=version.loc[ 2, "commit"][-7:]
+        swinfo.loc[5,"Nightly commit"]=version.loc[ 5, "commit"][-7:]
+        swinfo.loc[6,"Nightly commit"]=version.loc[ 6, "commit"][-7:]
+
+        # To do: Not only for pytorch nightly branch
+        swinfo.loc[0,"Main commit"]=get_main_commit("pytorch",version.loc[ 1, "commit"][-7:])
+        swinfo.loc[2,"Main commit"]=get_main_commit("audio",version.loc[ 4, "commit"][-7:])
+        swinfo.loc[3,"Main commit"]=get_main_commit("text",version.loc[ 3, "commit"][-7:])
+        swinfo.loc[4,"Main commit"]=get_main_commit("vision",version.loc[ 2, "commit"][-7:])
+        swinfo.loc[5,"Main commit"]=get_main_commit("data",version.loc[ 5, "commit"][-7:]) 
+    except :
+        print("version.txt not found")
+        pass
 
     sf = StyleFrame(swinfo)
     sf.set_column_width(1, 25)
@@ -118,6 +165,41 @@ def update_swinfo(excel):
     sf.set_column_width(3, 25)
 
     sf.to_excel(sheet_name='SW',excel_writer=excel)   
+
+def parse_failure(file,failed_model):
+    result = []
+    found = False
+    if failed_model in known_failures.keys():
+        result.append(failed_model+", "+known_failures[failed_model])
+    else:
+        with open(file, 'r') as reader:
+            contents = reader.readlines()
+            for line in contents:
+                if found ==  False and "cpu  eval  " in line:
+                    model = line.split("cpu  eval  ")[1].split(' ')[0].strip()
+                    if model != failed_model:
+                        continue
+                    found =  True
+                elif found ==  True and line.find("Error: ")!=-1:
+                    line=line.replace(',',' ',20)
+                    result.append(model+", "+ line)
+                    break
+    return result
+
+def str_to_dict(contents):
+    res_dict = {}
+    for line in contents:
+        model = line.split(", ")[0].strip()
+        reason = line.strip()
+        res_dict[model] = reason
+    return res_dict
+
+def failures_reason_parse(model,mode):
+    raw_log=getfolder(args.target,"multi_threads_model_bench_log") if mode=="multiple" else getfolder(args.target,"single_thread_model_bench_log")
+    content=parse_failure(raw_log,model)
+    ct_dict=str_to_dict(content)
+    line = ct_dict[model]
+    return line
 
 def update_failures(excel,target_thread):
     tmp=[]
@@ -129,28 +211,37 @@ def update_failures(excel,target_thread):
         acc_data=pd.read_csv(acc_path)
         
         acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
+        acc_data.insert(loc=2, column='acc_suite', value=suite)
         tmp.append(acc_data)
 
         perf_data=perf_data.loc[perf_data['speedup'] ==0,:]
+        perf_data.insert(loc=3, column='pef_suite', value=suite)
         tmp.append(perf_data)
 
     failures=pd.concat(tmp)
-    failures=failures[['name','accuracy','speedup']]
+    failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
+    failures['suite'] = failures.apply(lambda x: x['acc_suite'] if x['acc_suite'] is not None else x['perf_suite'], axis=1)
 
     failures['accuracy'].replace(["fail_to_run","fail_accuracy","0.0000"],["X","X","X"],inplace=True)
     failures['speedup'].replace([0],["X"],inplace=True)
     
-    failures=failures.rename(columns={'name':'name','accuracy':'accuracy','speedup':'perf'})
+    failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'})
     failures=failures.groupby('name').sum().reset_index()
-    failures['perf'].replace([0],["v"],inplace=True)
-    failures['accuracy'].replace([0],["v"],inplace=True)
+    failures['perf'].replace([0],["√"],inplace=True)
+    failures['accuracy'].replace([0],["√"],inplace=True)
 
-    sf = StyleFrame({'name': list(failures['name']),
+    # fill failure reasons
+    unique_failure=failures['name'].drop_duplicates().values.tolist()
+    reason_content=[]
+    for model in unique_failure:
+        reason_content.append(failures_reason_parse(model,target_thread))
+    failures['reason(reference only)']=reason_content
+
+    sf = StyleFrame({'suite': list(failures['suite']),
+                 'name': list(failures['name']),
                  'accuracy': list(failures['accuracy']),
                  'perf': list(failures['perf']),
-                 'reason':[''] * len(list(failures['name'])),
-                 'repro cmd':[''] * len(list(failures['name']))})
-    
+                 'reason(reference only)':(list(failures['reason(reference only)']))})
     sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "X"],
                             cols_to_style='accuracy',
                             styler_obj=failed_style,
@@ -159,21 +250,21 @@ def update_failures(excel,target_thread):
                             cols_to_style='perf',
                             styler_obj=failed_style,
                             overwrite_default_style=False)
-    sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "v"],
+    sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "√"],
                             cols_to_style='accuracy',
                             styler_obj=passed_style,
                             overwrite_default_style=False)
-    sf.apply_style_by_indexes(indexes_to_style=sf[sf['perf'] == "v"],
+    sf.apply_style_by_indexes(indexes_to_style=sf[sf['perf'] == "√"],
                             cols_to_style='perf',
                             styler_obj=passed_style,
                             overwrite_default_style=False)    
     sf.set_column_width(1, 30)
-    sf.set_column_width(2, 15)
-    sf.set_column_width(3, 15)    
-    sf.set_column_width(4, 100) 
-    sf.set_column_width(5, 150)              
+    sf.set_column_width(2, 30)
+    sf.set_column_width(3, 15)
+    sf.set_column_width(4, 15)
+    sf.set_column_width(5, 100)              
 
-    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('/')[2].strip(),excel_writer=excel,index=False)
+    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite,thread):
     target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_float32_inference_cpu_performance.csv'
@@ -238,6 +329,7 @@ def process(input):
         data.set_column_width(12, 28) 
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] < 0.9],styler_obj=regression_style)
+        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)    
     else:
         data_new=input[['name','batch_size','speedup','abs_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor'})
@@ -265,7 +357,7 @@ def update_details(writer):
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
 
-    if args.mode == "multiple" or args.mode is None:
+    if args.mode == "multiple" or args.mode == 'all':
         # mt
         head.to_excel(excel_writer=writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
         mt=process_thread('multi_threads_cf_logs')
@@ -289,7 +381,7 @@ def update_details(writer):
         s= pd.Series(suite_list)
         s.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=0)
         mt_data.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=1)    
-    if args.mode == "single" or args.mode is None:
+    if args.mode == "single" or args.mode == 'all':
         # st
         head.to_excel(excel_writer=writer, sheet_name='Single-Core Single-thread', index=False,startrow=0,header=False) 
         st=process_thread('single_thread_cf_logs')
@@ -309,11 +401,14 @@ def update_details(writer):
         s.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
         st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=1)   
 
-def update_md_file(target):
-    if args.mode is None:
+def update_issue_commits():
+    from github import Github
+    # generate md files
+    # To do: enrich original markdown files with swinfo /hwinfo /cmd etc
+    if not args.md_off:
         for thread in ['multi_threads_cf_logs','single_thread_cf_logs']:
-            result=open(thread.split('_')[0]+'_'+target+'.md','a+')
-            folder = getfolder(target,thread)
+            result=open(args.target+'/inductor_log/'+thread.split('_')[0]+'_'+args.target+'.md','a+')
+            folder = getfolder(args.target,thread)
             title=folder+'/gh_title.txt'
             summary=folder+'/gh_executive_summary.txt'
             inference=folder+'/gh_inference.txt'
@@ -321,16 +416,134 @@ def update_md_file(target):
             for file in title,summary,inference:
                 for line in open(file,'r'):
                     result.writelines(line)
+        # create comment in github issue
+        ESI_SYD_TK = args.gh_token
+        g = Github(ESI_SYD_TK)
+        g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
+        repo = g.get_repo("pytorch/pytorch")
+        issue = repo.get_issue(number=93531)
+        print(issue)
+        try:
+            with open(args.target+'/inductor_log/'+'multi_'+args.target+'.md') as mt,open(args.target+'/inductor_log/'+'single_'+args.target+'.md') as st:
+                issue.create_comment(mt.read())
+                issue.create_comment(st.read())
+        except:
+            print("issue commit create failed")
+            pass
+
+def html_head():
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Inductor Model Bench Report</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="css/animate.css">
+<link rel="stylesheet" type="text/css" href="css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
+<link rel="stylesheet" type="text/css" href="css/util.css">
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<meta name="robots" content="noindex, follow">
+</head>
+<body>
+  <div class="limiter">
+  <div class="container-table100">
+  <div class="wrap-table100">
+  <div class="table100">
+  <p><h3>Inductor Model Bench Report</p></h3> '''
+
+def html_tail():
+    # Use true HW info 
+    return '''<p>HW info:</p>
+  <table border="1">
+        <ol>
+        <table>
+            <tbody>
+            <tr>
+                <td>Machine name:&nbsp;</td>
+                <td>mlp-validate-icx24-ubuntu</td>
+            </tr>
+            <tr>
+                <td>Manufacturer:&nbsp;</td>
+                <td>Intel Corporation</td>
+            </tr>
+            <tr>
+                <td>Kernel:</td>
+                <td>5.4.0-131-generic</td>
+            </tr>
+            <tr>
+                <td>Microcode:</td>
+                <td>0xd000375</td>
+            </tr>
+            <tr>
+                <td>Installed Memory:</td>
+                <td>503GB</td>
+            </tr>
+            <tr>
+                <td>OS:</td>
+                <td>Ubuntu 18.04.6 LTS</td>
+            </tr>
+            <tr>
+                <td>CPU Model:</td>
+                <td>Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz</td>
+            </tr>
+            <tr>
+                <td>GCC:</td>
+                <td>gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0</td>
+            </tr>
+            <tr>
+                <td>GLIBC:</td>
+                <td>ldd (Ubuntu GLIBC 2.27-3ubuntu1.5) 2.27</td>
+            </tr>
+            <tr>
+                <td>Binutils:</td>
+                <td>GNU ld (GNU Binutils for Ubuntu) 2.30</td>
+            </tr>
+            <tr>
+                <td>Python:</td>
+                <td>Python 3.8.3</td>
+            </tr>
+            </tbody>
+        </table>
+        </ol>
+    <p>You can find details from attachments, Thanks</p>
+  </table>
+  </div>
+  </div>
+  </div>
+  </div>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/popper.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/select2/select2.min.js"></script>
+<script src="js/main.js"></script>
+</body>'''
+
+def html_generate(html_off):
+    if not html_off:
+        try:
+            content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
+            summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
+            swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
+            mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+            st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f:
+                f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+html_tail())
+            f.close()
+        except:
+            print("html_generate_failed")
+            pass
 
 def generate_report(excel,reference,target):
     update_summary(excel,reference,target)
     update_swinfo(excel)
-    if args.mode == 'multiple' or args.mode is None:
+    if args.mode == 'multiple' or args.mode == 'all':
         update_failures(excel,target_mt)
-    if args.mode =='single' or args.mode is None:
+    if args.mode =='single' or args.mode == 'all':
         update_failures(excel,target_st)
     update_details(excel)
-    update_md_file(target)
 
 def excel_postprocess(file):
     wb=file.book
@@ -346,7 +559,7 @@ def excel_postprocess(file):
     else:
         ws.merge_cells(start_row=2,end_row=3,start_column=1,end_column=1)
         ws.merge_cells(start_row=4,end_row=5,start_column=1,end_column=1)
-    if args.mode == "multiple" or args.mode is None:  
+    if args.mode == "multiple" or args.mode == 'all':  
         # Single-Socket Multi-threads
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
@@ -356,7 +569,7 @@ def excel_postprocess(file):
         wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=6)
         wmt.merge_cells(start_row=1,end_row=1,start_column=7,end_column=10)
         wmt.merge_cells(start_row=1,end_row=1,start_column=11,end_column=13)
-    if args.mode == "single" or args.mode is None:         
+    if args.mode == "single" or args.mode == 'all':
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
@@ -369,6 +582,8 @@ def excel_postprocess(file):
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter('Inductor Dashboard Regression Check '+args.target+'.xlsx')
+    excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx')
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
+    html_generate(args.html_off)
+    update_issue_commits()
