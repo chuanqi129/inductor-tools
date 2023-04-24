@@ -7,7 +7,7 @@ jks_url=${3:-jks}
 mkdir -p $LOG_DIR
 
 # install transformers
-pip uninstall transformers -y && pip install git+https://github.com/huggingface/transformers.git
+pip uninstall transformers -y && pip install transformers
 
 # use offline mode for network issues
 export TRANSFORMERS_OFFLINE=1
