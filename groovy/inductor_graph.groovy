@@ -1,4 +1,4 @@
-NODE_LABEL = 'mlp-validate-icx24-ubuntu'
+NODE_LABEL = 'mlp-validate-clx07-centos'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
@@ -94,7 +94,7 @@ def cleanup(){
         docker container prune -f
         docker system prune -f
         sudo chmod 777  ${WORKSPACE}
-        rm -rf ${WORKSPACE}/graph/        
+        sudo rm -rf ${WORKSPACE}/graph/        
         '''
     } catch(e) {
         echo "==============================================="
