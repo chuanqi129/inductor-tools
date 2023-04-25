@@ -8,6 +8,7 @@ args = parser.parse_args()
 commit_list=[]
 url_list=[]
 result = pd.read_table('result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+last_result = pd.read_table('ref_build/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
 componment = ["benchmark","pytorch","vision","text","audio","data"]
 for item in componment:
     sha_short = result.loc[componment.index(item), "commit"][-7:] if item != "benchmark" \
@@ -16,8 +17,11 @@ for item in componment:
     url_list.append(f"https://github.com/pytorch/{item}/commit/"+sha_short) 
 precision = result.loc[7,"commit"]
 latency = result.loc[8,"commit"]
+last_latency = last_result.loc[8,"commit"]
 latency_gptj = latency.split('ms.')[0]
+last_latency_gptj = last_latency.split('ms.')[0]
 latency_llama = latency.split('ms.')[1]
+last_latency_llama = last_latency.split('ms.')[1]
 transformers = result.loc[6,"commit"]
 
 report_content=f'''<!DOCTYPE html>
@@ -34,6 +38,8 @@ report_content=f'''<!DOCTYPE html>
             <th>greedy</th> 
             <th>use_dynamo</th> 
             <th>latency</th> 
+            <th>latency(lastsuccessful)</th> 
+            
         </tr> 
         <tr> 
             <td><p style="text-align:center">gptj6B</p></td> 
@@ -41,7 +47,8 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">32</p></td> 
             <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">{latency_gptj}ms</p></td>                                    
+            <td><p style="text-align:center">{latency_gptj}ms</p></td>                                  
+            <td><p style="text-align:center">{last_latency_gptj}ms</p></td>                                  
         </tr> 
         <tr> 
             <td><p style="text-align:center">llama7B</p></td> 
@@ -50,6 +57,7 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
             <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
+            <td><p style="text-align:center">{last_latency_llama}ms</p></td>                                    
         </tr>         
     </table> 
     <p>SW Info:</p> 

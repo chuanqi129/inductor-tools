@@ -277,6 +277,13 @@ if ('image_tag' in params) {
 }
 echo "image_tag: $image_tag"
 
+// set reference build
+refer_build = 'lastSuccessfulBuild'
+if( 'refer_build' in params && params.refer_build != '' ) {
+    refer_build = params.refer_build
+}
+echo "refer_build: $refer_build"
+
 def get_time(){
     return new Date().format('yyyy-MM-dd')
 }
@@ -412,12 +419,29 @@ node(NODE_LABEL){
             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/huggingface:/workspace/huggingface -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
             docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
             docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
-            docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench ${BUILD_URL}"
+            docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench"         
             '''
             }
         }
     }
+    stage("Generate Report") {
+        if ("${LLMBench}" == "true") {
+            if(refer_build != '0') {
+                copyArtifacts(
+                    projectName: currentBuild.projectName,
+                    selector: specific("${refer_build}"),
+                    filter: 'llm_bench/*.txt',
+                    fingerprintArtifacts: true,
+                    target: "llm_bench/")
+                archiveArtifacts artifacts: "**/llm_bench/ref_build/**"
+            }
+            sh '''
+            #!/usr/bin/env bash
+            cp scripts/llmbench/generate_report.py ${WORKSPACE}/llm_bench && cd ${WORKSPACE}/llm_bench
+            python generate_report.py --url ${BUILD_URL}
+            '''
+        }
+    } 
     stage('archiveArtifacts') {
         if ("${OPBench}" == "true"){
             archiveArtifacts artifacts: "**/opbench_log/**", fingerprint: true

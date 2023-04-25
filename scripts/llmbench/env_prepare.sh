@@ -3,7 +3,6 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 
 precision=${1:-float32}
 LOG_DIR=${2:-llm_bench}
-jks_url=${3:-jks}
 mkdir -p $LOG_DIR
 
 # install transformers
@@ -37,9 +36,3 @@ timestamp=$(date +%Y%m%d_%H%M%S)
 python run_dynamo_llm.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
 latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
 echo latency : ${latency} >>${FILE}
-
-# generate html report
-cp generate_report.py ${curdir}/${LOG_DIR}
-cd ${curdir}/${LOG_DIR}
-python generate_report.py --url ${jks_url}
-rm generate_report.py
