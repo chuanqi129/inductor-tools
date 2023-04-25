@@ -28,4 +28,4 @@ if [[ ${BS} -gt 0 ]]; then
     BS_extra="--batch_size=${BS} "
 fi
 
-numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} --backend=inductor
+numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --performance --inference --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} --backend=inductor
