@@ -8,13 +8,13 @@ args = parser.parse_args()
 commit_list=[]
 url_list=[]
 result = pd.read_table('result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-last_result = pd.read_table('ref_build/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+last_result = pd.read_table('llm_bench/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
 componment = ["benchmark","pytorch","vision","text","audio","data"]
 for item in componment:
     sha_short = result.loc[componment.index(item), "commit"][-7:] if item != "benchmark" \
         else result.loc[componment.index(item),"commit"][-8:]
     commit_list.append(sha_short)    
-    url_list.append(f"https://github.com/pytorch/{item}/commit/"+sha_short) 
+    url_list.append("https://github.com/pytorch/"+item+"/commit/"+sha_short)
 precision = result.loc[7,"commit"]
 latency = result.loc[8,"commit"]
 last_latency = last_result.loc[8,"commit"]

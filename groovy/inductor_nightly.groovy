@@ -433,12 +433,11 @@ node(NODE_LABEL){
                     filter: 'llm_bench/*.txt',
                     fingerprintArtifacts: true,
                     target: "llm_bench/")
-                archiveArtifacts artifacts: "**/llm_bench/ref_build/**"
             }
             sh '''
             #!/usr/bin/env bash
             cp scripts/llmbench/generate_report.py ${WORKSPACE}/llm_bench && cd ${WORKSPACE}/llm_bench
-            python generate_report.py --url ${BUILD_URL}
+            python3 generate_report.py --url ${BUILD_URL}
             '''
         }
     } 
