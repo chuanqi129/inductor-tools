@@ -20,8 +20,13 @@ latency = result.loc[8,"commit"]
 last_latency = last_result.loc[8,"commit"]
 latency_gptj = latency.split('ms.')[0]
 last_latency_gptj = last_latency.split('ms.')[0]
+ratio_gptj = float(last_latency_gptj) / float(latency_gptj)
+
 latency_llama = latency.split('ms.')[1]
 last_latency_llama = last_latency.split('ms.')[1]
+ratio_llama = float(last_latency_llama) / float(latency_llama)
+
+
 transformers = result.loc[6,"commit"]
 
 report_content=f'''<!DOCTYPE html>
@@ -39,6 +44,7 @@ report_content=f'''<!DOCTYPE html>
             <th>use_dynamo</th> 
             <th>latency</th> 
             <th>latency(lastsuccessful)</th> 
+            <th>ratio(last / current)</th>
             
         </tr> 
         <tr> 
@@ -48,7 +54,8 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
             <td><p style="text-align:center">{latency_gptj}ms</p></td>                                  
-            <td><p style="text-align:center">{last_latency_gptj}ms</p></td>                                  
+            <td><p style="text-align:center">{last_latency_gptj}ms</p></td>                                 
+            <td><p style="text-align:center">{ratio_gptj}</p></td>                                 
         </tr> 
         <tr> 
             <td><p style="text-align:center">llama7B</p></td> 
@@ -58,6 +65,7 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">True</p></td> 
             <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
             <td><p style="text-align:center">{last_latency_llama}ms</p></td>                                    
+            <td><p style="text-align:center">{ratio_llama}</p></td>                                    
         </tr>         
     </table> 
     <p>SW Info:</p> 

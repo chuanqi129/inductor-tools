@@ -1,5 +1,11 @@
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
+export KMP_AFFINITY=granularity=fine,compact,1,0
+export KMP_BLOCKTIME=1
+
+CORES=$(lscpu | grep Core | awk '{print $4}')
+end_core=$(expr $CORES - 1)
+export OMP_NUM_THREADS=$CORES
 
 precision=${1:-float32}
 LOG_DIR=${2:-llm_bench}
@@ -33,6 +39,6 @@ echo precision : ${precision} >>${FILE}
 
 # run benchmark
 timestamp=$(date +%Y%m%d_%H%M%S)
-python run_dynamo_llm.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
+numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --precision ${precision} 2>&1 | tee ${LOG_DIR}/llm_bench__${timestamp}.log
 latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
 echo latency : ${latency} >>${FILE}
