@@ -58,15 +58,14 @@ println(env._time)
 node(NODE_LABEL){
     stage("login instance && launch benchmark") {
         deleteDir()
-        checkout scm
         retry(3){
             sh '''
             #!/usr/bin/env bash
             cd /home2/yudongsi/
             cat .ssh/config
-            sed -i -e "/Host icx-regular/{n;s/.*/    Hostname ${_name}/}" .ssh/config
+            sed -i -e "/Host icx-yudong-new/{n;s/.*/    Hostname ${_name}/}" .ssh/config
             cat .ssh/config
-            ssh ubuntu@icx-regular "pwd; cd /home/ubuntu/docker; bash launch.sh ${_target}"
+            ssh ubuntu@icx-yudong-new "nohup bash entrance.sh ${_target} &>/dev/null &" &
             '''
         }
     }
@@ -74,10 +73,22 @@ node(NODE_LABEL){
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            if [ -d ${_archive_dir}/${_target} ]; then
-                rm -rf ${_archive_dir}/${_target}
-            fi
-            scp -r ubuntu@icx-regular:/home/ubuntu/docker/inductor_log ${_archive_dir}/${_target}
+            set +e
+            for ((i=1;i<=25;i++))
+            do
+                ssh ubuntu@icx-yudong-new "test -f /home/ubuntu/docker/finished.txt"
+                if [ $? -eq 0 ]; then
+                    if [ -d ${_archive_dir}/${_target} ]; then
+                        rm -rf ${_archive_dir}/${_target}
+                    fi
+                    mkdir -p ${_archive_dir}/${_target}
+                    scp -r ubuntu@icx-yudong-new:/home/ubuntu/docker/inductor_log ${_archive_dir}/${_target}
+                    break
+                else
+                    sleep 1h
+                    echo $t
+                fi
+            done
             '''
         }
     }
