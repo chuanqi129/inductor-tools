@@ -158,7 +158,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                mkdir -p ${_archive_dir}/refer && cp -r ${WORKSPACE}/inductor_log ${_archive_dir}/refer
+                mkdir -p ${_archive_dir}/refer && cp -r ${WORKSPACE}/inductor_log ${_archive_dir}/refer && rm -rf ${WORKSPACE}/inductor_log
                 cd ${_archive_dir} && python report_train.py -t ${_target} -r refer && rm -rf ${_archive_dir}/refer
                 '''
             }else{
