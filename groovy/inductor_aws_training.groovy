@@ -8,7 +8,7 @@ if ('NODE_LABEL' in params) {
 echo "NODE_LABEL: $NODE_LABEL"
 
 
-debug = 'True'
+debug = 'False'
 if ('debug' in params) {
     echo "debug in params"
     if (params.debug != '') {
@@ -36,7 +36,7 @@ if ('aws_hostname' in params) {
 echo "aws_hostname: $aws_hostname"
 
 
-target = 'WW17.2'
+target = 'WW18.4'
 if ('target' in params) {
     echo "target in params"
     if (params.target != '') {
@@ -44,6 +44,13 @@ if ('target' in params) {
     }
 }
 echo "target: $target"
+
+// set reference build
+refer_build = 'lastSuccessfulBuild'
+if( 'refer_build' in params && params.refer_build != '' ) {
+    refer_build = params.refer_build
+}
+echo "refer_build: $refer_build"
 
 precision = 'float32'
 if ('precision' in params) {
@@ -142,10 +149,25 @@ node(NODE_LABEL){
 
     stage("generate report"){
         retry(3){
-            sh '''
-            #!/usr/bin/env bash          
-            cd ${_archive_dir} && python report_train.py -t ${_target}
-            '''
+            if(refer_build != '0') {
+                copyArtifacts(
+                    projectName: currentBuild.projectName,
+                    selector: specific("${refer_build}"),
+                    filter: 'inductor_log/*.csv',
+                    fingerprintArtifacts: true,
+                    target: "inductor_log/"
+                )           
+                sh '''
+                #!/usr/bin/env bash
+                mkdir -p ${_archive_dir}/refer && cp -r ${WORKSPACE}/inductor_log ${_archive_dir}/refer
+                cd ${_archive_dir} && python report_train.py -t ${_target} -r refer && rm -rf ${_archive_dir}/refer
+                '''
+            }else{
+                sh '''
+                #!/usr/bin/env bash          
+                cd ${_archive_dir} && python report_train.py -t ${_target}
+                '''
+            }
         }
     }    
 
