@@ -154,8 +154,7 @@ node(NODE_LABEL){
                     projectName: currentBuild.projectName,
                     selector: specific("${refer_build}"),
                     filter: 'inductor_log/*.csv',
-                    fingerprintArtifacts: true,
-                    target: "inductor_log/"
+                    fingerprintArtifacts: true
                 )           
                 sh '''
                 #!/usr/bin/env bash
