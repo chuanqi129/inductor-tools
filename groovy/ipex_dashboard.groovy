@@ -56,13 +56,13 @@ node(NODE_LABEL){
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
                 sh '''#!/bin/bash
                     tag=${image_tag}
-                    old_container=`docker ps |grep pytorch-ipex-spr:nightly |awk '{print $1}'`
+                    old_container=`docker ps |grep pytorch-ipex-spr:ipex_torchbench_weekly |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
                         docker rm $old_container
                         docker container prune -f
                     fi
-                    old_image_id=`docker images|grep pytorch-ipex-spr|grep nightly|awk '{print $3}'`
+                    old_image_id=`docker images|grep pytorch-ipex-spr|grep ipex_torchbench_weekly|awk '{print $3}'`
                     old_image=`echo $old_image_id| awk '{print $1}'`
                     if [ -n "${old_image}" ]; then
                         docker rmi -f $old_image
@@ -81,13 +81,13 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             tag=${image_tag}
-            old_container=`docker ps |grep pt_inductor:nightly |awk '{print $1}'`
+            old_container=`docker ps |grep pt_inductor:ipex_torchbench_weekly |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
                 docker container prune -f
             fi
-            old_image_id=`docker images|grep pt_inductor|grep nightly|awk '{print $3}'`
+            old_image_id=`docker images|grep pt_inductor|grep ipex_torchbench_weekly|awk '{print $3}'`
             old_image=`echo $old_image_id| awk '{print $1}'`
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
@@ -102,7 +102,7 @@ node(NODE_LABEL){
         if ("${isOP}" == "true") {
             sh '''
             #!/usr/bin/env bash
-            docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log/build_num_$BUILD_NUMBER:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:nightly
+            docker run -tid --name op_pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log/build_num_$BUILD_NUMBER:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:ipex_torchbench_weekly
             docker cp tmp/scripts/microbench/microbench_parser.py op_pt_inductor:/workspace/pytorch
             docker cp tmp/scripts/microbench/microbench.sh op_pt_inductor:/workspace/pytorch
             docker exec -i op_pt_inductor bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -w ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
@@ -110,7 +110,7 @@ node(NODE_LABEL){
         }else {
             sh '''
             #!/usr/bin/env bash
-            docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log/build_num_$BUILD_NUMBER:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:nightly
+            docker run -tid --name pt_inductor --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/inductor_log/build_num_$BUILD_NUMBER:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:ipex_torchbench_weekly
             docker cp tmp/scripts/modelbench/inductor_test.sh pt_inductor:/workspace/pytorch         
             docker cp tmp/scripts/modelbench/log_parser.py pt_inductor:/workspace/pytorch           
             docker exec -i pt_inductor bash inductor_test.sh ${THREAD} ${CHANNELS} inductor_log ${MODEL_SUITE}
@@ -132,7 +132,7 @@ node(NODE_LABEL){
         }
         if (fileExists("${WORKSPACE}/opbench_log/build_num_$BUILD_NUMBER/op-microbench-${_VERSION}.xlsx") == true){
             emailext(
-                subject: "Torchinductor OP microbench Nightly Report",
+                subject: "IPEX OP microbench Nightly Report",
                 mimeType: "text/html",
                 attachmentsPattern: "**/opbench_log/build_num_$BUILD_NUMBER/*.xlsx",
                 from: "pytorch_inductor_val@intel.com",
@@ -142,7 +142,7 @@ node(NODE_LABEL){
         }
         else{
             emailext(
-                subject: "Failure occurs in Torchinductor OP microbench Nightly",
+                subject: "Failure occurs in IPEX OP microbench ipex_torchbench_weekly",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: maillist,

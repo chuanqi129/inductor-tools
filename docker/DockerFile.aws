@@ -1,0 +1,110 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} AS dev-base
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    build-essential \
+    ca-certificates \
+    ccache \
+    cmake \
+    ninja-build \
+    gcc-9 g++-9 \ 
+    gcc-11 g++-11 \
+    python3-dev \ 
+    python3-pip \
+    doxygen \
+    graphviz \
+    clang-tidy-12 \
+    wget \
+    libgl1 \
+    libsndfile1 \
+    rustc \
+    cargo \
+    curl \
+    ffmpeg \
+    git \
+    libtcmalloc-minimal4 \
+    libjpeg-dev \
+    libpng-dev \
+    libsm6 \
+    libxext6 \
+    numactl \
+    pybind11-dev \
+    vim \
+    && rm -rf /var/lib/apt/lists/* && \
+    pip3 install cpplint clang-format -i https://pypi.tuna.tsinghua.edu.cn/simple && \
+    wget --quiet https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz && \
+    tar -xzf protobuf-2.6.1.tar.gz && \
+    cd protobuf-2.6.1 && \
+    ./configure && \
+    make -j && \
+    make install
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 90 --slave /usr/bin/g++ g++ /usr/bin/g++-11 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 80 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+WORKDIR /opt/installs/
+
+RUN cd /opt/installs && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O anaconda3.sh && \
+    chmod +x anaconda3.sh && \
+    sed -i "s;#!/bin/sh;#!/bin/bash;" /opt/installs/anaconda3.sh && \
+    ./anaconda3.sh -b -p ~/anaconda3 && \
+    rm ./anaconda3.sh && \
+    /root/anaconda3/bin/conda config --set channel_priority strict && \
+    /root/anaconda3/bin/conda config --append channels conda-forge
+ENV PATH=~/anaconda3/bin/:${PATH}
+RUN echo NO | dpkg-reconfigure dash
+WORKDIR /root/workspace
+RUN ~/anaconda3/bin/conda create -yn pytorch python=3.8 && \
+    source ~/anaconda3/bin/activate pytorch && \
+    conda install astunparse \
+        cffi \
+        cython \
+        cmake>=3.13.0 \
+        dataclasses \
+        future \
+        git-lfs \
+        intel-openmp \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+	sympy \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \
+        weasyprint && \
+    pip uninstall torch torchvision torchdata torchtext torchaudio -y  && \
+    pip uninstall torch torchvision torchdata torchtext torchaudio -y  && \
+    pip uninstall torch torchvision torchdata torchtext torchaudio -y  && \
+    pip install --pre torch torchvision torchdata torchtext torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu --no-deps && \
+    git clone https://github.com/intel/intel-extension-for-pytorch.git && \
+    cd intel-extension-for-pytorch && \
+    git submodule sync && \
+    git submodule update --init --recursive && \
+    python setup.py install && \
+    /root/anaconda3/bin/conda clean -ya
+WORKDIR /root/workspace
+RUN source ~/anaconda3/bin/activate pytorch && \
+    git clone https://github.com/pytorch/benchmark.git && \
+    cd benchmark && \
+    pip install tqdm styleFrame pandas gitpython filelock && \
+    pip install --no-deps -r requirements.txt && \
+    python -c "import torch;import torchvision;import torchtext;import torchaudio" && \    
+    python install.py attention_* pass && \
+    pip list && \
+    python -c "import torch;import torchvision;import torchtext;import torchaudio" && \
+    python install.py && \
+    rm -rf /opt/installs/
+COPY ./pytorch /root/workspace/pytorch
+COPY ./benchmark /root/workspace/benchmark
+ENV PATH="~/anaconda3/bin:${PATH}"
+ENV MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:9000000000,muzzy_decay_ms:9000000000"
+ENV BASH_ENV=/root/.bash_profile
