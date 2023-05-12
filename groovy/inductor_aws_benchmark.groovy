@@ -63,7 +63,7 @@ if ('shape' in params) {
 echo "shape: $shape"
 
 // set reference build
-refer_build = 'lastSuccessfulBuild'
+refer_build = ''
 if( 'refer_build' in params && params.refer_build != '' ) {
     refer_build = params.refer_build
 }
@@ -145,11 +145,11 @@ node(NODE_LABEL){
         do
             ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_${_target}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
-                if [ -d ${WORKSPACE}/${_target} ]; then
-                    rm -rf ${WORKSPACE}/${_target}
+                if [ -d ${WORKSPACE}/${_target}_odm ]; then
+                    rm -rf ${WORKSPACE}/${_target}_odm
                 fi
-                mkdir -p ${WORKSPACE}/${_target}
-                scp -r ubuntu@${_name}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                mkdir -p ${WORKSPACE}/${_target}_odm
+                scp -r ubuntu@${_name}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}_odm
                 break
             else
                 sleep 1h
@@ -170,12 +170,12 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all --md_off --precision ${_precision} && rm -rf refer
+                cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target}_odm -m all --md_off --precision ${_precision} && rm -rf refer
                 '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && python report.py -t ${_target} -m all --md_off --precision ${_precision}
+                cd ${WORKSPACE} && python report.py -t ${_target}_odm -m all --md_off --precision ${_precision}
                 '''
             }
         }
@@ -190,12 +190,12 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
+                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target}_odm && rm -rf refer
                 '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && python report_train.py -t ${_target}
+                cd ${WORKSPACE} && python report_train.py -t ${_target}_odm
                 '''
             }
         }
@@ -206,14 +206,14 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
+            cp -r  ${WORKSPACE}/${_target}_odm $HOME/inductor_dashboard
             '''
         }
         if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
+            cp -r  ${WORKSPACE}/${_target}_odm $HOME/inductor_dashboard/Train
             '''
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
