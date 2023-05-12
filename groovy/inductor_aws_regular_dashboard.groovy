@@ -26,63 +26,57 @@ if ('aws_hostname' in params) {
 }
 echo "aws_hostname: $aws_hostname"
 
-
-target = 'WW17.2'
-if ('target' in params) {
-    echo "target in params"
-    if (params.target != '') {
-        target = params.target
-    }
+refer_build = ''
+if( 'refer_build' in params && params.refer_build != '' ) {
+    refer_build = params.refer_build
 }
-echo "target: $target"
-
-
-reference = 'WW16.4'
-if ('reference' in params) {
-    echo "reference in params"
-    if (params.reference != '') {
-        reference = params.reference
-    }
-}
-echo "reference: $reference"
+echo "refer_build: $refer_build"
 
 
 env._name = "$aws_hostname"
-env._target = "$target"
-env._reference = "$reference"
-env._archive_dir = '/home2/yudongsi/inductor_dashboard'
-
-env._time = new Date().format('yyyy-MM-dd')
-println(env._time)
+env._reference = "$refer_build"
+env._target = new Date().format('yyyy_MM_dd')
+println(env._target)
 
 node(NODE_LABEL){
-    stage("login instance && launch benchmark") {
+    stage("prepare scripts") {
         deleteDir()
+        checkout scm
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            cd /home2/yudongsi/
-            cat .ssh/config
-            sed -i -e "/Host icx-yudong-new/{n;s/.*/    Hostname ${_name}/}" .ssh/config
-            cat .ssh/config
-            ssh ubuntu@icx-yudong-new "nohup bash entrance.sh ${_target} &>/dev/null &" &
+            cd $HOME && cat .ssh/config
+            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
+            scp ${WORKSPACE}/inductor-tools/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
             '''
         }
     }
+
+    stage("launch benchmark") {
+        retry(3){
+            sh '''
+            #!/usr/bin/env bash
+            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} &>/dev/null &" &
+            '''
+        }
+    }
+
     stage("acquire logs"){
         retry(3){
             sh '''
             #!/usr/bin/env bash
             set +e
-            for ((i=1;i<=25;i++))
+            for t in {1..25}
             do
-                ssh ubuntu@icx-yudong-new "test -f /home/ubuntu/docker/finished.txt"
+                ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished.txt"
                 if [ $? -eq 0 ]; then
-                    if [ -d ${_archive_dir}/${_target} ]; then
-                        rm -rf ${_archive_dir}/${_target}
+                    if [ -d ${WORKSPACE}/${_target} ]; then
+                        rm -rf ${WORKSPACE}/${_target}
                     fi
-                    mkdir -p ${_archive_dir}/${_target}
-                    scp -r ubuntu@icx-yudong-new:/home/ubuntu/docker/inductor_log ${_archive_dir}/${_target}
+                    mkdir -p ${WORKSPACE}/${_target}
+                    scp -r ubuntu@${_name}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                     break
                 else
                     sleep 1h
@@ -95,17 +89,30 @@ node(NODE_LABEL){
 
     stage("generate report"){
         retry(3){
+            if(refer_build != '0') {
+                copyArtifacts(
+                    projectName: currentBuild.projectName,
+                    selector: specific("${refer_build}"),
+                    fingerprintArtifacts: true
+                )             
             sh '''
-            #!/usr/bin/env bash          
-            cd ${_archive_dir} && python report.py -r ${_reference} -t ${_target} -m all
+            #!/usr/bin/env bash        
+            cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+            cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer
             '''
+            }else{
+                sh '''
+                #!/usr/bin/env bash
+                cd ${WORKSPACE} && cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -t ${_target} -m all
+                '''
+            }
         }
-    }    
+    }
 
     stage('archiveArtifacts') {
             sh '''
             #!/usr/bin/env bash
-            cp -r ${_archive_dir}/${_target}/inductor_log ${WORKSPACE}
+            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
             '''        
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
     }

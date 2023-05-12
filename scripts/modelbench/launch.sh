@@ -1,19 +1,24 @@
 TAG=${1:-ww09.2}
-TORCH_REPO=${2:-https://github.com/pytorch/pytorch.git}
-TORCH_BRANCH=${3:-nightly}
-TORCH_COMMIT=${4:nightly}
+PRECISION=${2:-float32}
+TEST_MODE=${3:-inference}
+TEST_SHAPE=${4:-static}
 
-DYNAMO_BENCH=${5:-fea73cb}
+TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
+TORCH_BRANCH=${6:-nightly}
+TORCH_COMMIT=${7:nightly}
 
-AUDIO=${6:-0a652f5}
-TEXT=${7:-c4ad5dd}
-VISION=${8:-f2009ab}
-DATA=${9:-5cb3e6d}
-TORCH_BENCH=${10:-a0848e19}
+DYNAMO_BENCH=${8:-fea73cb}
 
-
+AUDIO=${9:-0a652f5}
+TEXT=${10:-c4ad5dd}
+VISION=${11:-f2009ab}
+DATA=${12:-5cb3e6d}
+TORCH_BENCH=${13:-a0848e19}
 
 echo "TAG" : $TAG
+echo "PRECISION" : $PRECISION
+echo "TEST_MODE" : $TEST_MODE
+echo "TEST_SHAPE" : $TEST_SHAPE
 echo "TORCH_REPO" : $TORCH_REPO
 echo "TORCH_BRANCH" : $TORCH_BRANCH
 echo "TORCH_COMMIT" : $TORCH_COMMIT
@@ -23,7 +28,6 @@ echo "TEXT" : $TEXT
 echo "VISION" : $VISION
 echo "DATA" : $DATA
 echo "TORCH_BENCH" : $TORCH_BENCH
-
 
 # clean up
 docker stop $(docker ps -aq)
@@ -37,7 +41,13 @@ fi
 
 DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t pt_inductor:$TAG -f Dockerfile --target image .
 
-docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log pt_inductor:$TAG
+docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log pt_inductor:$TAG
 
+docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
+docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 
-docker exec -i $USER bash -c "bash inductor_test.sh all first float32 static inductor_log $DYNAMO_BENCH"
+if (($TEST_MODE == 'inference')); then
+    docker exec -i $USER bash -c "bash inductor_test.sh all first $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
+elif (($TEST_MODE == 'training')); then
+    docker exec -i $USER bash -c "bash inductor_train.sh first $PRECISION inductor_log $DYNAMO_BENCH"
+fi
