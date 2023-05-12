@@ -42,7 +42,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
