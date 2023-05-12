@@ -46,8 +46,8 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 
-if (($TEST_MODE == 'inference')); then
+if [ $TEST_MODE == "inference" ]; then
     docker exec -i $USER bash -c "bash inductor_test.sh all first $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
-elif (($TEST_MODE == 'training')); then
+elif [ $TEST_MODE == "training" ]; then
     docker exec -i $USER bash -c "bash inductor_train.sh first $PRECISION inductor_log $DYNAMO_BENCH"
 fi
