@@ -63,8 +63,8 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
     rm -f /opt/conda/lib/libstdc++.so.6
 
 FROM dev-base AS build
-ARG PT_REPO=https://github.com/blzheng/pytorch
-ARG PT_BRANCH=xiaobing/Nov_11
+ARG PT_REPO=https://github.com/pytorch/pytorch
+ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
 ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
@@ -107,7 +107,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     python install.py && cd .. && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
-ARG IPEX_BRANCH=dynamo_ipex113
+ARG IPEX_BRANCH=master
 ARG IPEX_COMMIT=${IPEX_BRANCH}
 RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pytorch.git ipex && \
     cd ipex && git checkout ${IPEX_COMMIT} && git submodule sync && git submodule update --init --recursive && \
