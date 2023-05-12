@@ -23,7 +23,7 @@ parser.add_argument('-m','--mode',type=str,help='multiple or single mode')
 parser.add_argument('-p','--precision',type=str,default='float32',help='precision')
 parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
 parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
-parser.add_argument('--gh_token', type=str, help='github token for issue comment creation')
+parser.add_argument('--gh_token', type=str, default="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",help='github token for issue comment creation')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -469,7 +469,7 @@ def update_details(writer):
         st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=1)   
 
 def update_issue_commits():
-    # from github import Github
+    from github import Github
     # generate md files
     mt_addtional=f'''
 SW information:
@@ -588,25 +588,26 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         with open(st_inference,'r') as inference_file:
             st_result.writelines(inference_file.readlines())
         # create comment in github issue
-        # ESI_SYD_TK = args.gh_token
-        # g = Github(ESI_SYD_TK)
-        # g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
-        # repo = g.get_repo("pytorch/pytorch")
-        # issue = repo.get_issue(number=93531)
-        # print(issue)
-        # try:
-        #     with open(args.target+'/inductor_log/'+'mt_'+args.target+'.md') as mt,open(args.target+'/inductor_log/'+'st_'+args.target+'.md') as st:
-        #         issue.create_comment(mt.read())
-        #         issue.create_comment(st.read())
-        # except:
-        #     print("issue commit create failed")
-        #     pass
+        ESI_SYD_TK = args.gh_token
+        g = Github(ESI_SYD_TK)
+        g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
+        repo = g.get_repo("pytorch/pytorch")
+        issue = repo.get_issue(number=93531)
+        print(issue)
+        try:
+            mt_result.seek(0)
+            st_result.seek(0)
+            issue.create_comment(mt_result.read())
+            issue.create_comment(st_result.read())
+        except:
+            print("issue commit create failed")
+            pass
 
 def html_head():
     return '''<!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Inductor Model Bench Report</title>
+<title> Inductor Regular Model Bench Report (AWS) </title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
@@ -623,7 +624,7 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>Inductor Model Bench Report</p></h3> '''
+  <p><h3>Inductor Regular Model Bench Report (AWS)</p></h3> '''
 
 def html_tail():
     return '''<p>You can find perf regression or improvement from attachment report, Thanks</p>
