@@ -123,11 +123,11 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cd $HOME && cat .ssh/config
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/inductor-tools/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/inductor_train.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${_name}:/home/ubuntu/docker
             '''
         }
     }    
@@ -170,7 +170,7 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all --md_off --precision ${_precision} && rm -rf refer
+                cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all --md_off --precision ${_precision} && rm -rf refer
                 '''
             }else{
                 sh '''
@@ -190,7 +190,7 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp inductor-tools/scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
+                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
                 '''
             }else{
                 sh '''
