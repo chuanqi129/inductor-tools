@@ -10,6 +10,11 @@ TORCH_COMMIT=${7:nightly}
 
 DYNAMO_BENCH=${8:-fea73cb}
 
+IPEX_REPO=${9:-https://github.com/intel/intel-extension-for-pytorch.git}
+IPEX_BRANCH=${10:-master}
+IPEX_COMMIT=${11:master}
+
+
 # kill unused process
 itm_1=$(ps -ef | grep entrance.sh | awk '{print $2}')
 itm_2=$(ps -ef | grep launch.sh | awk '{print $2}')
@@ -42,7 +47,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
