@@ -32,9 +32,15 @@ if( 'refer_build' in params && params.refer_build != '' ) {
 }
 echo "refer_build: $refer_build"
 
+gh_token = ''
+if( 'gh_token' in params && params.gh_token != '' ) {
+    gh_token = params.gh_token
+}
+echo "gh_token: $gh_token"
 
 env._name = "$aws_hostname"
 env._reference = "$refer_build"
+env._gh_token = "$gh_token"
 env._target = new Date().format('yyyy_MM_dd')
 println(env._target)
 
@@ -98,7 +104,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash        
             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-            cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer
+            cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
             '''
             }else{
                 sh '''

@@ -23,7 +23,7 @@ parser.add_argument('-m','--mode',type=str,help='multiple or single mode')
 parser.add_argument('-p','--precision',type=str,default='float32',help='precision')
 parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
 parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
-parser.add_argument('--gh_token', type=str, default="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",help='github token for issue comment creation')
+parser.add_argument('--gh_token', type=str,help='github token for issue comment creation')
 args=parser.parse_args()
 
 # known failure @20230423
