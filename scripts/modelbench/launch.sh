@@ -5,7 +5,7 @@ TEST_SHAPE=${4:-static}
 
 TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
 TORCH_BRANCH=${6:-nightly}
-TORCH_COMMIT=${7:nightly}
+TORCH_COMMIT=${7:-nightly}
 
 DYNAMO_BENCH=${8:-fea73cb}
 
