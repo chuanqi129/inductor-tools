@@ -10,7 +10,7 @@ CHANNELS=${2:-first}
 DT=${3:-float32}
 # static / dynamic
 SHAPE=${4:-static}
-LOG_DIR=${5:-inductor_log}
+LOG_DIR=${5:-ipex_log}
 DYNAMO_BENCH=${6:-1238ae3}
 mkdir -p $LOG_DIR
 

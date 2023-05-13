@@ -53,7 +53,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             cd $HOME && cat .ssh/config
             scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/ipex_test.sh ubuntu@${_name}:/home/ubuntu/docker
             '''
