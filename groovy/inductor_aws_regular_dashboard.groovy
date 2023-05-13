@@ -104,7 +104,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash        
             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-            cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
+            cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all --gh_token ${_gh_token} && rm -rf refer
             '''
             }else{
                 sh '''
