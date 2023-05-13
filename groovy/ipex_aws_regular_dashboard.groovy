@@ -64,7 +64,7 @@ node(NODE_LABEL){
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} &>/dev/null &" &
+            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} > entrance.log 2>&1 &" &
             '''
         }
     }
