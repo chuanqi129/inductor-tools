@@ -52,10 +52,10 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cd $HOME && cat .ssh/config
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/inductor-tools/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/inductor-tools/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/ipex_test.sh ubuntu@${_name}:/home/ubuntu/docker
             '''
         }
     }
@@ -104,12 +104,12 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash        
             cd ${WORKSPACE} && mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
-            cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
+            cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
             '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp inductor-tools/scripts/modelbench/report.py ${WORKSPACE} && python report.py -t ${_target} -m all
+                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -t ${_target} -m all
                 '''
             }
         }
