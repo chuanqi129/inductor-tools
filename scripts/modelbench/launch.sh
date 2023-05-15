@@ -9,15 +9,17 @@ TORCH_COMMIT=${7:nightly}
 
 DYNAMO_BENCH=${8:-nightly}
 
-AUDIO=${9:-nightly}
-TEXT=${10:-nightly}
-VISION=${11:-nightly}
-DATA=${12:-nightly}
-TORCH_BENCH=${13:-nightly}
+IPEX_REPO=${9:-https://github.com/intel/intel-extension-for-pytorch.git}
+IPEX_BRANCH=${10:-master}
+IPEX_COMMIT=${11:master}
 
-IPEX_REPO=${14:-https://github.com/intel/intel-extension-for-pytorch.git}
-IPEX_BRANCH=${15:-master}
-IPEX_COMMIT=${16:master}
+AUDIO=${12:-nightly}
+TEXT=${13:-nightly}
+VISION=${14:-nightly}
+DATA=${15:-nightly}
+TORCH_BENCH=${16:-nightly}
+
+
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
