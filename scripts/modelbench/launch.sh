@@ -17,7 +17,7 @@ AUDIO=${12:-nightly}
 TEXT=${13:-nightly}
 VISION=${14:-nightly}
 DATA=${15:-nightly}
-TORCH_BENCH=${16:-nightly}
+TORCH_BENCH=${16:-main}
 
 
 
