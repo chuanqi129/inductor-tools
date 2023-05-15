@@ -7,13 +7,13 @@ TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
 TORCH_BRANCH=${6:-nightly}
 TORCH_COMMIT=${7:nightly}
 
-DYNAMO_BENCH=${8:-fea73cb}
+DYNAMO_BENCH=${8:-nightly}
 
-AUDIO=${9:-0a652f5}
-TEXT=${10:-c4ad5dd}
-VISION=${11:-f2009ab}
-DATA=${12:-5cb3e6d}
-TORCH_BENCH=${13:-a0848e19}
+AUDIO=${9:-nightly}
+TEXT=${10:-nightly}
+VISION=${11:-nightly}
+DATA=${12:-nightly}
+TORCH_BENCH=${13:-nightly}
 
 IPEX_REPO=${14:-https://github.com/intel/intel-extension-for-pytorch.git}
 IPEX_BRANCH=${15:-master}
