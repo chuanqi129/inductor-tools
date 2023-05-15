@@ -1,5 +1,5 @@
 set +e
-TAG=${1:-ww18.4}
+TAG=${1:-ww20.1}
 PRECISION=${2:-float32}
 TEST_MODE=${3:-inference}
 SHAPE=${4:-static}
