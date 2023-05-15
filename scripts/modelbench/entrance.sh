@@ -47,7 +47,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
