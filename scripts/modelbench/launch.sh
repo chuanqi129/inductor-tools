@@ -48,13 +48,12 @@ fi
 
 DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg IPEX_REPO=$IPEX_REPO --build-arg IPEX_BRANCH=$IPEX_BRANCH --build-arg IPEX_COMMIT=$IPEX_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t ipex_torchbench:$TAG -f Dockerfile.ipex --target image .
 
-docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log ipex_torchbench:$TAG
+docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/ipex_log:/workspace/pytorch/ipex_log ipex_torchbench:$TAG
 
-docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
-docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
+docker cp /home/ubuntu/docker/ipex_test.sh $USER:/workspace/pytorch
 
 if (($TEST_MODE == 'inference')); then
-    docker exec -i $USER bash -c "bash inductor_test.sh all first $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash ipex_test.sh all first $PRECISION $TEST_SHAPE ipex_log $DYNAMO_BENCH"
 elif (($TEST_MODE == 'training')); then
     docker exec -i $USER bash -c "bash inductor_train.sh first $PRECISION inductor_log $DYNAMO_BENCH"
 fi

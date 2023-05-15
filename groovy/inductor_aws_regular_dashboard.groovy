@@ -53,7 +53,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             cd $HOME && cat .ssh/config
             scp ${WORKSPACE}/inductor-tools/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/inductor-tools/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/inductor-tools/docker/Dockerfile.ipex ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/inductor-tools/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/inductor-tools/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
             '''
