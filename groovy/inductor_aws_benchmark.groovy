@@ -159,7 +159,7 @@ node(NODE_LABEL){
         '''
     }
     stage("generate report"){
-        if (test_mode == 'inference')
+        if ("${test_mode}" == "inference")
         {
             if(refer_build != '0') {
                 copyArtifacts(
@@ -179,7 +179,7 @@ node(NODE_LABEL){
                 '''
             }
         }
-        if (test_mode == 'training')
+        if ("${test_mode}" == "training")
         {
             if(refer_build != '0') {
                 copyArtifacts(
@@ -202,14 +202,14 @@ node(NODE_LABEL){
     }    
 
     stage('archiveArtifacts') {
-        if (test_mode == 'inference')
+        if ("${test_mode}" == "inference")
         {
             sh '''
             #!/usr/bin/env bash
             cp -r  ${WORKSPACE}/${_target}_odm $HOME/inductor_dashboard
             '''
         }
-        if (test_mode == 'training')
+        if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
@@ -225,11 +225,11 @@ node(NODE_LABEL){
         }else{
             maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
         }
-        if (test_mode == 'inference')
+        if ("${test_mode}" == "inference")
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor Inference Benchmark Report (AWS)",
+                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-Report(AWS)",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -238,7 +238,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor Inference Benchmark (AWS)",
+                    subject: "Failure occurs in Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-(AWS)",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -246,11 +246,11 @@ node(NODE_LABEL){
                 )
             }
         }//inference
-        if (test_mode == 'training')
+        if ("${test_mode}" == "training")
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor Training Benchmark Report (AWS)",
+                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-Report(AWS)",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
