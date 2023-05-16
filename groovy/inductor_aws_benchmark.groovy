@@ -207,6 +207,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cp -r  ${WORKSPACE}/${_target}_odm $HOME/inductor_dashboard
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}_odm/inductor_log/ ./ && rm -rf ${_target}_odm
             '''
         }
         if ("${test_mode}" == "training")
@@ -214,6 +215,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cp -r  ${WORKSPACE}/${_target}_odm $HOME/inductor_dashboard/Train
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}_odm/inductor_log/ ./ && rm -rf ${_target}_odm
             '''
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true

@@ -119,6 +119,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''        
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
     }
