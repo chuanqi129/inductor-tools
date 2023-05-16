@@ -112,7 +112,7 @@ ARG IPEX_COMMIT=${IPEX_BRANCH}
 RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pytorch.git ipex && \
     cd ipex && git checkout ${IPEX_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py install
-ARG BENCH_COMMIT=${PT_COMMIT}
+ARG BENCH_COMMIT=main
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
     python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
