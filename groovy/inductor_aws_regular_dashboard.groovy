@@ -17,14 +17,14 @@ if ('debug' in params) {
 }
 echo "debug: $debug"
 
-aws_hostname = 'ec2-34-207-213-120.compute-1.amazonaws.com'
-if ('aws_hostname' in params) {
-    echo "aws_hostname in params"
-    if (params.aws_hostname != '') {
-        aws_hostname = params.aws_hostname
+instance_ids = 'i-039458152f180ba94'
+if ('instance_ids' in params) {
+    echo "instance_ids in params"
+    if (params.instance_ids != '') {
+        instance_ids = params.instance_ids
     }
 }
-echo "aws_hostname: $aws_hostname"
+echo "instance_ids: $instance_ids"
 
 refer_build = ''
 if( 'refer_build' in params && params.refer_build != '' ) {
@@ -38,60 +38,76 @@ if( 'gh_token' in params && params.gh_token != '' ) {
 }
 echo "gh_token: $gh_token"
 
-env._name = "$aws_hostname"
+env._name = "$instance_ids"
 env._reference = "$refer_build"
 env._gh_token = "$gh_token"
 env._target = new Date().format('yyyy_MM_dd')
 println(env._target)
 
 node(NODE_LABEL){
-    stage("prepare scripts") {
+    stage("start instance")
+    {
         deleteDir()
         checkout scm
+        sh '''
+        #!/usr/bin/env bash
+        cd $HOME && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch
+        init_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        echo init_ip is $init_ip
+        ssh -o StrictHostKeyChecking=no ubuntu@{init_ip} "pwd"
+        '''
+    }
+    stage("prepare scripts & benchmark") {
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            cd $HOME && cat .ssh/config
-            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${_name}:/home/ubuntu/docker
+            current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} &>/dev/null &" &
             '''
         }
     }
-
-    stage("launch benchmark") {
-        retry(3){
-            sh '''
-            #!/usr/bin/env bash
-            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} &>/dev/null &" &
-            '''
-        }
-    }
-
     stage("acquire logs"){
-        retry(3){
-            sh '''
-            #!/usr/bin/env bash
-            set +e
-            for t in {1..25}
-            do
-                ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_float32_inference_static.txt"
-                if [ $? -eq 0 ]; then
-                    if [ -d ${WORKSPACE}/${_target} ]; then
-                        rm -rf ${WORKSPACE}/${_target}
-                    fi
-                    mkdir -p ${WORKSPACE}/${_target}
-                    scp -r ubuntu@${_name}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
-                    break
-                else
-                    sleep 1h
-                    echo $t
+        sh '''
+        #!/usr/bin/env bash
+        set +e
+        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        for t in {1..25}
+        do
+            ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_float32_inference_static.txt"
+            if [ $? -eq 0 ]; then
+                if [ -d ${WORKSPACE}/${_target} ]; then
+                    rm -rf ${WORKSPACE}/${_target}
                 fi
-            done
-            '''
-        }
+                mkdir -p ${WORKSPACE}/${_target}
+                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                break
+            else
+                sleep 1h
+                echo $t
+                if [ $t -eq 22 ]; then
+                    echo restart instance now...
+                    $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch
+                    $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch
+                    current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+                    echo update ip $current_ip
+                    ssh -o StrictHostKeyChecking=no ubuntu@{current_ip} "pwd"
+                fi                
+            fi
+        done
+        '''
+
     }
+    stage("stop instance")
+    {
+        sh '''
+        #!/usr/bin/env bash
+        $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch
+        '''
+    }    
 
     stage("generate report"){
         retry(3){
