@@ -54,7 +54,7 @@ node(NODE_LABEL){
         cd $HOME && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch
         init_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         echo init_ip is $init_ip
-        ssh -o StrictHostKeyChecking=no ubuntu@{init_ip} "pwd"
+        ssh -o StrictHostKeyChecking=no ubuntu@${init_ip} "pwd"
         '''
     }
     stage("prepare scripts & benchmark") {
@@ -94,7 +94,7 @@ node(NODE_LABEL){
                     $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch
                     current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
                     echo update ip $current_ip
-                    ssh -o StrictHostKeyChecking=no ubuntu@{current_ip} "pwd"
+                    ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
                 fi                
             fi
         done
