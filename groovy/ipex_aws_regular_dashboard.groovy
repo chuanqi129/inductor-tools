@@ -127,7 +127,7 @@ node(NODE_LABEL){
 '''
     stage("Sent Email"){
         if ("${debug}" == "true"){
-            maillist="yudong.si@intel.com"
+            maillist="diwei.sun@intel.com"
         }else{
             maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
         }
