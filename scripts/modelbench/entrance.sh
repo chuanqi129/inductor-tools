@@ -44,6 +44,7 @@ cd /home/ubuntu/docker
 # rm finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt file
 if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
     rm finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
+    rm finished.txt
 fi
 
 # launch benchmark
