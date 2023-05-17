@@ -45,29 +45,29 @@ env._target = new Date().format('yyyy_MM_dd')
 println(env._target)
 
 node(NODE_LABEL){
-    stage("prepare scripts") {
-        deleteDir()
-        checkout scm
-        retry(3){
-            sh '''
-            #!/usr/bin/env bash
-            cd $HOME && cat .ssh/config
-            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/ipex_test.sh ubuntu@${_name}:/home/ubuntu/docker
-            '''
-        }
-    }
+    // stage("prepare scripts") {
+    //     deleteDir()
+    //     checkout scm
+    //     retry(3){
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         cd $HOME && cat .ssh/config
+    //         scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${_name}:/home/ubuntu
+    //         scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${_name}:/home/ubuntu/docker
+    //         scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
+    //         scp ${WORKSPACE}/scripts/modelbench/ipex_test.sh ubuntu@${_name}:/home/ubuntu/docker
+    //         '''
+    //     }
+    // }
 
-    stage("launch benchmark") {
-        retry(3){
-            sh '''
-            #!/usr/bin/env bash
-            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} > entrance.log 2>&1 &" &
-            '''
-        }
-    }
+    // stage("launch benchmark") {
+    //     retry(3){
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} > entrance.log 2>&1 &" &
+    //         '''
+    //     }
+    // }
 
     stage("acquire logs"){
         retry(3){
