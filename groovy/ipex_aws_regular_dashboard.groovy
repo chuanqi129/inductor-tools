@@ -102,13 +102,15 @@ node(NODE_LABEL){
                     fingerprintArtifacts: true
                 )             
             sh '''
-            #!/usr/bin/env bash        
+            #!/usr/bin/env bash      
+            source activate ipex_report  
             cd ${WORKSPACE} && mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
             cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
             '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
+                source activate ipex_report
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -t ${_target} -m all
                 '''
             }
