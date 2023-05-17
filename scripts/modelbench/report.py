@@ -704,4 +704,4 @@ if __name__ == '__main__':
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)
-    update_issue_commits()
+    # update_issue_commits()
