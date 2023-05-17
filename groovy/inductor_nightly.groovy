@@ -354,7 +354,7 @@ node(NODE_LABEL){
                     fi
                     if [ ${task_status} == "SUCCESS" ]; then
                         docker system prune -f
-                        docker login ccr-registry.caas.intel.com -u yudongsi -p 1996+SYD
+                        docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
                         docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
                     fi
                 '''
@@ -375,7 +375,7 @@ node(NODE_LABEL){
                 docker rmi -f $old_image
             fi
             docker system prune -f
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 1996+SYD
+            docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
             docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
             '''        
         }
