@@ -6,14 +6,13 @@ SHAPE=${4:-static}
 
 TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
 TORCH_BRANCH=${6:-nightly}
-TORCH_COMMIT=${7:-nightly}
+TORCH_COMMIT=${7:-9a8c655}
 
 DYNAMO_BENCH=${8:-fea73cb}
 
 IPEX_REPO=${9:-https://github.com/intel/intel-extension-for-pytorch.git}
 IPEX_BRANCH=${10:-master}
-IPEX_COMMIT=${11:master}
-
+IPEX_COMMIT=${11:80b824e2}
 
 # kill unused process
 itm_1=$(ps -ef | grep entrance.sh | awk '{print $2}')
