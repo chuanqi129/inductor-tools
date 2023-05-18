@@ -42,7 +42,6 @@ env._name = "$aws_hostname"
 env._reference = "$refer_build"
 env._gh_token = "$gh_token"
 env._target = new Date().format('yyyy_MM_dd')
-env._target = "2023_05_17"
 println(env._target)
 
 node(NODE_LABEL){
