@@ -45,7 +45,6 @@ cd /home/ubuntu/docker
 if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
     rm finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
     rm finished.txt
-    rm ../entrance.log
 fi
 
 # launch benchmark
