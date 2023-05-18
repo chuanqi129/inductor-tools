@@ -38,7 +38,7 @@ if( 'gh_token' in params && params.gh_token != '' ) {
 }
 echo "gh_token: $gh_token"
 
-env._name = "$instance_ids"
+env._aws_id = "$instance_ids"
 env._reference = "$refer_build"
 env._gh_token = "$gh_token"
 env._target = new Date().format('yyyy_MM_dd')
