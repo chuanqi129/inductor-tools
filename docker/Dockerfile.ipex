@@ -57,7 +57,6 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         setuptools \
         jemalloc \
         openssl \
-        cpuid \
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
