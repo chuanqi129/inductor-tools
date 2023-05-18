@@ -17,7 +17,7 @@ AUDIO=${12:-a8dc4de}
 TEXT=${13:-b0ebddc}
 VISION=${14:-0370134}
 DATA=${15:-11bb5b8}
-TORCH_BENCH=${16:-f73973d}
+TORCH_BENCH=${16:-33128f1}
 
 
 
