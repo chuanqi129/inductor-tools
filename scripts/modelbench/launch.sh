@@ -5,19 +5,19 @@ TEST_SHAPE=${4:-static}
 
 TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
 TORCH_BRANCH=${6:-nightly}
-TORCH_COMMIT=${7:-nightly}
+TORCH_COMMIT=${7:-9a8c655}
 
-DYNAMO_BENCH=${8:-nightly}
+DYNAMO_BENCH=${8:-cf05864}
 
 IPEX_REPO=${9:-https://github.com/intel/intel-extension-for-pytorch.git}
 IPEX_BRANCH=${10:-master}
-IPEX_COMMIT=${11:master}
+IPEX_COMMIT=${11:-80b824e2}
 
-AUDIO=${12:-nightly}
-TEXT=${13:-nightly}
-VISION=${14:-nightly}
-DATA=${15:-nightly}
-TORCH_BENCH=${16:-main}
+AUDIO=${12:-a8dc4de}
+TEXT=${13:-b0ebddc}
+VISION=${14:-0370134}
+DATA=${15:-11bb5b8}
+TORCH_BENCH=${16:-f73973d}
 
 
 
