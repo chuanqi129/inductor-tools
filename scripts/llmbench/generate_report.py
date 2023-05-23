@@ -8,7 +8,6 @@ args = parser.parse_args()
 commit_list=[]
 url_list=[]
 result = pd.read_table('result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-last_result = pd.read_table('llm_bench/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
 componment = ["benchmark","pytorch","vision","text","audio","data"]
 for item in componment:
     sha_short = result.loc[componment.index(item), "commit"][-7:] if item != "benchmark" \
@@ -17,15 +16,40 @@ for item in componment:
     url_list.append("https://github.com/pytorch/"+item+"/commit/"+sha_short)
 precision = result.loc[7,"commit"]
 latency = result.loc[8,"commit"]
-last_latency = last_result.loc[8,"commit"]
+
 latency_gptj = latency.split('ms.')[0]
-last_latency_gptj = last_latency.split('ms.')[0]
-ratio_gptj = float(last_latency_gptj) / float(latency_gptj)
-
 latency_llama = latency.split('ms.')[1]
-last_latency_llama = last_latency.split('ms.')[1]
-ratio_llama = float(last_latency_llama) / float(latency_llama)
+latency_gptj_cppwrapper = latency.split('ms.')[2]
+latency_llama_cppwrapper = latency.split('ms.')[3]
 
+last_latency_gptj=0
+last_latency_gptj_cppwrapper=0
+last_latency_llama=0
+last_latency_llama_cppwrapper=0
+
+try:
+    last_result = pd.read_table('llm_bench/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+    
+    last_latency = last_result.loc[8,"commit"]
+    last_latency_gptj = last_latency.split('ms.')[0]
+    ratio_gptj = float(last_latency_gptj) / float(latency_gptj)
+    last_latency_llama = last_latency.split('ms.')[1]
+    ratio_llama = float(last_latency_llama) / float(latency_llama)
+
+    last_latency_gptj_cppwrapper = last_latency.split('ms.')[2]
+    ratio_gptj_cppwrapper = float(last_latency_gptj_cppwrapper) / float(latency_gptj_cppwrapper)
+    last_latency_llama_cppwrapper = last_latency.split('ms.')[3]
+    ratio_llama_cppwrapper = float(last_latency_llama_cppwrapper) / float(latency_llama_cppwrapper)    
+except:
+    last_latency_gptj=0
+    last_latency_gptj_cppwrapper=0
+    last_latency_llama=0
+    last_latency_llama_cppwrapper=0
+    ratio_gptj=0
+    ratio_llama=0
+    ratio_gptj_cppwrapper=0
+    ratio_llama_cppwrapper=0
+    pass
 
 transformers = result.loc[6,"commit"]
 
@@ -66,7 +90,28 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
             <td><p style="text-align:center">{last_latency_llama}ms</p></td>                                    
             <td><p style="text-align:center">{ratio_llama}</p></td>                                    
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">gptj6B(cpp_wrapper)</p></td> 
+            <td><p style="text-align:center">{precision}</p></td> 
+            <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
+            <td><p style="text-align:center">True</p></td> 
+            <td><p style="text-align:center">{latency_gptj_cppwrapper}ms</p></td>                                  
+            <td><p style="text-align:center">{last_latency_gptj_cppwrapper}ms</p></td>                                 
+            <td><p style="text-align:center">{ratio_gptj_cppwrapper}</p></td>                                 
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">llama7B(wrapper)</p></td> 
+            <td><p style="text-align:center">{precision}</p></td> 
+            <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
+            <td><p style="text-align:center">True</p></td> 
+            <td><p style="text-align:center">{latency_llama_cppwrapper}ms</p></td>                                    
+            <td><p style="text-align:center">{last_latency_llama_cppwrapper}ms</p></td>                                    
+            <td><p style="text-align:center">{ratio_llama_cppwrapper}</p></td>                                    
         </tr>         
+
     </table> 
     <p>SW Info:</p> 
     <table border="1"> 

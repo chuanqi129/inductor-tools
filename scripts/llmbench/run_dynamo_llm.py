@@ -31,6 +31,7 @@ parser.add_argument('--max-new-tokens', default=32, type=int, help="output max n
 parser.add_argument('--greedy', action='store_true')
 # parser.add_argument('--use_ipex_optimize_api', action='store_true')
 parser.add_argument('--use_dynamo', action='store_true')
+parser.add_argument('--cpp_wrapper', action='store_true')
 parser.add_argument('--profile', action='store_true')
 
 
@@ -45,6 +46,10 @@ if args.greedy:
 else:
     generate_kwargs = dict(do_sample=False, temperature=0.9, num_beams=4)
 
+if args.cpp_wrapper:
+    config.cpp_wrapper = True
+else:
+    config.cpp_wrapper = False
 
 def run_benchmark(model):
     # load model
