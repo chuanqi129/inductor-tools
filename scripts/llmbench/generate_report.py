@@ -66,10 +66,21 @@ report_content=f'''<!DOCTYPE html>
             <th>max-new-tokens</th> 
             <th>greedy</th> 
             <th>use_dynamo</th> 
+            <th>cpp_wrapper</th> 
             <th>latency</th> 
             <th>latency(lastsuccessful)</th> 
-            <th>ratio(last / current)</th>
-            
+            <th>ratio(last / current)</th>  
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">gptj6B</p></td> 
+            <td><p style="text-align:center">{precision}</p></td> 
+            <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
+            <td><p style="text-align:center">True</p></td>
+            <td><p style="text-align:center">False</p></td>
+            <td><p style="text-align:center">{latency_gptj}ms</p></td>                                  
+            <td><p style="text-align:center">{last_latency_gptj}ms</p></td>                                 
+            <td><p style="text-align:center">{ratio_gptj}</p></td>                                 
         </tr> 
         <tr> 
             <td><p style="text-align:center">gptj6B</p></td> 
@@ -77,41 +88,33 @@ report_content=f'''<!DOCTYPE html>
             <td><p style="text-align:center">32</p></td> 
             <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">{latency_gptj}ms</p></td>                                  
-            <td><p style="text-align:center">{last_latency_gptj}ms</p></td>                                 
-            <td><p style="text-align:center">{ratio_gptj}</p></td>                                 
-        </tr> 
+            <td><p style="text-align:center">True</p></td>
+            <td><p style="text-align:center">{latency_gptj_cppwrapper}ms</p></td>                                  
+            <td><p style="text-align:center">{last_latency_gptj_cppwrapper}ms</p></td>                                 
+            <td><p style="text-align:center">{ratio_gptj_cppwrapper}</p></td>                                 
+        </tr>         
+        <tr> 
+            <td><p style="text-align:center">llama7B</p></td> 
+            <td><p style="text-align:center">{precision}</p></td> 
+            <td><p style="text-align:center">32</p></td> 
+            <td><p style="text-align:center">False</p></td> 
+            <td><p style="text-align:center">True</p></td>
+            <td><p style="text-align:center">False</p></td>
+            <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
+            <td><p style="text-align:center">{last_latency_llama}ms</p></td>                                    
+            <td><p style="text-align:center">{ratio_llama}</p></td>                                    
+        </tr>
         <tr> 
             <td><p style="text-align:center">llama7B</p></td> 
             <td><p style="text-align:center">{precision}</p></td> 
             <td><p style="text-align:center">32</p></td> 
             <td><p style="text-align:center">False</p></td> 
             <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">{latency_llama}ms</p></td>                                    
-            <td><p style="text-align:center">{last_latency_llama}ms</p></td>                                    
-            <td><p style="text-align:center">{ratio_llama}</p></td>                                    
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">gptj6B(cpp_wrapper)</p></td> 
-            <td><p style="text-align:center">{precision}</p></td> 
-            <td><p style="text-align:center">32</p></td> 
-            <td><p style="text-align:center">False</p></td> 
-            <td><p style="text-align:center">True</p></td> 
-            <td><p style="text-align:center">{latency_gptj_cppwrapper}ms</p></td>                                  
-            <td><p style="text-align:center">{last_latency_gptj_cppwrapper}ms</p></td>                                 
-            <td><p style="text-align:center">{ratio_gptj_cppwrapper}</p></td>                                 
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">llama7B(wrapper)</p></td> 
-            <td><p style="text-align:center">{precision}</p></td> 
-            <td><p style="text-align:center">32</p></td> 
-            <td><p style="text-align:center">False</p></td> 
-            <td><p style="text-align:center">True</p></td> 
+            <td><p style="text-align:center">True</p></td>
             <td><p style="text-align:center">{latency_llama_cppwrapper}ms</p></td>                                    
             <td><p style="text-align:center">{last_latency_llama_cppwrapper}ms</p></td>                                    
             <td><p style="text-align:center">{ratio_llama_cppwrapper}</p></td>                                    
-        </tr>         
-
+        </tr> 
     </table> 
     <p>SW Info:</p> 
     <table border="1"> 
