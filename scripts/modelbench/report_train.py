@@ -251,7 +251,7 @@ def html_generate():
         content = pd.read_excel(args.target+'/inductor_log/inductor_model_training_check '+args.target+'.xlsx',sheet_name=[0,1,2])
         swinfo= pd.DataFrame(content[0]).to_html(classes="table",index = False)
         failures= pd.DataFrame(content[1]).to_html(classes="table",index = False)
-        details= pd.DataFrame(content[2],index=range(10)).to_html(classes="table",index = False,header=False,na_rep='*')
+        details= pd.DataFrame(content[2],index=range(11)).to_html(classes="table",index = False,header=False,na_rep='*')
         with open(args.target+'/inductor_log/inductor_model_training_bench.html',mode = "a") as f:
             f.write(html_head()+"<p>SW info</p>"+swinfo+"<p>Failures</p>"+failures+"<p>Details</p>"+details+html_tail())
         f.close()
