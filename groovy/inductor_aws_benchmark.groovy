@@ -186,7 +186,7 @@ node(NODE_LABEL){
         {
             if(refer_build != '0') {
                 copyArtifacts(
-                    projectaws_id: currentBuild.projectName,
+                    projectName: currentBuild.projectName,
                     selector: specific("${refer_build}"),
                     fingerprintArtifacts: true
                 )           
@@ -206,7 +206,7 @@ node(NODE_LABEL){
         {
             if(refer_build != '0') {
                 copyArtifacts(
-                    projectaws_id: currentBuild.projectName,
+                    projectName: currentBuild.projectName,
                     selector: specific("${refer_build}"),
                     fingerprintArtifacts: true
                 )           
