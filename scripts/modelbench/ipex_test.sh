@@ -28,6 +28,7 @@ python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
 	print("torchdata : ", torchdata.__version__)''' >>${curdir}/${LOG_DIR}/version.txt
 echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 
+git reset --hard
 sed -i "s%torch._dynamo.config.base_dir%'/workspace/pytorch'%" ./benchmarks/dynamo/common.py
 sed -i '/\"inductor\": \"--inference -n50 --inductor \"/a\"ipex\": \"--backend=ipex --inference \",' ./benchmarks/dynamo/runner.py
 
