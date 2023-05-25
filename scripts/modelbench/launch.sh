@@ -15,6 +15,9 @@ VISION=${11:-f2009ab}
 DATA=${12:-5cb3e6d}
 TORCH_BENCH=${13:-a0848e19}
 
+THREADS=${14:-all}
+CHANNELS=${15:-first}
+
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
 echo "TEST_MODE" : $TEST_MODE
@@ -28,6 +31,8 @@ echo "TEXT" : $TEXT
 echo "VISION" : $VISION
 echo "DATA" : $DATA
 echo "TORCH_BENCH" : $TORCH_BENCH
+echo "THREADS" : $THREADS
+echo "CHANNELS" : $CHANNELS
 
 # clean up
 docker stop $(docker ps -aq)
@@ -41,13 +46,13 @@ fi
 
 DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t pt_inductor:$TAG -f Dockerfile --target image .
 
-docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log pt_inductor:$TAG
+docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 20G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log pt_inductor:$TAG
 
 docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 
 if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh all first $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
 elif [ $TEST_MODE == "training" ]; then
-    docker exec -i $USER bash -c "bash inductor_train.sh first $PRECISION inductor_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
 fi
