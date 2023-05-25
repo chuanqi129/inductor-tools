@@ -92,7 +92,7 @@ if ('TORCH_COMMIT' in params) {
 }
 echo "TORCH_COMMIT: $TORCH_COMMIT"
 
-IPEX_REPO = 'https://github.com/pytorch/pytorch.git'
+IPEX_REPO = 'https://github.com/intel/intel-extension-for-pytorch.git'
 if ('IPEX_REPO' in params) {
     echo "IPEX_REPO in params"
     if (params.IPEX_REPO != '') {
