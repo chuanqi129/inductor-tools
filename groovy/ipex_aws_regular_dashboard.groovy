@@ -105,7 +105,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash      
             source activate ipex_report  
             cd ${WORKSPACE}/${_target} && mv ipex_log ${_target} && mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
-            cp ${WORKSPACE}scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
+            cp ${WORKSPACE}/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
             '''
             }else{
                 sh '''
