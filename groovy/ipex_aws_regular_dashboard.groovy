@@ -38,10 +38,218 @@ if( 'gh_token' in params && params.gh_token != '' ) {
 }
 echo "gh_token: $gh_token"
 
+precision = 'float32'
+if ('precision' in params) {
+    echo "precision in params"
+    if (params.precision != '') {
+        precision = params.precision
+    }
+}
+echo "precision: $precision"
+
+test_mode = 'inference'
+if ('test_mode' in params) {
+    echo "test_mode in params"
+    if (params.test_mode != '') {
+        test_mode = params.test_mode
+    }
+}
+echo "test_mode: $test_mode"
+
+shape = 'static'
+if ('shape' in params) {
+    echo "shape in params"
+    if (params.shape != '') {
+        shape = params.shape
+    }
+}
+echo "shape: $shape"
+
+TORCH_REPO = 'https://github.com/pytorch/pytorch.git'
+if ('TORCH_REPO' in params) {
+    echo "TORCH_REPO in params"
+    if (params.TORCH_REPO != '') {
+        TORCH_REPO = params.TORCH_REPO
+    }
+}
+echo "TORCH_REPO: $TORCH_REPO"
+
+TORCH_BRANCH= 'nightly'
+if ('TORCH_BRANCH' in params) {
+    echo "TORCH_BRANCH in params"
+    if (params.TORCH_BRANCH != '') {
+        TORCH_BRANCH = params.TORCH_BRANCH
+    }
+}
+echo "TORCH_BRANCH: $TORCH_BRANCH"
+
+TORCH_COMMIT= 'nightly'
+if ('TORCH_COMMIT' in params) {
+    echo "TORCH_COMMIT in params"
+    if (params.TORCH_COMMIT != '') {
+        TORCH_COMMIT = params.TORCH_COMMIT
+    }
+}
+echo "TORCH_COMMIT: $TORCH_COMMIT"
+
+IPEX_REPO = 'https://github.com/pytorch/pytorch.git'
+if ('IPEX_REPO' in params) {
+    echo "IPEX_REPO in params"
+    if (params.IPEX_REPO != '') {
+        IPEX_REPO = params.IPEX_REPO
+    }
+}
+echo "IPEX_REPO: $IPEX_REPO"
+
+IPEX_BRANCH= 'master'
+if ('IPEX_BRANCH' in params) {
+    echo "IPEX_BRANCH in params"
+    if (params.IPEX_BRANCH != '') {
+        IPEX_BRANCH = params.IPEX_BRANCH
+    }
+}
+echo "IPEX_BRANCH: $IPEX_BRANCH"
+
+IPEX_COMMIT= 'master'
+if ('IPEX_COMMIT' in params) {
+    echo "IPEX_COMMIT in params"
+    if (params.IPEX_COMMIT != '') {
+        IPEX_COMMIT = params.IPEX_COMMIT
+    }
+}
+echo "IPEX_COMMIT: $IPEX_COMMIT"
+
+DYNAMO_BENCH= 'fea73cb'
+if ('DYNAMO_BENCH' in params) {
+    echo "DYNAMO_BENCH in params"
+    if (params.DYNAMO_BENCH != '') {
+        DYNAMO_BENCH = params.DYNAMO_BENCH
+    }
+}
+echo "DYNAMO_BENCH: $DYNAMO_BENCH"
+
+TORCH_AUDIO_BRANCH= 'nightly'
+if ('TORCH_AUDIO_BRANCH' in params) {
+    echo "TORCH_AUDIO_BRANCH in params"
+    if (params.TORCH_AUDIO_BRANCH != '') {
+        TORCH_AUDIO_BRANCH = params.TORCH_AUDIO_BRANCH
+    }
+}
+echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
+
+AUDIO= '0a652f5'
+if ('AUDIO' in params) {
+    echo "AUDIO in params"
+    if (params.AUDIO != '') {
+        AUDIO = params.AUDIO
+    }
+}
+echo "AUDIO: $AUDIO"
+
+TORCH_TEXT_BRANCH= 'nightly'
+if ('TORCH_TEXT_BRANCH' in params) {
+    echo "TORCH_TEXT_BRANCH in params"
+    if (params.TORCH_TEXT_BRANCH != '') {
+        TORCH_TEXT_BRANCH = params.TORCH_TEXT_BRANCH
+    }
+}
+echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
+
+TEXT= 'c4ad5dd'
+if ('TEXT' in params) {
+    echo "TEXT in params"
+    if (params.TEXT != '') {
+        TEXT = params.TEXT
+    }
+}
+echo "TEXT: $TEXT"
+
+TORCH_VISION_BRANCH= 'nightly'
+if ('TORCH_VISION_BRANCH' in params) {
+    echo "TORCH_VISION_BRANCH in params"
+    if (params.TORCH_VISION_BRANCH != '') {
+        TORCH_VISION_BRANCH = params.TORCH_VISION_BRANCH
+    }
+}
+echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
+
+VISION= 'f2009ab'
+if ('VISION' in params) {
+    echo "VISION in params"
+    if (params.VISION != '') {
+        VISION = params.VISION
+    }
+}
+echo "VISION: $VISION"
+
+TORCH_DATA_BRANCH= 'nightly'
+if ('TORCH_DATA_BRANCH' in params) {
+    echo "TORCH_DATA_BRANCH in params"
+    if (params.TORCH_DATA_BRANCH != '') {
+        TORCH_DATA_BRANCH = params.TORCH_DATA_BRANCH
+    }
+}
+echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
+
+DATA= '5cb3e6d'
+if ('DATA' in params) {
+    echo "DATA in params"
+    if (params.DATA != '') {
+        DATA = params.DATA
+    }
+}
+echo "DATA: $DATA"
+
+TORCH_BENCH_BRANCH= 'main'
+if ('TORCH_BENCH_BRANCH' in params) {
+    echo "TORCH_BENCH_BRANCH in params"
+    if (params.TORCH_BENCH_BRANCH != '') {
+        TORCH_BENCH_BRANCH = params.TORCH_BENCH_BRANCH
+    }
+}
+echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
+
+TORCH_BENCH= 'a0848e19'
+if ('TORCH_BENCH' in params) {
+    echo "TORCH_BENCH in params"
+    if (params.TORCH_BENCH != '') {
+        TORCH_BENCH = params.TORCH_BENCH
+    }
+}
+echo "TORCH_BENCH: $TORCH_BENCH"
+
+THREADS= 'all'
+if ('THREADS' in params) {
+    echo "THREADS in params"
+    if (params.THREADS != '') {
+        THREADS = params.THREADS
+    }
+}
+echo "THREADS: $THREADS"
+
+
 env._name = "$aws_hostname"
 env._reference = "$refer_build"
 env._gh_token = "$gh_token"
 env._target = new Date().format('yyyy_MM_dd')
+
+env._precision = "$precision"
+env._test_mode = "$test_mode"
+env._shape="$shape"
+env._TORCH_REPO = "$TORCH_REPO"
+env._TORCH_BRANCH = "$TORCH_BRANCH"
+env._TORCH_COMMIT = "$TORCH_COMMIT"
+env._IPEX_REPO = "$IPEX_REPO"
+env._IPEX_BRANCH = "$IPEX_BRANCH"
+env._IPEX_COMMIT = "$IPEX_COMMIT"
+env._DYNAMO_BENCH = "$DYNAMO_BENCH"
+
+env._AUDIO = "$AUDIO"
+env._TEXT = "$TEXT"
+env._VISION = "$VISION"
+env._DATA = "$DATA"
+env._TORCH_BENCH = "$TORCH_BENCH"
+env._THREADS = "$THREADS"
 println(env._target)
 
 node(NODE_LABEL){
@@ -64,7 +272,7 @@ node(NODE_LABEL){
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} > entrance.log 2>&1 &" &
+            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_IPEX_REPO} ${_IPEX_BRANCH} ${_IPEX_COMMIT}  ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} > entrance.log 2>&1 &" &
             '''
         }
     }

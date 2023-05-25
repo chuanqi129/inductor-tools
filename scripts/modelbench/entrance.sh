@@ -12,7 +12,14 @@ DYNAMO_BENCH=${8:-cf05864}
 
 IPEX_REPO=${9:-https://github.com/intel/intel-extension-for-pytorch.git}
 IPEX_BRANCH=${10:-master}
-IPEX_COMMIT=${11:-nightly}
+IPEX_COMMIT=${11:-12e5cb4}
+
+AUDIO=${12:-0a652f5}
+TEXT=${13:-c4ad5dd}
+VISION=${14:-f2009ab}
+DATA=${15:-5cb3e6d}
+TORCH_BENCH=${16:-a0848e19}
+THREAD=${17:-all}
 
 # kill unused process
 itm_1=$(ps -ef | grep entrance.sh | awk '{print $2}')
