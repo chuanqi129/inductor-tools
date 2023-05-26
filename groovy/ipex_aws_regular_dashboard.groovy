@@ -312,7 +312,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash      
             source activate ipex_report  
-            cd ${WORKSPACE} &&  mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
+            cd ${WORKSPACE} &&  mkdir -p refer && cp -r 2023_05_17/ipex_log refer && rm -rf ipex_log
             cp ${WORKSPACE}/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
             '''
             }else{
@@ -328,7 +328,7 @@ node(NODE_LABEL){
     stage('archiveArtifacts') {
             sh '''
             #!/usr/bin/env bash
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
+            cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
