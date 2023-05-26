@@ -276,25 +276,29 @@ def update_failures(excel,target_thread):
         perf_data=pd.read_csv(perf_path)
         acc_data=pd.read_csv(acc_path)
         
-        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
+        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='infra_error') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
         acc_data.insert(loc=2, column='acc_suite', value=suite)
         tmp.append(acc_data)
 
-        perf_data=perf_data.loc[perf_data['speedup'] ==0,:]
+        perf_data=perf_data.loc[(perf_data['batch_size'] ==0) | (perf_data['speedup'] ==0) | (perf_data['speedup'] =='infra_error'),:]
         perf_data.insert(loc=3, column='pef_suite', value=suite)
         tmp.append(perf_data)
 
     failures=pd.concat(tmp)
     failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
-    failures['suite'] = failures.apply(lambda x: x['acc_suite'] if x['acc_suite'] is not None else x['perf_suite'], axis=1)
+    failures['pef_suite'].fillna(0,inplace=True)
+    failures['acc_suite'].fillna(0,inplace=True)
+    failures['suite'] = failures.apply(lambda x: x['pef_suite'] if x['acc_suite']==0 else x['acc_suite'], axis=1) 
+    failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'}) 
 
-    failures['accuracy'].replace(["fail_to_run","fail_accuracy","0.0000"],["X","X","X"],inplace=True)
-    failures['speedup'].replace([0],["X"],inplace=True)
-    
-    failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'})
-    failures=failures.groupby('name').sum().reset_index()
-    failures['perf'].replace([0],["√"],inplace=True)
-    failures['accuracy'].replace([0],["√"],inplace=True)
+    # 1 -> failed
+    failures['accuracy'].replace(['infra_error',"fail_to_run","fail_accuracy","0.0000"],[1,1,1,1],inplace=True)
+    failures['perf'].replace([0,"infra_error"],[1,1],inplace=True)
+    failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
+    failures=failures.groupby(by=['name']).sum().reset_index()
+    failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
+    failures['perf'].replace([0,1],["√","X"],inplace=True)
+    failures['accuracy'].replace([0,1],["√","X"],inplace=True)
 
     # fill failure reasons
     failures['name']=failures['name'].drop_duplicates()
@@ -362,10 +366,14 @@ def process(input):
     if args.reference is not None:
         data_new=input[['name','batch_size_x','speedup_x','abs_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new'})
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
+        data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
         data_old=input[['batch_size_y','speedup_y','abs_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old'})    
         data_old['inductor_old']=data_old['inductor_old'].astype(float).div(1000)
+        data_old['speed_up_old']=data_old['speed_up_old'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_old['eager_old'] = data_old['speed_up_old'] * data_old['inductor_old']
+        input['speedup_x']=input['speedup_x'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
+        input['speedup_y']=input['speedup_y'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_ratio= pd.DataFrame(round(input['speedup_x'] / input['speedup_y'],2),columns=['Ratio Speedup(New/old)'])
         data_ratio['Eager Ratio(old/new)'] = pd.DataFrame(round(data_old['eager_old'] / data_new['eager_new'],2))
         data_ratio['Inductor Ratio(old/new)'] = pd.DataFrame(round(data_old['inductor_old'] / data_new['inductor_new'],2))
@@ -401,6 +409,7 @@ def process(input):
     else:
         data_new=input[['name','batch_size','speedup','abs_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
+        data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
         data = StyleFrame({'name': list(data_new['name']),
                     'batch_size': list(data_new['batch_size']),
