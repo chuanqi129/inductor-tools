@@ -70,14 +70,14 @@ if ('LLMBench' in params) {
 }
 echo "LLMBench: $LLMBench"
 
-transformers = '4.24.0'
-if ('transformers' in params) {
-    echo "transformers in params"
-    if (params.transformers != '') {
-        transformers = params.transformers
+GNNBench = 'false'
+if ('GNNBench' in params) {
+    echo "GNNBench in params"
+    if (params.GNNBench != '') {
+        GNNBench = params.GNNBench
     }
 }
-echo "transformers: $transformers"
+echo "GNNBench: $GNNBench"
 
 PT_REPO = 'https://github.com/pytorch/pytorch.git'
 if ('PT_REPO' in params) {
@@ -292,6 +292,7 @@ println(env._VERSION)
 
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env._NODE = "$NODE_LABEL"
+env._image_tag = "$image_tag"
 
 def cleanup(){
     try {
@@ -340,14 +341,13 @@ node(NODE_LABEL){
             task_number = image_build_job.number
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
                 sh '''#!/bin/bash
-                    tag=${image_tag}
                     old_container=`docker ps |grep $USER |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
                         docker rm $old_container
                         docker container prune -f
                     fi
-                    old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
+                    old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
                     old_image=`echo $old_image_id| awk '{print $1}'`
                     if [ -n "${old_image}" ]; then
                         docker rmi -f $old_image
@@ -355,76 +355,108 @@ node(NODE_LABEL){
                     if [ ${task_status} == "SUCCESS" ]; then
                         docker system prune -f
                         docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
-                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
+                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     fi
                 '''
             }           
         }else {
             sh '''
             #!/usr/bin/env bash
-            tag=${image_tag}
             old_container=`docker ps |grep $USER |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
                 docker container prune -f
             fi
-            old_image_id=`docker images|grep pt_inductor|grep ${tag}|awk '{print $3}'`
+            old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
             old_image=`echo $old_image_id| awk '{print $1}'`
             if [ -n "${old_image}" ]; then
                 docker rmi -f $old_image
             fi
             docker system prune -f
             docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
-            docker pull ${DOCKER_IMAGE_NAMESPACE}:${tag}
+            docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
             '''        
         }
     }
-    stage('login container & prepare scripts & run') {
-        echo 'login container & prepare scripts & run......'
+
+    stage('OPBench') {
         if ("${OPBench}" == "true") {
+            echo 'OPBench......'
             sh '''
             #!/usr/bin/env bash
-            tag=${image_tag}
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/microbench/microbench_parser.py $USER:/workspace/pytorch
-            docker cp scripts/microbench/microbench.sh $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
-            '''
-        }
-        if ("${ModelBench}" == "true") {
-            sh '''
-            #!/usr/bin/env bash
-            tag=${image_tag}
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/.cache:/root/.cache -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
-            docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log;cp inductor_model_bench.html inductor_log"
-            '''
-        }
-    }
-    stage("LLMBench"){
-        retry(3){
-            if ("${LLMBench}" == "true") {
-            echo 'LLMBench......'
-            sh '''
-            #!/usr/bin/env bash
-            tag=${image_tag}
             old_container=`docker ps |grep $USER |awk '{print $1}'`
             if [ -n "${old_container}" ]; then
                 docker stop $old_container
                 docker rm $old_container
                 docker container prune -f
             fi
-            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/huggingface:/workspace/huggingface -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${tag}
-            docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
-            docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
-            docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench
-            docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench"         
+            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+            docker cp scripts/microbench/microbench_parser.py $USER:/workspace/pytorch
+            docker cp scripts/microbench/microbench.sh $USER:/workspace/pytorch
+            docker exec -i $USER bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
-            }
         }
-    }
+    }//OPBench
+
+    stage("ModelBench"){
+        if ("${ModelBench}" == "true") {
+            echo 'ModelBench......'
+            sh '''
+            #!/usr/bin/env bash
+            old_container=`docker ps |grep $USER |awk '{print $1}'`
+            if [ -n "${old_container}" ]; then
+                docker stop $old_container
+                docker rm $old_container
+                docker container prune -f
+            fi            
+            docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/.cache:/root/.cache -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+            docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
+            docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch
+            docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log;cp inductor_model_bench.html inductor_log"
+            '''
+        }
+    }//ModelBench
+
+    stage("LLMBench"){
+        if ("${LLMBench}" == "true") {
+        echo 'LLMBench......'
+        sh '''
+        #!/usr/bin/env bash
+        old_container=`docker ps |grep $USER |awk '{print $1}'`
+        if [ -n "${old_container}" ]; then
+            docker stop $old_container
+            docker rm $old_container
+            docker container prune -f
+        fi
+        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/huggingface:/workspace/huggingface -v ${WORKSPACE}/llm_bench:/workspace/pytorch/llm_bench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
+        docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
+        docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench
+        docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench"         
+        '''
+        }
+    }//LLMBench
+
+    stage("GNNBench"){
+        if ("${GNNBench}" == "true") {
+        echo 'GNNBench......'
+        sh '''
+        #!/usr/bin/env bash
+        old_container=`docker ps |grep $USER |awk '{print $1}'`
+        if [ -n "${old_container}" ]; then
+            docker stop $old_container
+            docker rm $old_container
+            docker container prune -f
+        fi
+        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/dataset:/workspace/dataset -v ${WORKSPACE}/gnn_bench:/workspace/gnn_bench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        docker cp scripts/gnnbench/gnn_bench.sh $USER:/workspace
+        docker cp scripts/gnnbench/generate_report.py $USER:/workspace/gnn_bench
+        docker exec -i $USER bash -c "cd /workspace;bash gnn_bench.sh gnn_bench"
+        '''
+        }
+    }//GNNBench    
+    
     stage("Generate Report") {
         if ("${LLMBench}" == "true") {
             if(refer_build != '0') {
@@ -439,7 +471,21 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             docker exec -i $USER bash -c "cd llm_bench;python generate_report.py --url ${BUILD_URL};rm -rf llm_bench;rm generate_report.py"
             '''
-        }
+        }//LLMBench_report
+        if ("${GNNBench}" == "true") {
+            if(refer_build != '0') {
+                copyArtifacts(
+                    projectName: currentBuild.projectName,
+                    selector: specific("${refer_build}"),
+                    filter: 'gnn_bench/*.txt',
+                    fingerprintArtifacts: true,
+                    target: "gnn_bench/")
+            }
+            sh '''
+            #!/usr/bin/env bash
+            docker exec -i $USER bash -c "cd gnn_bench;python generate_report.py --url ${BUILD_URL};rm -rf gnn_bench;rm generate_report.py"
+            '''
+        }//GNNBench_report       
     } 
     stage('archiveArtifacts') {
         if ("${OPBench}" == "true"){
@@ -451,6 +497,9 @@ node(NODE_LABEL){
         if ("${LLMBench}" == "true") {
             archiveArtifacts artifacts: "**/llm_bench/**", fingerprint: true
         }
+        if ("${GNNBench}" == "true") {
+            archiveArtifacts artifacts: "**/gnn_bench/**", fingerprint: true
+        }        
     }
     stage("Sent Email"){
         if ("${debug}" == "true"){
@@ -517,6 +566,26 @@ node(NODE_LABEL){
                     body: 'Job build failed, please double check in ${BUILD_URL}'
                 )
             }
-        }//LLMBench                 
+        }//LLMBench
+        if ("${GNNBench}" == "true"){
+            if (fileExists("${WORKSPACE}/gnn_bench/gnn_report.html") == true){
+                emailext(
+                    subject: "Torchinductor GNNBench Report",
+                    mimeType: "text/html",
+                    attachmentsPattern: "**/gnn_bench/result.txt",
+                    from: "pytorch_inductor_val@intel.com",
+                    to: maillist,
+                    body: '${FILE,path="gnn_bench/gnn_report.html"}'
+                )
+            }else{
+                emailext(
+                    subject: "Failure occurs in Torchinductor GNNBench",
+                    mimeType: "text/html",
+                    from: "pytorch_inductor_val@intel.com",
+                    to: maillist,
+                    body: 'Job build failed, please double check in ${BUILD_URL}'
+                )
+            }
+        }//GNNBench                             
     } 
 }
