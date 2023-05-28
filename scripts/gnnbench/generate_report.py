@@ -23,14 +23,14 @@ torch_geometric = result.loc[7, "commit"]
 ogb = result.loc[8, "commit"]
 
 # results
-GCN_Vanilla_time = result.loc[9, "commit"]
-GCN_Compiled_time = result.loc[10, "commit"]
-GraphSAGE_Vanilla_time = result.loc[11, "commit"]
-GraphSAGE_Compiled_time = result.loc[12, "commit"]
-GIN_Vanilla_time = result.loc[13, "commit"]
-GIN_Compiled_time = result.loc[14, "commit"]
-EdgeCNN_Vanilla_time = result.loc[15, "commit"]
-EdgeCNN_Compiled_time = result.loc[16, "commit"]
+GCN_Vanilla_time = result.loc[9, "commit"].split("s")[0]
+GCN_Compiled_time = result.loc[10, "commit"].split("s")[0]
+GraphSAGE_Vanilla_time = result.loc[11, "commit"].split("s")[0]
+GraphSAGE_Compiled_time = result.loc[12, "commit"].split("s")[0]
+GIN_Vanilla_time = result.loc[13, "commit"].split("s")[0]
+GIN_Compiled_time = result.loc[14, "commit"].split("s")[0]
+EdgeCNN_Vanilla_time = result.loc[15, "commit"].split("s")[0]
+EdgeCNN_Compiled_time = result.loc[16, "commit"].split("s")[0]
 gnn_train_accuracy_use_sage = result.loc[17, "commit"]
 gnn_valid_accuracy_use_sage = result.loc[18, "commit"]
 
@@ -51,14 +51,14 @@ try:
     last_result = pd.read_table('gnn_bench/result.txt', sep='\:',
                                 header=None, names=['item', 'commit'], engine='python')
 
-    last_GCN_Vanilla_time = last_result.loc[9, "commit"]
-    last_GCN_Compiled_time = last_result.loc[10, "commit"]
-    last_GraphSAGE_Vanilla_time = last_result.loc[11, "commit"]
-    last_GraphSAGE_Compiled_time = last_result.loc[12, "commit"]
-    last_GIN_Vanilla_time = last_result.loc[13, "commit"]
-    last_GIN_Compiled_time = last_result.loc[14, "commit"]
-    last_EdgeCNN_Vanilla_time = last_result.loc[15, "commit"]
-    last_EdgeCNN_Compiled_time = last_result.loc[16, "commit"]
+    last_GCN_Vanilla_time = last_result.loc[9, "commit"].split("s")[0]
+    last_GCN_Compiled_time = last_result.loc[10, "commit"].split("s")[0]
+    last_GraphSAGE_Vanilla_time = last_result.loc[11, "commit"].split("s")[0]
+    last_GraphSAGE_Compiled_time = last_result.loc[12, "commit"].split("s")[0]
+    last_GIN_Vanilla_time = last_result.loc[13, "commit"].split("s")[0]
+    last_GIN_Compiled_time = last_result.loc[14, "commit"].split("s")[0]
+    last_EdgeCNN_Vanilla_time = last_result.loc[15, "commit"].split("s")[0]
+    last_EdgeCNN_Compiled_time = last_result.loc[16, "commit"].split("s")[0]
     last_gnn_train_accuracy_use_sage = last_result.loc[17, "commit"]
     last_gnn_valid_accuracy_use_sage = last_result.loc[18, "commit"]
 
@@ -75,8 +75,8 @@ try:
     Ratio_EdgeCNN_Vanilla = float(last_EdgeCNN_Vanilla_time) / float(EdgeCNN_Vanilla_time)
     Ratio_EdgeCNN_Compiled = float(last_EdgeCNN_Compiled_time) / float(EdgeCNN_Compiled_time)
 
-    Ratio_gnn_train_accuracy = float(last_gnn_train_accuracy_use_sage) / float(gnn_train_accuracy_use_sage)
-    Ratio_gnn_valid_accuracy = float(last_gnn_valid_accuracy_use_sage) / float(gnn_valid_accuracy_use_sage)
+    Ratio_gnn_train_accuracy = float(gnn_train_accuracy_use_sage) / float(last_gnn_train_accuracy_use_sage)
+    Ratio_gnn_valid_accuracy = float(gnn_valid_accuracy_use_sage) / float(last_gnn_valid_accuracy_use_sage)
 
 except:
     Ratio_GCN_Vanilla = 0
@@ -103,65 +103,65 @@ report_content = f'''<!DOCTYPE html>
             <th>note</th>
             <th>result</th> 
             <th>result(lastsuccessful)</th> 
-            <th>ratio(last / current)</th>
+            <th>ratio</th>
         </tr> 
         <tr> 
             <td><p style="text-align:center">GCN</p></td> 
             <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GCN_Vanilla_time}</p></td>                                  
-            <td><p style="text-align:center">{last_GCN_Vanilla_time}</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GCN_Vanilla}</p></td>                                 
+            <td><p style="text-align:center">{GCN_Vanilla_time}s</p></td>                                  
+            <td><p style="text-align:center">{last_GCN_Vanilla_time}s</p></td>                                 
+            <td><p style="text-align:center">{Ratio_GCN_Vanilla}s</p></td>                                 
         </tr> 
         <tr> 
             <td><p style="text-align:center">GCN</p></td> 
             <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GCN_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{last_GCN_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GCN_Compiled}</p></td>                               
+            <td><p style="text-align:center">{GCN_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{last_GCN_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{Ratio_GCN_Compiled}s</p></td>                               
         </tr> 
 
         <tr> 
             <td><p style="text-align:center">GraphSAGE</p></td> 
             <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GraphSAGE_Vanilla_time}</p></td>                                  
-            <td><p style="text-align:center">{last_GraphSAGE_Vanilla_time}</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GraphSAGE_Vanilla}</p></td>                                 
+            <td><p style="text-align:center">{GraphSAGE_Vanilla_time}s</p></td>                                  
+            <td><p style="text-align:center">{last_GraphSAGE_Vanilla_time}s</p></td>                                 
+            <td><p style="text-align:center">{Ratio_GraphSAGE_Vanilla}s</p></td>                                 
         </tr> 
         <tr> 
             <td><p style="text-align:center">GraphSAGE</p></td> 
             <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GraphSAGE_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{last_GraphSAGE_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GraphSAGE_Compiled}</p></td>                               
+            <td><p style="text-align:center">{GraphSAGE_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{last_GraphSAGE_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{Ratio_GraphSAGE_Compiled}s</p></td>                               
         </tr> 
 
         <tr> 
             <td><p style="text-align:center">GIN</p></td> 
             <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GIN_Vanilla_time}</p></td>                                  
-            <td><p style="text-align:center">{last_GIN_Vanilla_time}</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GIN_Vanilla}</p></td>                                 
+            <td><p style="text-align:center">{GIN_Vanilla_time}s</p></td>                                  
+            <td><p style="text-align:center">{last_GIN_Vanilla_time}s</p></td>                                 
+            <td><p style="text-align:center">{Ratio_GIN_Vanilla}s</p></td>                                 
         </tr> 
         <tr> 
             <td><p style="text-align:center">GIN</p></td> 
             <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GIN_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{last_GIN_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GIN_Compiled}</p></td>                               
+            <td><p style="text-align:center">{GIN_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{last_GIN_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{Ratio_GIN_Compiled}s</p></td>                               
         </tr> 
 
         <tr> 
             <td><p style="text-align:center">EdgeCNN</p></td> 
             <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{EdgeCNN_Vanilla_time}</p></td>                                  
-            <td><p style="text-align:center">{last_EdgeCNN_Vanilla_time}</p></td>                                 
-            <td><p style="text-align:center">{Ratio_EdgeCNN_Vanilla}</p></td>                                 
+            <td><p style="text-align:center">{EdgeCNN_Vanilla_time}s</p></td>                                  
+            <td><p style="text-align:center">{last_EdgeCNN_Vanilla_time}s</p></td>                                 
+            <td><p style="text-align:center">{Ratio_EdgeCNN_Vanilla}s</p></td>                                 
         </tr> 
         <tr>
             <td><p style="text-align:center">EdgeCNN</p></td> 
             <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{EdgeCNN_Compiled_time}</p></td>                                    
-            <td><p style="text-align:center">{last_EdgeCNN_Compiled_time}</p></td>                                    
+            <td><p style="text-align:center">{EdgeCNN_Compiled_time}s</p></td>                                    
+            <td><p style="text-align:center">{last_EdgeCNN_Compiled_time}s</p></td>                                    
             <td><p style="text-align:center">{Ratio_EdgeCNN_Compiled}</p></td>                               
         </tr>
         <tr> 
