@@ -459,31 +459,39 @@ node(NODE_LABEL){
     
     stage("Generate Report") {
         if ("${LLMBench}" == "true") {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    filter: 'llm_bench/*.txt',
-                    fingerprintArtifacts: true,
-                    target: "llm_bench/")
+            try{
+                if(refer_build != '0') {
+                    copyArtifacts(
+                        projectName: currentBuild.projectName,
+                        selector: specific("${refer_build}"),
+                        filter: 'llm_bench/*.txt',
+                        fingerprintArtifacts: true,
+                        target: "llm_bench/")
+                }
+            }catch(err){
+                echo err.getMessage()
             }
             sh '''
             #!/usr/bin/env bash
-            docker exec -i $USER bash -c "cd llm_bench;python generate_report.py --url ${BUILD_URL};rm -rf llm_bench;rm generate_report.py"
+            cd ${WORKSPACE}/llm_bench && python3 generate_report.py --url ${BUILD_URL} && rm -rf llm_bench && rm generate_report.py
             '''
         }//LLMBench_report
         if ("${GNNBench}" == "true") {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    filter: 'gnn_bench/*.txt',
-                    fingerprintArtifacts: true,
-                    target: "gnn_bench/")
+            try{
+                if(refer_build != '0') {
+                    copyArtifacts(
+                        projectName: currentBuild.projectName,
+                        selector: specific("${refer_build}"),
+                        filter: 'gnn_bench/*.txt',
+                        fingerprintArtifacts: true,
+                        target: "gnn_bench/")
+                }
+            }catch(err){
+                echo err.getMessage()
             }
             sh '''
             #!/usr/bin/env bash
-            docker exec -i $USER bash -c "cd gnn_bench;python generate_report.py --url ${BUILD_URL};rm -rf gnn_bench;rm generate_report.py"
+            cd ${WORKSPACE}/gnn_bench && python3 generate_report.py --url ${BUILD_URL} && rm -rf gnn_bench && rm generate_report.py 
             '''
         }//GNNBench_report       
     } 
