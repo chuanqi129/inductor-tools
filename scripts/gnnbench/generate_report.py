@@ -21,74 +21,111 @@ for item in componment:
 pyg_lib = result.loc[6, "commit"]
 torch_geometric = result.loc[7, "commit"]
 ogb = result.loc[8, "commit"]
+torch_scatter = result.loc[9, "commit"]
+torch_sparse = result.loc[10, "commit"]
 
 # results
-GCN_Vanilla_time = result.loc[9, "commit"].split("s")[0]
-GCN_Compiled_time = result.loc[10, "commit"].split("s")[0]
-GraphSAGE_Vanilla_time = result.loc[11, "commit"].split("s")[0]
-GraphSAGE_Compiled_time = result.loc[12, "commit"].split("s")[0]
-GIN_Vanilla_time = result.loc[13, "commit"].split("s")[0]
-GIN_Compiled_time = result.loc[14, "commit"].split("s")[0]
-EdgeCNN_Vanilla_time = result.loc[15, "commit"].split("s")[0]
-EdgeCNN_Compiled_time = result.loc[16, "commit"].split("s")[0]
-gnn_train_accuracy_use_sage = result.loc[17, "commit"]
-gnn_valid_accuracy_use_sage = result.loc[18, "commit"]
+# case 1
+GCN_Vanilla_Ftime = result.loc[11, "commit"]
+GCN_Vanilla_Btime = result.loc[12, "commit"]
+GCN_Vanilla_Ttime = result.loc[13, "commit"]
+GCN_Compiled_Ftime = result.loc[14, "commit"]
+GCN_Compiled_Btime = result.loc[15, "commit"]
+GCN_Compiled_Ttime = result.loc[16, "commit"]
 
-# last successful result
-last_GCN_Vanilla_time = 0
-last_GCN_Compiled_time = 0
-last_GraphSAGE_Vanilla_time = 0
-last_GraphSAGE_Compiled_time = 0
-last_GIN_Vanilla_time = 0
-last_GIN_Compiled_time = 0
-last_EdgeCNN_Vanilla_time = 0
-last_EdgeCNN_Compiled_time = 0
-last_gnn_train_accuracy_use_sage = 0
-last_gnn_valid_accuracy_use_sage = 0
+GraphSAGE_Vanilla_Ftime = result.loc[17, "commit"]
+GraphSAGE_Vanilla_Btime = result.loc[18, "commit"]
+GraphSAGE_Vanilla_Ttime = result.loc[19, "commit"]
+GraphSAGE_Compiled_Ftime = result.loc[20, "commit"]
+GraphSAGE_Compiled_Btime = result.loc[21, "commit"]
+GraphSAGE_Compiled_Ttime = result.loc[22, "commit"]
 
+GIN_Vanilla_Ftime = result.loc[23, "commit"]
+GIN_Vanilla_Btime = result.loc[24, "commit"]
+GIN_Vanilla_Ttime = result.loc[25, "commit"]
+GIN_Compiled_Ftime = result.loc[26, "commit"]
+GIN_Compiled_Btime = result.loc[27, "commit"]
+GIN_Compiled_Ttime = result.loc[28, "commit"]
+
+EdgeCNN_Vanilla_Ftime = result.loc[29, "commit"]
+EdgeCNN_Vanilla_Btime = result.loc[30, "commit"]
+EdgeCNN_Vanilla_Ttime = result.loc[31, "commit"]
+EdgeCNN_Compiled_Ftime = result.loc[32, "commit"]
+EdgeCNN_Compiled_Btime = result.loc[33, "commit"]
+EdgeCNN_Compiled_Ttime = result.loc[34, "commit"]
+
+GCN_speedup = result.loc[35, "commit"]
+GraphSAGE_speedup = result.loc[36, "commit"]
+GIN_speedup = result.loc[37, "commit"]
+EdgeCNN_speedup = result.loc[38, "commit"]
+
+last_GCN_speedup=0
+last_GraphSAGE_speedup=0
+last_GIN_speedup=0
+last_EdgeCNN_speedup=0
+
+GCN_speedup_ratio = 0
+GraphSAGE_speedup_ratio = 0
+GIN_speedup_ratio = 0
+EdgeCNN_speedup_ratio = 0
+
+# # case 2 failed w/ inductor now
+vanilla_gnn_train_accuracy_use_sage = result.loc[39, "commit"]
+vanilla_gnn_valid_accuracy_use_sage = result.loc[40, "commit"]
+
+try:
+    compiled_gnn_train_accuracy_use_sage=result.loc[41, "commit"]
+    compiled_gnn_valid_accuracy_use_sage=result.loc[42, "commit"]
+except:
+    compiled_gnn_train_accuracy_use_sage = 0
+    compiled_gnn_valid_accuracy_use_sage = 0
+    pass
+
+last_vanilla_gnn_train_accuracy_use_sage=0
+last_vanilla_gnn_valid_accuracy_use_sage=0
+last_compiled_gnn_train_accuracy_use_sage=0
+last_compiled_gnn_valid_accuracy_use_sage=0
+
+Ratio_vanilla_gnn_train_accuracy = 0
+Ratio_vanilla_gnn_valid_accuracy = 0
+Ratio_compiled_gnn_train_accuracy = 0
+Ratio_compiled_gnn_valid_accuracy = 0
 
 try:
     last_result = pd.read_table('gnn_bench/result.txt', sep='\:',
                                 header=None, names=['item', 'commit'], engine='python')
 
-    last_GCN_Vanilla_time = last_result.loc[9, "commit"].split("s")[0]
-    last_GCN_Compiled_time = last_result.loc[10, "commit"].split("s")[0]
-    last_GraphSAGE_Vanilla_time = last_result.loc[11, "commit"].split("s")[0]
-    last_GraphSAGE_Compiled_time = last_result.loc[12, "commit"].split("s")[0]
-    last_GIN_Vanilla_time = last_result.loc[13, "commit"].split("s")[0]
-    last_GIN_Compiled_time = last_result.loc[14, "commit"].split("s")[0]
-    last_EdgeCNN_Vanilla_time = last_result.loc[15, "commit"].split("s")[0]
-    last_EdgeCNN_Compiled_time = last_result.loc[16, "commit"].split("s")[0]
-    last_gnn_train_accuracy_use_sage = last_result.loc[17, "commit"]
-    last_gnn_valid_accuracy_use_sage = last_result.loc[18, "commit"]
+    last_last_GCN_speedup = last_result.loc[35, "commit"]
+    last_GraphSAGE_speedup = last_result.loc[36, "commit"]
+    last_GIN_Vanilla_time = last_result.loc[37, "commit"]
+    last_EdgeCNN_speedup = last_result.loc[38, "commit"]
 
-    # ratio
-    Ratio_GCN_Vanilla = float(last_GCN_Vanilla_time) / float(GCN_Vanilla_time)
-    Ratio_GCN_Compiled = float(last_GCN_Compiled_time) / float(GCN_Compiled_time)
+    GCN_speedup_ratio = float(GCN_speedup) / float(last_GCN_speedup)
+    GraphSAGE_speedup_ratio = float(GraphSAGE_speedup) / float(last_GraphSAGE_speedup)
+    GIN_speedup_ratio = float(GIN_speedup) / float(last_GIN_speedup)
+    EdgeCNN_speedup_ratio = float(EdgeCNN_speedup) / float(last_EdgeCNN_speedup)
 
-    Ratio_GraphSAGE_Vanilla = float(last_GraphSAGE_Vanilla_time) / float(GraphSAGE_Vanilla_time)
-    Ratio_GraphSAGE_Compiled = float(last_GraphSAGE_Compiled_time) / float(GraphSAGE_Compiled_time)
+    last_vanilla_gnn_train_accuracy_use_sage=last_result.loc[39, "commit"]
+    last_vanilla_gnn_valid_accuracy_use_sage=last_result.loc[40, "commit"]
 
-    Ratio_GIN_Vanilla = float(last_GIN_Vanilla_time) / float(GIN_Vanilla_time)
-    Ratio_GIN_Compiled = float(last_GIN_Compiled_time) / float(GIN_Compiled_time)
+    last_compiled_gnn_train_accuracy_use_sage=last_result.loc[41, "commit"]
+    last_compiled_gnn_valid_accuracy_use_sage=last_result.loc[42, "commit"]    
 
-    Ratio_EdgeCNN_Vanilla = float(last_EdgeCNN_Vanilla_time) / float(EdgeCNN_Vanilla_time)
-    Ratio_EdgeCNN_Compiled = float(last_EdgeCNN_Compiled_time) / float(EdgeCNN_Compiled_time)
-
-    Ratio_gnn_train_accuracy = float(gnn_train_accuracy_use_sage) / float(last_gnn_train_accuracy_use_sage)
-    Ratio_gnn_valid_accuracy = float(gnn_valid_accuracy_use_sage) / float(last_gnn_valid_accuracy_use_sage)
+    Ratio_vanilla_gnn_train_accuracy = float(vanilla_gnn_train_accuracy_use_sage) / float(last_vanilla_gnn_train_accuracy_use_sage)
+    Ratio_vanilla_gnn_valid_accuracy = float(vanilla_gnn_valid_accuracy_use_sage) / float(last_vanilla_gnn_valid_accuracy_use_sage)
+    Ratio_compiled_gnn_train_accuracy = float(compiled_gnn_train_accuracy_use_sage) / float(last_compiled_gnn_train_accuracy_use_sage)
+    Ratio_compiled_gnn_valid_accuracy = float(compiled_gnn_valid_accuracy_use_sage) / float(last_compiled_gnn_valid_accuracy_use_sage)   
 
 except:
-    Ratio_GCN_Vanilla = 0
-    Ratio_GCN_Compiled = 0
-    Ratio_GraphSAGE_Vanilla = 0
-    Ratio_GraphSAGE_Compiled = 0
-    Ratio_GIN_Vanilla = 0
-    Ratio_GIN_Compiled = 0
-    Ratio_EdgeCNN_Vanilla = 0
-    Ratio_EdgeCNN_Compiled = 0
-    Ratio_gnn_train_accuracy = 0
-    Ratio_gnn_valid_accuracy = 0 
+    GCN_speedup_ratio = 0
+    GraphSAGE_speedup_ratio = 0
+    GIN_speedup_ratio = 0
+    EdgeCNN_speedup_ratio = 0
+
+    Ratio_vanilla_gnn_train_accuracy = 0
+    Ratio_vanilla_gnn_valid_accuracy = 0
+    Ratio_compiled_gnn_train_accuracy = 0
+    Ratio_compiled_gnn_valid_accuracy = 0
     pass
 
 report_content = f'''<!DOCTYPE html>
@@ -96,89 +133,124 @@ report_content = f'''<!DOCTYPE html>
 <head><title>GNN Models Bench Report</title></head>
 <body>
     <h3> GNN Models Inductor Benchmark Report </h3>
-    <p>Result:</p>
+    <p>PYG Case :</p>
     <table border="1">
         <tr>
-            <th>Model/Case</th>
-            <th>note</th>
-            <th>result</th> 
-            <th>result(lastsuccessful)</th> 
-            <th>ratio</th>
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">GCN</p></td> 
-            <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GCN_Vanilla_time}s</p></td>                                  
-            <td><p style="text-align:center">{last_GCN_Vanilla_time}s</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GCN_Vanilla}s</p></td>                                 
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">GCN</p></td> 
-            <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GCN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{last_GCN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GCN_Compiled}s</p></td>                               
-        </tr> 
-
-        <tr> 
-            <td><p style="text-align:center">GraphSAGE</p></td> 
-            <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GraphSAGE_Vanilla_time}s</p></td>                                  
-            <td><p style="text-align:center">{last_GraphSAGE_Vanilla_time}s</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GraphSAGE_Vanilla}s</p></td>                                 
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">GraphSAGE</p></td> 
-            <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GraphSAGE_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{last_GraphSAGE_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GraphSAGE_Compiled}s</p></td>                               
-        </tr> 
-
-        <tr> 
-            <td><p style="text-align:center">GIN</p></td> 
-            <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{GIN_Vanilla_time}s</p></td>                                  
-            <td><p style="text-align:center">{last_GIN_Vanilla_time}s</p></td>                                 
-            <td><p style="text-align:center">{Ratio_GIN_Vanilla}s</p></td>                                 
-        </tr> 
-        <tr> 
-            <td><p style="text-align:center">GIN</p></td> 
-            <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{GIN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{last_GIN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{Ratio_GIN_Compiled}s</p></td>                               
-        </tr> 
-
-        <tr> 
-            <td><p style="text-align:center">EdgeCNN</p></td> 
-            <td><p style="text-align:center">Vanilla_time</p></td> 
-            <td><p style="text-align:center">{EdgeCNN_Vanilla_time}s</p></td>                                  
-            <td><p style="text-align:center">{last_EdgeCNN_Vanilla_time}s</p></td>                                 
-            <td><p style="text-align:center">{Ratio_EdgeCNN_Vanilla}s</p></td>                                 
+            <th>Model</th>
+            <th>Mode</th>
+            <th>Fwd</th> 
+            <th>Bwd</th> 
+            <th>Total</th> 
+            <th>Speedup</th> 
+            <th>Speedup (lastsuccessful)</th> 
+            <th>Speedup_ratio (current/last)</th>
         </tr> 
         <tr>
-            <td><p style="text-align:center">EdgeCNN</p></td> 
-            <td><p style="text-align:center">Compiled_time</p></td> 
-            <td><p style="text-align:center">{EdgeCNN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{last_EdgeCNN_Compiled_time}s</p></td>                                    
-            <td><p style="text-align:center">{Ratio_EdgeCNN_Compiled}</p></td>                               
+            <td><p style="text-align:center">GCN</p></td>
+            <td><p style="text-align:center">Vanilla</p></td>
+            <td><p style="text-align:center">{GCN_Vanilla_Ftime}s</p></td>
+            <td><p style="text-align:center">{GCN_Vanilla_Btime}s</p></td>
+            <td><p style="text-align:center">{GCN_Vanilla_Ttime}s</p></td>
+            <td rowspan="2"><p style="text-align:center">{GCN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{last_GCN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{GCN_speedup_ratio}</p></td>
         </tr>
         <tr> 
-            <td><p style="text-align:center">ogb example</p></td> 
-            <td><p style="text-align:center">train_accuracy_use_sage</p></td> 
-            <td><p style="text-align:center">{gnn_train_accuracy_use_sage}%</p></td>                                  
-            <td><p style="text-align:center">{last_gnn_train_accuracy_use_sage}%</p></td>                                 
-            <td><p style="text-align:center">{Ratio_gnn_train_accuracy}</p></td>                                 
+            <td><p style="text-align:center">GCN</p></td>
+            <td><p style="text-align:center">Compiled</p></td>
+            <td><p style="text-align:center">{GCN_Compiled_Ftime}s</p></td>                          
+            <td><p style="text-align:center">{GCN_Compiled_Btime}s</p></td>
+            <td><p style="text-align:center">{GCN_Compiled_Ttime}s</p></td>                     
         </tr> 
         <tr> 
-            <td><p style="text-align:center">ogb example</p></td> 
-            <td><p style="text-align:center">valid_accuracy_use_sage</p></td> 
-            <td><p style="text-align:center">{gnn_valid_accuracy_use_sage}%</p></td>                                    
-            <td><p style="text-align:center">{last_gnn_valid_accuracy_use_sage}%</p></td>                                    
-            <td><p style="text-align:center">{Ratio_gnn_valid_accuracy}</p></td>                                   
+            <td><p style="text-align:center">GraphSAGE</p></td>
+            <td><p style="text-align:center">Vanilla</p></td>
+            <td><p style="text-align:center">{GraphSAGE_Vanilla_Ftime}s</p></td>                         
+            <td><p style="text-align:center">{GraphSAGE_Vanilla_Btime}s</p></td>                              
+            <td><p style="text-align:center">{GraphSAGE_Vanilla_Ttime}s</p></td>
+            <td rowspan="2"><p style="text-align:center">{GraphSAGE_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{last_GraphSAGE_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{GraphSAGE_speedup_ratio}</p></td>                                    
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">GraphSAGE</p></td> 
+            <td><p style="text-align:center">Compiled</p></td> 
+            <td><p style="text-align:center">{GraphSAGE_Compiled_Ftime}s</p></td>                             
+            <td><p style="text-align:center">{GraphSAGE_Compiled_Btime}s</p></td>                             
+            <td><p style="text-align:center">{GraphSAGE_Compiled_Ttime}s</p></td>                             
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">GIN</p></td> 
+            <td><p style="text-align:center">Vanilla</p></td> 
+            <td><p style="text-align:center">{GIN_Vanilla_Ftime}s</p></td>                              
+            <td><p style="text-align:center">{GIN_Vanilla_Btime}s</p></td>                              
+            <td><p style="text-align:center">{GIN_Vanilla_Ttime}s</p></td> 
+            <td rowspan="2"><p style="text-align:center">{GIN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{last_GIN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{GIN_speedup_ratio}</p></td>
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">GIN</p></td> 
+            <td><p style="text-align:center">Compiled</p></td> 
+            <td><p style="text-align:center">{GIN_Compiled_Ftime}s</p></td>                             
+            <td><p style="text-align:center">{GIN_Compiled_Btime}s</p></td>                             
+            <td><p style="text-align:center">{GIN_Compiled_Ttime}s</p></td>                             
+        </tr> 
+        <tr> 
+            <td><p style="text-align:center">EdgeCNN</p></td>
+            <td><p style="text-align:center">Vanilla</p></td>
+            <td><p style="text-align:center">{EdgeCNN_Vanilla_Ftime}s</p></td>                              
+            <td><p style="text-align:center">{EdgeCNN_Vanilla_Btime}s</p></td>                              
+            <td><p style="text-align:center">{EdgeCNN_Vanilla_Ttime}s</p></td> 
+            <td rowspan="2"><p style="text-align:center">{EdgeCNN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{last_EdgeCNN_speedup}</p></td>
+            <td rowspan="2"><p style="text-align:center">{EdgeCNN_speedup_ratio}</p></td>
+        </tr> 
+        <tr>
+            <td><p style="text-align:center">EdgeCNN</p></td>
+            <td><p style="text-align:center">Compiled</p></td>
+            <td><p style="text-align:center">{EdgeCNN_Compiled_Ftime}s</p></td>                            
+            <td><p style="text-align:center">{EdgeCNN_Compiled_Btime}s</p></td>                       
+            <td><p style="text-align:center">{EdgeCNN_Compiled_Ttime}s</p></td>                            
         </tr>
     </table> 
+    <p>OGB Case :</p>
+    <table border="1">
+        <tr>
+            <th rowspan="3"><p style="text-align:center">Vanilla</p></th>
+            <th>item</th>
+            <th>accuracy</th>
+            <th>accuracy(lastsuccessful)</th>
+            <th>ratio (current/last)</th>
+        </tr>
+        <tr>
+            <td><p style="text-align:center">train_accuracy_use_sage</p></td>
+            <td><p style="text-align:center">{vanilla_gnn_train_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{last_vanilla_gnn_train_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{Ratio_vanilla_gnn_train_accuracy}</p></td>
+        </tr>
+        <tr>
+            <td><p style="text-align:center">valid_accuracy_use_sage</p></td>
+            <td><p style="text-align:center">{vanilla_gnn_valid_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{last_vanilla_gnn_valid_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{Ratio_vanilla_gnn_valid_accuracy}</p></td>
+        </tr>
+        <tr>
+            <th rowspan="3"><p style="text-align:center">Compiled</p></th>
+        </tr>
+        <tr>
+            <td><p style="text-align:center">train_accuracy_use_sage</p></td>
+            <td><p style="text-align:center">{compiled_gnn_train_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{last_compiled_gnn_train_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{Ratio_compiled_gnn_train_accuracy}</p></td>
+        </tr>
+        <tr>
+            <td><p style="text-align:center">valid_accuracy_use_sage</p></td>
+            <td><p style="text-align:center">{compiled_gnn_valid_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{last_compiled_gnn_valid_accuracy_use_sage}%</p></td>
+            <td><p style="text-align:center">{Ratio_compiled_gnn_valid_accuracy}</p></td>
+        </tr>
+    </table>
     <p>SW Info:</p> 
     <table border="1"> 
         <tr><td>Pytorch:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> 
@@ -190,6 +262,8 @@ report_content = f'''<!DOCTYPE html>
         <tr><td>pyg_lib:&nbsp;</td><td>{pyg_lib}</td></tr> 
         <tr><td>torch_geometric:&nbsp;</td><td>{torch_geometric}</td></tr> 
         <tr><td>ogb:&nbsp;</td><td>{ogb}</td></tr> 
+        <tr><td>torch_sparse:&nbsp;</td><td>{torch_sparse}</td></tr> 
+        <tr><td>torch_scatter:&nbsp;</td><td>{torch_scatter}</td></tr> 
     </table> 
     <p>HW info:</p><ol><table> 
         <tbody> 
