@@ -576,6 +576,11 @@ node(NODE_LABEL){
             }
         }//LLMBench
         if ("${GNNBench}" == "true"){
+            if ("${debug}" == "true"){
+                maillist="yudong.si@intel.com"
+            }else{
+                maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com;yanbing.jiang@intel.com;mingfei.ma@intel.com"
+            }
             if (fileExists("${WORKSPACE}/gnn_bench/gnn_report.html") == true){
                 emailext(
                     subject: "Torchinductor GNNBench Report",
