@@ -55,6 +55,7 @@ python -c '''import torch_sparse; print("torch-sparse: ", torch_sparse.__version
 timestamp=$(date +%Y%m%d_%H%M%S)
 numactl -C 0-${end_core} --membind=0 python pytorch_geometric/test/nn/models/test_basic_gnn.py --backward --device=cpu 2>&1 | tee -a ${LOG_DIR}/gnn_bench__${timestamp}.log
 numactl -C 0-${end_core} --membind=0 python ogb/examples/nodeproppred/products/gnn.py --use_sage --epochs=3 --runs=1 2>&1 | tee -a ${LOG_DIR}/gnn_bench__${timestamp}.log
+numactl -C 0-${end_core} --membind=0 python ogb/examples/nodeproppred/products/gnn.py --inference --use_sage --epochs=3 --runs=1 2>&1 | tee -a ${LOG_DIR}/gnn_bench__${timestamp}.log
 
 # get numbers
 
@@ -103,8 +104,47 @@ echo GIN_speedup : $(awk 'BEGIN{printf "%.2f\n",'$(parse_data "Vanilla" 3 7)' / 
 echo EdgeCNN_speedup : $(awk 'BEGIN{printf "%.2f\n",'$(parse_data "Vanilla" 4 7)' / '$(parse_data "Compiled" 4 7)'}') >>${FILE}
 
 # case 2
+# training vanilla
+trainning_vanilla_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==1{print}')
 vanilla_gnn_train_accuracy_use_sage=$(grep "Highest Train:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Train://;s/[^0-9.]//' | awk 'NR==1{print}')
 vanilla_gnn_valid_accuracy_use_sage=$(grep "Highest Valid:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Valid://;s/[^0-9.]//' | awk 'NR==1{print}')
 
 echo vanilla_gnn_train_accuracy_use_sage : ${vanilla_gnn_train_accuracy_use_sage} >>${FILE}
 echo vanilla_gnn_valid_accuracy_use_sage : ${vanilla_gnn_valid_accuracy_use_sage} >>${FILE}
+
+# training compiled
+# detect inductor error
+inductor_train_err=$(grep "Error" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Error://;s/[^0-9.]//' | awk 'NR==1{print}')
+
+if [ -n "${inductor_train_err}" ];then
+	trainning_compiled_time=0
+	compiled_gnn_train_accuracy_use_sage=0
+	compiled_gnn_valid_accuracy_use_sage=0
+else
+	trainning_compiled_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==2{print}')
+	compiled_gnn_train_accuracy_use_sage=$(grep "Highest Train:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Train://;s/[^0-9.]//' | awk 'NR==3{print}')
+	compiled_gnn_valid_accuracy_use_sage=$(grep "Highest Valid:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Valid://;s/[^0-9.]//' | awk 'NR==3{print}')
+fi
+
+echo compiled_gnn_train_accuracy_use_sage : ${compiled_gnn_train_accuracy_use_sage} >>${FILE}
+echo compiled_gnn_valid_accuracy_use_sage : ${compiled_gnn_valid_accuracy_use_sage} >>${FILE}
+
+echo trainning_vanilla_time : ${trainning_vanilla_time} >>${FILE}
+echo trainning_compiled_time : ${trainning_compiled_time} >>${FILE}
+
+
+# inference
+inductor_infer_err=$(grep "Error" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Error://;s/[^0-9.]//' | awk 'NR==2{print}')
+
+if [ -n "${inductor_infer_err}" ];then
+	inference_vanilla_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==2{print}')
+	inference_compiled_time=0
+else
+	inference_vanilla_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==3{print}')
+	inference_compiled_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==4{print}')
+fi
+
+echo inference_vanilla_time : ${inference_vanilla_time} >>${FILE}
+echo inference_compiled_time : ${inference_compiled_time} >>${FILE}
+
+echo inductor_compile_err : ${inductor_train_err}${inductor_infer_err} >>${FILE}

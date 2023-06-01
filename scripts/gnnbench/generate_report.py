@@ -91,41 +91,60 @@ Ratio_vanilla_gnn_valid_accuracy = 0
 Ratio_compiled_gnn_train_accuracy = 0
 Ratio_compiled_gnn_valid_accuracy = 0
 
+trainning_vanilla_time = result.loc[43, "commit"].split('s')[0]
+trainning_compiled_time = result.loc[44, "commit"].split('s')[0]
+inference_vanilla_time = result.loc[45, "commit"].split('s')[0]
+inference_compiled_time = result.loc[46, "commit"].split('s')[0]
+
+# err msg
+inductor_compile_err = result.loc[47, "commit"]
+
+last_trainning_vanilla_time = 0
+last_trainning_compiled_time = 0
+last_inference_vanilla_time = 0
+last_inference_compiled_time = 0
+
+Ratio_trainning_vanilla_time=0
+Ratio_trainning_compiled_time=0
+Ratio_inference_vanilla_time=0
+Ratio_inference_compiled_time=0
+
+
+
 try:
     last_result = pd.read_table('gnn_bench/result.txt', sep='\:',
                                 header=None, names=['item', 'commit'], engine='python')
 
-    last_last_GCN_speedup = last_result.loc[35, "commit"]
+    last_GCN_speedup = last_result.loc[35, "commit"]
     last_GraphSAGE_speedup = last_result.loc[36, "commit"]
-    last_GIN_Vanilla_time = last_result.loc[37, "commit"]
+    last_GIN_speedup = last_result.loc[37, "commit"]
     last_EdgeCNN_speedup = last_result.loc[38, "commit"]
+    last_vanilla_gnn_train_accuracy_use_sage=last_result.loc[39, "commit"]
+    last_vanilla_gnn_valid_accuracy_use_sage=last_result.loc[40, "commit"]
 
     GCN_speedup_ratio = float(GCN_speedup) / float(last_GCN_speedup)
     GraphSAGE_speedup_ratio = float(GraphSAGE_speedup) / float(last_GraphSAGE_speedup)
     GIN_speedup_ratio = float(GIN_speedup) / float(last_GIN_speedup)
-    EdgeCNN_speedup_ratio = float(EdgeCNN_speedup) / float(last_EdgeCNN_speedup)
-
-    last_vanilla_gnn_train_accuracy_use_sage=last_result.loc[39, "commit"]
-    last_vanilla_gnn_valid_accuracy_use_sage=last_result.loc[40, "commit"]
-
-    last_compiled_gnn_train_accuracy_use_sage=last_result.loc[41, "commit"]
-    last_compiled_gnn_valid_accuracy_use_sage=last_result.loc[42, "commit"]    
-
+    EdgeCNN_speedup_ratio = float(EdgeCNN_speedup) / float(last_EdgeCNN_speedup)      
     Ratio_vanilla_gnn_train_accuracy = float(vanilla_gnn_train_accuracy_use_sage) / float(last_vanilla_gnn_train_accuracy_use_sage)
     Ratio_vanilla_gnn_valid_accuracy = float(vanilla_gnn_valid_accuracy_use_sage) / float(last_vanilla_gnn_valid_accuracy_use_sage)
-    Ratio_compiled_gnn_train_accuracy = float(compiled_gnn_train_accuracy_use_sage) / float(last_compiled_gnn_train_accuracy_use_sage)
-    Ratio_compiled_gnn_valid_accuracy = float(compiled_gnn_valid_accuracy_use_sage) / float(last_compiled_gnn_valid_accuracy_use_sage)   
+
+    last_compiled_gnn_train_accuracy_use_sage=last_result.loc[41, "commit"]
+    last_compiled_gnn_valid_accuracy_use_sage=last_result.loc[42, "commit"]
+    last_trainning_vanilla_time = last_result.loc[43, "commit"].split('s')[0]
+    last_trainning_compiled_time = last_result.loc[44, "commit"].split('s')[0]
+    last_inference_vanilla_time = last_result.loc[45, "commit"].split('s')[0]
+    last_inference_compiled_time = last_result.loc[46, "commit"].split('s')[0]
+    
+    Ratio_compiled_gnn_train_accuracy = float(compiled_gnn_train_accuracy_use_sage) / float(last_compiled_gnn_train_accuracy_use_sage) 
+    Ratio_compiled_gnn_valid_accuracy = float(compiled_gnn_valid_accuracy_use_sage) / float(last_compiled_gnn_valid_accuracy_use_sage)
+
+    Ratio_trainning_vanilla_time = float(last_trainning_vanilla_time) / float(trainning_vanilla_time)
+    Ratio_trainning_compiled_time=float(last_trainning_compiled_time) / float(trainning_compiled_time)
+    Ratio_inference_vanilla_time=float(last_inference_vanilla_time) / float(inference_vanilla_time)
+    Ratio_inference_compiled_time=float(last_inference_compiled_time) / float(inference_compiled_time)
 
 except:
-    GCN_speedup_ratio = 0
-    GraphSAGE_speedup_ratio = 0
-    GIN_speedup_ratio = 0
-    EdgeCNN_speedup_ratio = 0
-
-    Ratio_vanilla_gnn_train_accuracy = 0
-    Ratio_vanilla_gnn_valid_accuracy = 0
-    Ratio_compiled_gnn_train_accuracy = 0
-    Ratio_compiled_gnn_valid_accuracy = 0
     pass
 
 report_content = f'''<!DOCTYPE html>
@@ -143,7 +162,7 @@ report_content = f'''<!DOCTYPE html>
             <th>Total</th> 
             <th>Speedup</th> 
             <th>Speedup (lastsuccessful)</th> 
-            <th>Speedup_ratio (current/last)</th>
+            <th>ratio (current/last)</th>
         </tr> 
         <tr>
             <td><p style="text-align:center">GCN</p></td>
@@ -214,14 +233,28 @@ report_content = f'''<!DOCTYPE html>
             <td><p style="text-align:center">{EdgeCNN_Compiled_Ttime}s</p></td>                            
         </tr>
     </table> 
-    <p>OGB Case :</p>
+    <p>OGB Case: Training</p>
     <table border="1">
         <tr>
-            <th rowspan="3"><p style="text-align:center">Vanilla</p></th>
+            <th rowspan="4"><p style="text-align:center">Vanilla</p></th>
             <th>item</th>
-            <th>accuracy</th>
-            <th>accuracy(lastsuccessful)</th>
-            <th>ratio (current/last)</th>
+            <th>accuracy or time cost</th>
+            <th>accuracy or time cost(lastsuccessful)</th>
+            <th>ratio</th>
+        </tr>
+        <tr>
+            <td>
+                <p style="text-align:center">trainning_vanilla_e2etime</p>
+            </td>
+            <td>
+                <p style="text-align:center">{trainning_vanilla_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{last_trainning_vanilla_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{Ratio_trainning_vanilla_time}</p>
+            </td>
         </tr>
         <tr>
             <td><p style="text-align:center">train_accuracy_use_sage</p></td>
@@ -236,7 +269,21 @@ report_content = f'''<!DOCTYPE html>
             <td><p style="text-align:center">{Ratio_vanilla_gnn_valid_accuracy}</p></td>
         </tr>
         <tr>
-            <th rowspan="3"><p style="text-align:center">Compiled</p></th>
+            <th rowspan="4"><p style="text-align:center">Compiled</p></th>
+        </tr>
+        <tr>
+            <td>
+                <p style="text-align:center">trainning_compiled_e2etime</p>
+            </td>
+            <td>
+                <p style="text-align:center">{trainning_compiled_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{last_trainning_compiled_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{Ratio_trainning_compiled_time}</p>
+            </td>
         </tr>
         <tr>
             <td><p style="text-align:center">train_accuracy_use_sage</p></td>
@@ -251,6 +298,52 @@ report_content = f'''<!DOCTYPE html>
             <td><p style="text-align:center">{Ratio_compiled_gnn_valid_accuracy}</p></td>
         </tr>
     </table>
+    <p>OGB Case: Inference</p>
+    <table border="1">
+        <tr>
+            <th rowspan="2">
+                <p style="text-align:center">Vanilla</p>
+            </th>
+            <th>item</th>
+            <th>time cost</th>
+            <th>time cost(lastsuccessful)</th>
+            <th>ratio</th>
+        </tr>
+        <tr>
+            <td>
+                <p style="text-align:center">inference_vanilla_e2etime</p>
+            </td>
+            <td>
+                <p style="text-align:center">{inference_vanilla_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{last_inference_vanilla_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{Ratio_inference_vanilla_time}</p>
+            </td>
+        </tr>
+        <tr>
+            <th rowspan="2">
+                <p style="text-align:center">Compiled</p>
+            </th>
+        </tr>
+        <tr>
+            <td>
+                <p style="text-align:center">inference_compiled_e2etime</p>
+            </td>
+            <td>
+                <p style="text-align:center">{inference_compiled_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{last_inference_compiled_time}s</p>
+            </td>
+            <td>
+                <p style="text-align:center">{Ratio_inference_compiled_time}</p>
+            </td>
+        </tr>
+    </table>
+    <p><th>inductor_compile_err: {inductor_compile_err}</th></p>
     <p>SW Info:</p> 
     <table border="1"> 
         <tr><td>Pytorch:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> 
