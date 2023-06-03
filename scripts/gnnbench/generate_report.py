@@ -136,12 +136,12 @@ try:
     last_inference_vanilla_time = last_result.loc[45, "commit"].split('s')[0]
     last_inference_compiled_time = last_result.loc[46, "commit"].split('s')[0]
     
+    Ratio_trainning_vanilla_time = float(last_trainning_vanilla_time) / float(trainning_vanilla_time)
+    Ratio_inference_vanilla_time=float(last_inference_vanilla_time) / float(inference_vanilla_time)  
+
     Ratio_compiled_gnn_train_accuracy = float(compiled_gnn_train_accuracy_use_sage) / float(last_compiled_gnn_train_accuracy_use_sage) 
     Ratio_compiled_gnn_valid_accuracy = float(compiled_gnn_valid_accuracy_use_sage) / float(last_compiled_gnn_valid_accuracy_use_sage)
-
-    Ratio_trainning_vanilla_time = float(last_trainning_vanilla_time) / float(trainning_vanilla_time)
     Ratio_trainning_compiled_time=float(last_trainning_compiled_time) / float(trainning_compiled_time)
-    Ratio_inference_vanilla_time=float(last_inference_vanilla_time) / float(inference_vanilla_time)
     Ratio_inference_compiled_time=float(last_inference_compiled_time) / float(inference_compiled_time)
 
 except:
