@@ -18,6 +18,7 @@ TEXT=${13:-b0ebddc}
 VISION=${14:-9b7c7d3}
 DATA=${15:-65e2ede}
 TORCH_BENCH=${16:-ec359fad}
+THREAD=${17:-all}
 
 
 
@@ -55,7 +56,7 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 docker cp /home/ubuntu/docker/ipex_test.sh $USER:/workspace/pytorch
 
 if (($TEST_MODE == "inference")); then
-    docker exec -i $USER bash -c "bash ipex_test.sh all first $PRECISION $TEST_SHAPE ipex_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash ipex_test.sh ${THREAD} first $PRECISION $TEST_SHAPE ipex_log $DYNAMO_BENCH"
 elif (($TEST_MODE == "training")); then
     docker exec -i $USER bash -c "bash inductor_train.sh first $PRECISION inductor_log $DYNAMO_BENCH"
 fi
