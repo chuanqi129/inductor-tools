@@ -300,7 +300,7 @@ node(NODE_LABEL){
             '''
         }
     }
-
+    '''
     stage("generate report"){
         retry(3){
             if(refer_build != '0') {
@@ -324,6 +324,7 @@ node(NODE_LABEL){
             }
         }
     }
+    '''
 
     stage('archiveArtifacts') {
             sh '''
@@ -332,7 +333,7 @@ node(NODE_LABEL){
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
-'''
+
     stage("Sent Email"){
         if ("${debug}" == "true"){
             maillist="diwei.sun@intel.com"
@@ -358,5 +359,5 @@ node(NODE_LABEL){
             )
         }
     }//email
-    '''
+
 }
