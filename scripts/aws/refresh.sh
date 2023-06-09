@@ -26,7 +26,7 @@ fi
 enter_code=$(grep -A 2 'enter the code' nohup.out | awk 'NR==3')
 echo $enter_code
 if [ -n "${enter_code}" ]; then
-    python aws_sso.py -f ${FF} -d {GD} -c $enter_code -u ${USER} -p ${PASSWD}
+    python aws_sso.py -f ${FF} -d ${GD} -c $enter_code -u ${USER} -p ${PASSWD}
 else
     echo Not Found enter_code, SSO configure may be still valid
 fi
