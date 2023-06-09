@@ -30,13 +30,14 @@ def authorize_request(browser):
     WebDriverWait(browser, 200).until(EC.element_to_be_clickable((By.XPATH, approval)))   
     sleep(10)       
     browser.find_element(By.XPATH, approval).click()
+    success='//*[@id="LoginForm"]/div/span'
+    WebDriverWait(browser, 60).until(EC.visibility_of_element_located((By.XPATH, success)))
     print("AWS SSO Refresh Done")
     browser.quit()
 
 def sso_refresh(ff,gd,code,user,passwd):
     options = Options()
     options.add_argument('--headless')
-    options.add_argument('--incognito') # for fix login steps
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-dev-shm-usage')        
@@ -56,15 +57,16 @@ def sso_refresh(ff,gd,code,user,passwd):
         driver.find_element(By.XPATH, next).click()
 
         print("PSWD...")
+        sleep(5)
         pswd='//*[@id="i0118"]'
         WebDriverWait(driver, 1200).until(EC.visibility_of_element_located((By.XPATH, pswd)))
         driver.find_element(By.XPATH, pswd).send_keys(passwd)
-        sleep(10)
+        sleep(5)
         signin='//*[@id="idSIButton9"]'
         WebDriverWait(driver, 200).until(EC.element_to_be_clickable((By.XPATH, signin)))      
         driver.find_element(By.XPATH, signin).click()
         authorize_request(driver)
     except:
-        authorize_request(driver) 
+        authorize_request(driver)
 
 sso_refresh(args.ff,args.gd,args.code,args.user,args.passwd)

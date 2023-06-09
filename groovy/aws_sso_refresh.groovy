@@ -67,14 +67,19 @@ env._USER = "$user"
 env._PASSWD = "$passwd"
 
 node(NODE_LABEL){
-    stage("AWS SSO Refresh"){
+    stage("AWS SSO Refresh")
+    {
         deleteDir()
-        checkout scm        
-        sh '''
-        #!/usr/bin/env bash
-        cd scripts/aws && bash launch_login.sh ${_FF} ${_GD} ${_USER} ${_PASSWD}
-        '''
-    }//Refresh
+        checkout scm    
+        try{
+            sh '''
+            #!/usr/bin/env bash
+            cd scripts/aws && bash refresh.sh ${_FF} ${_GD} ${_USER} ${_PASSWD}
+            '''
+        }catch(err){
+            echo err.getMessage()   
+        }
+    }    
     stage("Email"){
         if ("${debug}" == "true"){
             maillist="${debug_mail}"
