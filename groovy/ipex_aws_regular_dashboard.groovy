@@ -300,6 +300,7 @@ node(NODE_LABEL){
             '''
         }
     }
+
     '''
     stage("generate report"){
         retry(3){
@@ -324,7 +325,7 @@ node(NODE_LABEL){
             }
         }
     }
-    '''
+
 
     stage('archiveArtifacts') {
             sh '''
@@ -333,6 +334,7 @@ node(NODE_LABEL){
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
+    '''
 
     stage("Sent Email"){
         if ("${debug}" == "true"){
