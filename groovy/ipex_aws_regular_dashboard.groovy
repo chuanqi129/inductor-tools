@@ -300,7 +300,7 @@ node(NODE_LABEL){
             '''
         }
     }
-    '''
+
     stage("generate report"){
         retry(3){
             if(refer_build != '0') {
@@ -324,7 +324,7 @@ node(NODE_LABEL){
             }
         }
     }
-    '''
+
 
     stage('archiveArtifacts') {
             sh '''
