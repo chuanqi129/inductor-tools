@@ -314,7 +314,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash      
             source activate ipex_report  
             cd ${WORKSPACE} &&  mkdir -p refer && cp -r 2023_05_17/ipex_log refer && rm -rf ipex_log
-            cp ${WORKSPACE}/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer --gh_token ${_gh_token}
+            cp ${WORKSPACE}/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all 
             '''
             }else{
                 sh '''
