@@ -329,7 +329,7 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         set +e
         current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-        for t in {1..25}
+        for t in {1..30}
         do
             ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
