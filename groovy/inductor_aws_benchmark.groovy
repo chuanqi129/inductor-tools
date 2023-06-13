@@ -331,7 +331,7 @@ node(NODE_LABEL){
         current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         for t in {1..30}
         do
-            ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
                     rm -rf ${WORKSPACE}/${_target}
@@ -342,7 +342,7 @@ node(NODE_LABEL){
             else
                 sleep 1h
                 echo $t
-                if [ $t -eq 24 ]; then
+                if [ $t -eq 25 ]; then
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
