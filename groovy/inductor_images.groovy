@@ -159,16 +159,18 @@ node(NODE_LABEL){
     }
     stage("nightly_pre") {
         if ("${tag}" == "nightly") {
-            sh '''
-            #!/usr/bin/env bash
-            docker system prune -af
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
-            docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-            docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-            docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-            docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-            docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
-            '''
+            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                sh '''
+                #!/usr/bin/env bash
+                docker system prune -af
+                docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
+                docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+                docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+                docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
+                docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
+                '''
+            }
         }else {
             sh '''
             #!/usr/bin/env bash

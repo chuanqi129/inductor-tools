@@ -340,7 +340,9 @@ node(NODE_LABEL){
             task_status = image_build_job.result
             task_number = image_build_job.number
             withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
-                sh '''#!/bin/bash
+                withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                    sh '''
+                    #!/bin/bash
                     old_container=`docker ps |grep $USER |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
@@ -354,29 +356,32 @@ node(NODE_LABEL){
                     fi
                     if [ ${task_status} == "SUCCESS" ]; then
                         docker system prune -f
-                        docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
+                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                         docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     fi
-                '''
+                    '''
+                }
             }           
         }else {
-            sh '''
-            #!/usr/bin/env bash
-            old_container=`docker ps |grep $USER |awk '{print $1}'`
-            if [ -n "${old_container}" ]; then
-                docker stop $old_container
-                docker rm $old_container
-                docker container prune -f
-            fi
-            old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
-            old_image=`echo $old_image_id| awk '{print $1}'`
-            if [ -n "${old_image}" ]; then
-                docker rmi -f $old_image
-            fi
-            docker system prune -f
-            docker login ccr-registry.caas.intel.com -u yudongsi -p 2580369+SYD
-            docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-            '''        
+            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                sh '''
+                #!/usr/bin/env bash
+                old_container=`docker ps |grep $USER |awk '{print $1}'`
+                if [ -n "${old_container}" ]; then
+                    docker stop $old_container
+                    docker rm $old_container
+                    docker container prune -f
+                fi
+                old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
+                old_image=`echo $old_image_id| awk '{print $1}'`
+                if [ -n "${old_image}" ]; then
+                    docker rmi -f $old_image
+                fi
+                docker system prune -f
+                docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+                ''' 
+            }       
         }
     }
 
