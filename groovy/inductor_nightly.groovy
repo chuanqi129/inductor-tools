@@ -399,7 +399,10 @@ node(NODE_LABEL){
             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
             docker cp scripts/microbench/microbench_parser.py $USER:/workspace/pytorch
             docker cp scripts/microbench/microbench.sh $USER:/workspace/pytorch
-            docker exec $USER bash -c "bash microbench.sh dynamo_opbench ${op_suite} ${op_repeats} ${DT};cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
+            docker exec $USER bash -c "bash microbench.sh dynamo_opbench timm ${op_repeats} ${DT}"
+            docker exec $USER bash -c "bash microbench.sh dynamo_opbench torchbench ${op_repeats} ${DT}"
+            docker exec $USER bash -c "bash microbench.sh dynamo_opbench huggingface ${op_repeats} ${DT}"
+            docker exec $USER bash -c "cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
             '''
         }
     }//OPBench
