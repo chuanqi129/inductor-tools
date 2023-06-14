@@ -50,6 +50,7 @@ node(NODE_LABEL){
     stage("AWS SSO Refresh")
     {
         deleteDir()
+        checkout scm
         try{
             withCredentials([usernamePassword(credentialsId: 'yudongsi_iap', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')])
             {        
