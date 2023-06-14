@@ -43,39 +43,21 @@ if ('gd' in params) {
 }
 echo "gd: $gd"
 
-user = 'yudong.si@intel.com'
-if ('user' in params) {
-    echo "user in params"
-    if (params.user != '') {
-        user = params.user
-    }
-}
-echo "user: $user"
-
-passwd = 'XXX'
-if ('passwd' in params) {
-    echo "passwd in params"
-    if (params.passwd != '') {
-        passwd = params.passwd
-    }
-}
-echo "passwd: $passwd"
-
 env._FF = "$firefox"
 env._GD = "$gd"
-env._USER = "$user"
-env._PASSWD = "$passwd"
 
 node(NODE_LABEL){
     stage("AWS SSO Refresh")
     {
         deleteDir()
-        checkout scm    
         try{
-            sh '''
-            #!/usr/bin/env bash
-            cd scripts/aws && bash refresh.sh ${_FF} ${_GD} ${_USER} ${_PASSWD}
-            '''
+            withCredentials([usernamePassword(credentialsId: 'yudongsi_iap', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')])
+            {        
+                sh '''
+                #!/usr/bin/env bash
+                cd scripts/aws && bash refresh.sh ${_FF} ${_GD} $USERNAME $PASSWORD
+                '''
+            }
         }catch(err){
             echo err.getMessage()   
         }
