@@ -330,6 +330,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
+            cd ./${_target}
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
