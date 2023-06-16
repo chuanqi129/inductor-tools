@@ -329,8 +329,10 @@ node(NODE_LABEL){
     stage('archiveArtifacts') {
             sh '''
             #!/usr/bin/env bash
+            echo ${_target}
             cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
-            cd ./${_target}
+            cd ${WORKSPACE}/${_target}
+            
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
