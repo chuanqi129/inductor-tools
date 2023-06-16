@@ -312,7 +312,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash      
             source activate ipex_report  
-            cd ${WORKSPACE} && mkdir -p refer && cp -r ./2023_06_09/ipex_log refer && rm -rf ipex_log
+            cd ${WORKSPACE} && mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
             cp ${WORKSPACE}/scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m all && rm -rf refer 
             '''
             }else{
