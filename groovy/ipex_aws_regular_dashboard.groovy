@@ -331,11 +331,11 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             echo ${_target}
             cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
-            cp -r  ${WORKSPACE}/${_target}/ipex_log ${WORKSPACE} 
+            cp -r  ${WORKSPACE}/${_target}/ipex_log ${WORKSPACE} && rm -rf ${WORKSPACE}/${_target}
             cd ${WORKSPACE}/${_target} 
             
             '''        
-        archiveArtifacts artifacts: "./ipex_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
 
     stage("Sent Email"){
