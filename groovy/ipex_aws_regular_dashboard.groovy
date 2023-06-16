@@ -332,7 +332,6 @@ node(NODE_LABEL){
             echo ${_target}
             cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
             cp -r  ${WORKSPACE}/${_target}/ipex_log ${WORKSPACE} && rm -rf ${WORKSPACE}/${_target}
-            cd ${WORKSPACE}/${_target} 
             
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
