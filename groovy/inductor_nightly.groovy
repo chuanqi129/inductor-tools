@@ -323,6 +323,33 @@ def cleanup(){
     }
 }
 
+def prepare(){
+    echo 'prepare......'
+    cleanup()
+    deleteDir()
+    checkout scm
+    withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+        sh '''
+        #!/usr/bin/env bash
+        old_container=`docker ps |grep $USER |awk '{print $1}'`
+        if [ -n "${old_container}" ]; then
+            docker stop $old_container
+            docker rm $old_container
+            docker container prune -f
+        fi
+        old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
+        old_image=`echo $old_image_id| awk '{print $1}'`
+        if [ -n "${old_image}" ]; then
+            docker rmi -f $old_image
+        fi
+        docker system prune -f
+        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+        docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        ''' 
+    }
+}
+
+
 def llm_benchmark(node){
     withEnv(["exec_node=${node}"]){
         sh '''
@@ -510,81 +537,31 @@ def mail_sent(node){
 }
 
 stage('Benchmark') {
+    if ("${Build_Image}" == "true") {
+        def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
+            [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
+            [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
+            [$class: 'StringParameterValue', name: 'PT_REPO', value: "${PT_REPO}"],
+            [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${PT_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${PT_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${TORCH_VISION_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TORCH_TEXT_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${TORCH_DATA_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${TORCH_AUDIO_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
+            [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
+        ] 
     parallel icx24: {
         node(ICX_NODE_LABEL){
-            stage("get image and inductor-tools repo"){
-                echo 'get image and inductor-tools repo......'
-                cleanup()
-                deleteDir()
-                checkout scm
-                if ("${Build_Image}" == "true") {
-                    def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
-                        [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
-                        [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
-                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${PT_REPO}"],
-                        [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${PT_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${PT_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${TORCH_VISION_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TORCH_TEXT_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${TORCH_DATA_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${TORCH_AUDIO_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
-                        [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
-                    ]
-                    task_status = image_build_job.result
-                    task_number = image_build_job.number
-                    withEnv(["task_status=${task_status}","task_number=${task_number}"]) {
-                        withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                            sh '''
-                            #!/bin/bash
-                            old_container=`docker ps |grep $USER |awk '{print $1}'`
-                            if [ -n "${old_container}" ]; then
-                                docker stop $old_container
-                                docker rm $old_container
-                                docker container prune -f
-                            fi
-                            old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
-                            old_image=`echo $old_image_id| awk '{print $1}'`
-                            if [ -n "${old_image}" ]; then
-                                docker rmi -f $old_image
-                            fi
-                            if [ ${task_status} == "SUCCESS" ]; then
-                                docker system prune -f
-                                docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                                docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-                            fi
-                            '''
-                        }
-                    }           
-                }else {
-                    withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                        sh '''
-                        #!/usr/bin/env bash
-                        old_container=`docker ps |grep $USER |awk '{print $1}'`
-                        if [ -n "${old_container}" ]; then
-                            docker stop $old_container
-                            docker rm $old_container
-                            docker container prune -f
-                        fi
-                        old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
-                        old_image=`echo $old_image_id| awk '{print $1}'`
-                        if [ -n "${old_image}" ]; then
-                            docker rmi -f $old_image
-                        fi
-                        docker system prune -f
-                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-                        ''' 
-                    }       
-                }
+            stage("prepare in icx node"){
+                prepare()
             }
-
             stage('OPBench') {
                 if ("${OPBench}" == "true") {
                     echo 'OPBench......'
@@ -664,30 +641,8 @@ stage('Benchmark') {
     },
     spr04: {
         node(SPR_NODE_LABEL) {
-            stage("get image and repo"){
-                echo 'get image and repo......'
-                cleanup()
-                deleteDir()
-                checkout scm
-                withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                    sh '''
-                    #!/usr/bin/env bash
-                    old_container=`docker ps |grep $USER |awk '{print $1}'`
-                    if [ -n "${old_container}" ]; then
-                        docker stop $old_container
-                        docker rm $old_container
-                        docker container prune -f
-                    fi
-                    old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
-                    old_image=`echo $old_image_id| awk '{print $1}'`
-                    if [ -n "${old_image}" ]; then
-                        docker rmi -f $old_image
-                    fi
-                    docker system prune -f
-                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                    docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-                    '''
-                }
+            stage("prepare in spr node"){
+                prepare()
             }
             stage("LLMBench"){
                 if ("${LLMBench}" == "true") {
