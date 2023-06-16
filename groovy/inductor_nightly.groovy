@@ -367,7 +367,7 @@ def report(node){
             }
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE}/llm_bench_${exec_node} && python3 generate_report.py --url ${BUILD_URL} --node ${exec_node} && rm -rf llm_bench && rm generate_report.py
+            cd ${WORKSPACE}/llm_bench_${exec_node} && python3 generate_report.py --url ${BUILD_URL} --node ${exec_node} && rm -rf llm_bench_${exec_node} && rm generate_report.py
             '''            
         }
     }//LLMBench_report
