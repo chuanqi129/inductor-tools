@@ -457,14 +457,25 @@ def mail_sent(node){
     if ("${LLMBench}" == "true"){
         withEnv(["exec_node=${node}"]){
             if (fileExists("${WORKSPACE}/llm_bench_${exec_node}/llm_report.html") == true){
-                emailext(
-                    subject: "Torchinductor LLMBench Report ${_VERSION}",
-                    mimeType: "text/html",
-                    attachmentsPattern: "**/llm_bench_${exec_node}/result.txt",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: '${FILE,path="llm_bench_${exec_node}/llm_report.html"}'
-                )
+                if("${exec_node}" == "${_ICX_NODE}"){
+                    emailext(
+                        subject: "Torchinductor LLMBench Report ${_VERSION}",
+                        mimeType: "text/html",
+                        attachmentsPattern: "**/llm_bench_${exec_node}/result.txt",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: '${FILE,path="llm_bench_mlp-validate-icx24-ubuntu/llm_report.html"}'
+                    )
+                }else{
+                    emailext(
+                        subject: "Torchinductor LLMBench Report ${_VERSION}",
+                        mimeType: "text/html",
+                        attachmentsPattern: "**/llm_bench_${exec_node}/result.txt",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: '${FILE,path="llm_bench_mlp-spr-04.sh.intel.com/llm_report.html"}'
+                    )                    
+                }
             }else{
                 emailext(
                     subject: "Failure occurs in Torchinductor LLMBench ${_VERSION}",
