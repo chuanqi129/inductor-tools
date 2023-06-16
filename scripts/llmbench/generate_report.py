@@ -3,6 +3,7 @@ import pandas as pd
 
 parser = argparse.ArgumentParser(description='Torchinductor LLMbench Report Generate')
 parser.add_argument('-l', '--url', type=str, help='jenkins build url')
+parser.add_argument('-n', '--node', type=str, default='mlp-validate-icx24-ubuntu',help='benchmark node')
 args = parser.parse_args()
 
 commit_list=[]
@@ -28,7 +29,7 @@ last_latency_llama=0
 last_latency_llama_cppwrapper=0
 
 try:
-    last_result = pd.read_table('llm_bench/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+    last_result = pd.read_table('llm_bench_'+args.node+'/result.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
     
     last_latency = last_result.loc[8,"commit"]
     last_latency_gptj = last_latency.split('ms.')[0]
@@ -128,17 +129,7 @@ report_content=f'''<!DOCTYPE html>
     </table> 
     <p>HW info:</p><ol><table> 
         <tbody> 
-            <tr><td>Machine name:&nbsp;</td><td>mlp-validate-icx24-ubuntu</td></tr> 
-            <tr><td>Manufacturer:&nbsp;</td><td>Intel Corporation</td></tr> 
-            <tr><td>Kernel:</td><td>5.4.0-131-generic</td></tr> 
-            <tr><td>Microcode:</td><td>0xd000375</td></tr> 
-            <tr><td>Installed Memory:</td><td>503GB</td></tr> 
-            <tr><td>OS:</td><td>Ubuntu 18.04.6 LTS</td></tr> 
-            <tr><td>CPU Model:</td><td>Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz</td></tr> 
-            <tr><td>GCC:</td><td>gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0</td></tr> 
-            <tr><td>GLIBC:</td><td>ldd (Ubuntu GLIBC 2.27-3ubuntu1.5) 2.27</td></tr> 
-            <tr><td>Binutils:</td><td>GNU ld (GNU Binutils for Ubuntu) 2.30</td></tr> 
-            <tr><td>Python:</td><td>Python 3.8.3</td></tr> 
+            <tr><td>Machine name:&nbsp;</td><td>{args.node}</td></tr> 
         </tbody></table></ol> 
     <p>job info:</p><ol><table>
         <tbody>
