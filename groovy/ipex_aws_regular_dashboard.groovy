@@ -331,6 +331,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             echo ${_target}
             cp -r  ${WORKSPACE}/${_target} $HOME/ipex_dashboard
+            cp -r  ${WORKSPACE}/${_target}/ipex_log ${WORKSPACE}
             cd ${WORKSPACE}/${_target}
             
             '''        
