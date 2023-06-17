@@ -390,18 +390,26 @@ def report(node){
 
 def atfs(node){
     withEnv(["exec_node=${node}"]){
-        if ("${OPBench}" == "true"){
-            archiveArtifacts artifacts: "**/opbench_log/**", fingerprint: true
+        if("${exec_node}" == "${_ICX_NODE}"){
+            if ("${OPBench}" == "true"){
+                archiveArtifacts artifacts: "**/opbench_log/**", fingerprint: true
+            }
+            if ("${ModelBench}" == "true"){
+                archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+            }
+            if ("${LLMBench}" == "true") {
+                archiveArtifacts artifacts: "**/llm_bench_${exec_node}/**", fingerprint: true
+            }
+            if ("${GNNBench}" == "true") {
+                archiveArtifacts artifacts: "**/gnn_bench/**", fingerprint: true
+            }        
         }
-        if ("${ModelBench}" == "true"){
-            archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        if("${exec_node}" == "${_SPR_NODE}"){
+            if ("${LLMBench}" == "true") {
+                archiveArtifacts artifacts: "**/llm_bench_${exec_node}/**", fingerprint: true
+            }          
         }
-        if ("${LLMBench}" == "true") {
-            archiveArtifacts artifacts: "**/llm_bench_${exec_node}/**", fingerprint: true
-        }
-        if ("${GNNBench}" == "true") {
-            archiveArtifacts artifacts: "**/gnn_bench/**", fingerprint: true
-        } 
+
     }
 }
 
@@ -410,51 +418,71 @@ def mail_sent(node){
         maillist="yudong.si@intel.com"
     }else{
         maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
-    }    
-    if ("${OPBench}" == "true"){
-        if (fileExists("${WORKSPACE}/opbench_log/op-microbench-${_VERSION}.xlsx") == true){
-            emailext(
-                subject: "Torchinductor OP microbench Nightly Report ${node} ${_VERSION}",
-                mimeType: "text/html",
-                attachmentsPattern: "**/opbench_log/*.xlsx",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: '${FILE,path="opbench_log/ops.html"}'
-            )
-        }else{
-            emailext(
-                subject: "Failure occurs in Torchinductor OP microbench Nightly ${node} ${_VERSION}",
-                mimeType: "text/html",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: 'Job build failed, please double check in ${BUILD_URL}'
-            )
-        }
-    }//OPBench
-    if ("${ModelBench}" == "true"){
-        if (fileExists("${WORKSPACE}/inductor_log/inductor_dashboard_regression_check.xlsx") == true){
-            emailext(
-                subject: "Torchinductor ModelBench Report ${node} ${_VERSION}",
-                mimeType: "text/html",
-                attachmentsPattern: "**/inductor_log/*.xlsx",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
-            )
-        }else{
-            emailext(
-                subject: "Failure occurs in Torchinductor ModelBench ${node} ${_VERSION}",
-                mimeType: "text/html",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: 'Job build failed, please double check in ${BUILD_URL}'
-            )
-        }
-    }//ModelBench
-    if ("${LLMBench}" == "true"){
-        withEnv(["exec_node=${node}"]){
-            if (fileExists("${WORKSPACE}/llm_bench_${exec_node}/llm_report.html") == true){
-                if("${exec_node}" == "${_ICX_NODE}"){
+    } 
+    withEnv(["exec_node=${node}"]){
+        if("${exec_node}" == "${_ICX_NODE}"){
+            if ("${OPBench}" == "true"){
+                if (fileExists("${WORKSPACE}/opbench_log/op-microbench-${_VERSION}.xlsx") == true){
+                    emailext(
+                        subject: "Torchinductor OP microbench Nightly Report ${_VERSION}",
+                        mimeType: "text/html",
+                        attachmentsPattern: "**/opbench_log/*.xlsx",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: '${FILE,path="opbench_log/ops.html"}'
+                    )
+                }else{
+                    emailext(
+                        subject: "Failure occurs in Torchinductor OP microbench Nightly ${_VERSION}",
+                        mimeType: "text/html",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: 'Job build failed, please double check in ${BUILD_URL}'
+                    )
+                }
+            }//OPBench
+            if ("${ModelBench}" == "true"){
+                if (fileExists("${WORKSPACE}/inductor_log/inductor_dashboard_regression_check.xlsx") == true){
+                    emailext(
+                        subject: "Torchinductor ModelBench Report ${_VERSION}",
+                        mimeType: "text/html",
+                        attachmentsPattern: "**/inductor_log/*.xlsx",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    )
+                }else{
+                    emailext(
+                        subject: "Failure occurs in Torchinductor ModelBench ${_VERSION}",
+                        mimeType: "text/html",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: 'Job build failed, please double check in ${BUILD_URL}'
+                    )
+                }
+            }//ModelBench
+            if ("${GNNBench}" == "true"){
+                if (fileExists("${WORKSPACE}/gnn_bench/gnn_report.html") == true){
+                    emailext(
+                        subject: "Torchinductor GNNBench Report ${_VERSION}",
+                        mimeType: "text/html",
+                        attachmentsPattern: "**/gnn_bench/result.txt",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: '${FILE,path="gnn_bench/gnn_report.html"}'
+                    )
+                }else{
+                    emailext(
+                        subject: "Failure occurs in Torchinductor GNNBench ${_VERSION}",
+                        mimeType: "text/html",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: 'Job build failed, please double check in ${BUILD_URL}'
+                    )
+                }
+            }//GNNBench
+            if ("${LLMBench}" == "true"){
+                if (fileExists("${WORKSPACE}/llm_bench_${exec_node}/llm_report.html") == true){
                     emailext(
                         subject: "Torchinductor LLMBench Report ${_VERSION}",
                         mimeType: "text/html",
@@ -465,45 +493,38 @@ def mail_sent(node){
                     )
                 }else{
                     emailext(
+                        subject: "Failure occurs in Torchinductor LLMBench ${_VERSION}",
+                        mimeType: "text/html",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: 'Job build failed, please double check in ${BUILD_URL}'
+                    )
+                }
+            }//LLMBench                           
+        }
+        if("${exec_node}" == "${_SPR_NODE}"){
+            if ("${LLMBench}" == "true"){
+                if (fileExists("${WORKSPACE}/llm_bench_${exec_node}/llm_report.html") == true){
+                    emailext(
                         subject: "Torchinductor LLMBench Report ${_VERSION}",
                         mimeType: "text/html",
                         attachmentsPattern: "**/llm_bench_${exec_node}/result.txt",
                         from: "pytorch_inductor_val@intel.com",
                         to: maillist,
                         body: '${FILE,path="llm_bench_mlp-spr-04.sh.intel.com/llm_report.html"}'
-                    )                    
+                    )
+                }else{
+                    emailext(
+                        subject: "Failure occurs in Torchinductor LLMBench ${_VERSION}",
+                        mimeType: "text/html",
+                        from: "pytorch_inductor_val@intel.com",
+                        to: maillist,
+                        body: 'Job build failed, please double check in ${BUILD_URL}'
+                    )
                 }
-            }else{
-                emailext(
-                    subject: "Failure occurs in Torchinductor LLMBench ${_VERSION}",
-                    mimeType: "text/html",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: 'Job build failed, please double check in ${BUILD_URL}'
-                )
-            }            
-        }
-    }//LLMBench
-    if ("${GNNBench}" == "true"){
-        if (fileExists("${WORKSPACE}/gnn_bench/gnn_report.html") == true){
-            emailext(
-                subject: "Torchinductor GNNBench Report ${node} ${_VERSION}",
-                mimeType: "text/html",
-                attachmentsPattern: "**/gnn_bench/result.txt",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: '${FILE,path="gnn_bench/gnn_report.html"}'
-            )
-        }else{
-            emailext(
-                subject: "Failure occurs in Torchinductor GNNBench ${node} ${_VERSION}",
-                mimeType: "text/html",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: 'Job build failed, please double check in ${BUILD_URL}'
-            )
-        }
-    }//GNNBench 
+            }//LLMBench
+        }      
+    }
 }
 
 stage('Benchmark') {
