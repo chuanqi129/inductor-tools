@@ -353,7 +353,7 @@ def llm_benchmark(node){
                     selector: specific("${refer_build}"),
                     filter: "llm_bench_${exec_node}/*.txt",
                     fingerprintArtifacts: true,
-                    target: "llm_bench_${exec_node}/")
+                    target: "refer/")
             }
         }catch(err){
             echo err.getMessage()
@@ -361,7 +361,7 @@ def llm_benchmark(node){
         sh '''
         #!/usr/bin/env bash
         set +e
-        docker cp llm_bench_${exec_node} $USER:/workspace/pytorch/llm_bench_${exec_node}
+        docker cp refer/llm_bench_${exec_node} $USER:/workspace/pytorch/llm_bench_${exec_node}
         docker exec -i $USER bash -c "cd llm_bench_${exec_node};python3 generate_report.py --url ${BUILD_URL} --node ${exec_node};rm -rf llm_bench_${exec_node};rm generate_report.py"
         '''              
     }
