@@ -345,7 +345,6 @@ def llm_benchmark(node){
         docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
         docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench_${exec_node}
         docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench_${exec_node}"
-        }
         '''       
     }
 }
@@ -576,7 +575,7 @@ stage('Benchmark') {
                     docker exec $USER bash -c "bash microbench.sh dynamo_opbench timm ${op_repeats} ${DT}"
                     docker exec $USER bash -c "bash microbench.sh dynamo_opbench torchbench ${op_repeats} ${DT}"
                     docker exec $USER bash -c "bash microbench.sh dynamo_opbench huggingface ${op_repeats} ${DT}"
-                    docker exec $USER bash -c "cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_NODE};rm microbench_parser.py"
+                    docker exec $USER bash -c "cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_ICX_NODE};rm microbench_parser.py"
                     '''
                 }
             }//OPBench
