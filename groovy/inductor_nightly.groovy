@@ -659,11 +659,10 @@ stage('Benchmark') {
             stage("prepare"){
                 echo 'prepare......'
                 cleanup()
-                deleteDir()
-                checkout scm
                 withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
                     sh '''
                     #!/usr/bin/env bash
+                    sudo rm -rf ${WORKSPACE}/*
                     old_container=`docker ps |grep $USER |awk '{print $1}'`
                     if [ -n "${old_container}" ]; then
                         docker stop $old_container
@@ -680,6 +679,7 @@ stage('Benchmark') {
                     docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     '''
                 }
+                checkout scm                
             }
             stage("LLMBench"){
                 if ("${LLMBench}" == "true") {
