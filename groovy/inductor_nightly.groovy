@@ -345,31 +345,29 @@ def llm_benchmark(node){
         docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
         docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench_${exec_node}
         docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench_${exec_node}"
-        '''       
+        ''' 
+        try{
+            if(refer_build != '0') {
+                copyArtifacts(
+                    projectName: currentBuild.projectName,
+                    selector: specific("${refer_build}"),
+                    filter: "llm_bench_${exec_node}/*.txt",
+                    fingerprintArtifacts: true,
+                    target: "llm_bench_${exec_node}/")
+            }
+        }catch(err){
+            echo err.getMessage()
+        }
+        sh '''
+        #!/usr/bin/env bash
+        set +e
+        docker cp llm_bench_${exec_node} $USER:/workspace/pytorch/llm_bench_${exec_node}
+        docker exec -i $USER bash -c "cd llm_bench_${exec_node};python3 generate_report.py --url ${BUILD_URL} --node ${exec_node};rm -rf llm_bench_${exec_node};rm generate_report.py"
+        '''              
     }
 }
 
 def report(node){
-    if ("${LLMBench}" == "true") {
-        withEnv(["exec_node=${node}"]){
-            try{
-                if(refer_build != '0') {
-                    copyArtifacts(
-                        projectName: currentBuild.projectName,
-                        selector: specific("${refer_build}"),
-                        filter: "llm_bench_${exec_node}/*.txt",
-                        fingerprintArtifacts: true,
-                        target: "llm_bench_${exec_node}/")
-                }
-            }catch(err){
-                echo err.getMessage()
-            }
-            sh '''
-            #!/usr/bin/env bash
-            cd ${WORKSPACE}/llm_bench_${exec_node} && python3 generate_report.py --url ${BUILD_URL} --node ${exec_node} && rm -rf llm_bench_${exec_node} && rm generate_report.py
-            '''            
-        }
-    }//LLMBench_report
     if ("${GNNBench}" == "true") {
         try{
             if(refer_build != '0') {
@@ -532,8 +530,8 @@ stage('Benchmark') {
     }   
     parallel icx24: {
         node(ICX_NODE_LABEL){
-            stage("get image and inductor-tools repo"){
-                echo 'get image and inductor-tools repo......'
+            stage("prepare"){
+                echo 'prepare......'
                 cleanup()
                 deleteDir()
                 checkout scm
@@ -637,8 +635,8 @@ stage('Benchmark') {
     },
     spr04: {
         node(SPR_NODE_LABEL) {
-            stage("get image and repo"){
-                echo 'get image and repo......'
+            stage("prepare"){
+                echo 'prepare......'
                 cleanup()
                 deleteDir()
                 checkout scm
@@ -666,10 +664,7 @@ stage('Benchmark') {
                 if ("${LLMBench}" == "true") {
                     llm_benchmark(SPR_NODE_LABEL)
                 }
-            }//LLMBench 
-            stage("Generate Report") {
-                report(SPR_NODE_LABEL) 
-            } 
+            }//LLMBench
             stage('archiveArtifacts') {
                 atfs(SPR_NODE_LABEL)       
             }
