@@ -361,7 +361,7 @@ def llm_benchmark(node){
         sh '''
         #!/usr/bin/env bash
         set +e
-        docker cp refer/llm_bench_${exec_node} $USER:/workspace/pytorch/llm_bench_${exec_node}
+        docker cp refer/llm_bench_${exec_node} $USER:/workspace/pytorch/llm_bench_${exec_node} && sudo rm -rf refer/*
         docker exec -i $USER bash -c "cd llm_bench_${exec_node};python3 generate_report.py --url ${BUILD_URL} --node ${exec_node};rm -rf llm_bench_${exec_node};rm generate_report.py"
         '''              
     }
