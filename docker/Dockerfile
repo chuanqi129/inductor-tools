@@ -36,6 +36,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
     /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
+        boto3 \
         cffi \
         cython \
         cmake>=3.13.0 \
