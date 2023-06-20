@@ -11,7 +11,11 @@ rm -rf ${log_dir}
 mkdir ${log_dir}
 
 echo running cpu userbenchmark........
-precisions="fp32 bf16 fx_int8"
+# precisions="fp32 bf16 fx_int8"
+# models="resnet50,hf_DistilBert,hf_Bert_large,BERT_pytorch,hf_GPT2_large,timm_vision_transformer_large,dcgan"
+precisions="fp32 bf16"
+models="attention_is_all_you_need_pytorch,functorch_maml_omniglot,mnasnet1_0,mobilenet_v3_large,pytorch_unet,shufflenet_v2_x1_0,pyhpc_isoneutral_mixing,LearningToPaint"
+
 for precision in ${precisions}; do
 	if [ $precision = "fx_int8" ]; then
 		precison_ext="fx_int8 --quant-engine qnnpack"
@@ -23,7 +27,7 @@ for precision in ${precisions}; do
 		precision_ext=${precision}
 		unset DNNL_DEFAULT_FPMATH_MODE
 	fi
-        cmd_prefix="python run_benchmark.py cpu -m resnet50,hf_DistilBert,hf_Bert_large,BERT_pytorch,hf_GPT2_large,timm_vision_transformer_large,dcgan --precision ${precision_ext} --channels-last --launcher --launcher-args=\"--throughput-mode\""
+        cmd_prefix="python run_benchmark.py cpu -m ${models} --precision ${precision_ext} --channels-last --launcher --launcher-args=\"--throughput-mode\""
 
         # eager
         ${cmd_prefix} 
@@ -38,4 +42,3 @@ for precision in ${precisions}; do
         ${cmd_prefix}  --torchdynamo inductor
         mv .userbenchmark/cpu ${log_dir}/${precision}_inductor_throughput
 done
-

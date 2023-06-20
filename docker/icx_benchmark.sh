@@ -10,9 +10,13 @@ rm -rf ${log_dir}
 mkdir ${log_dir}
 
 echo running cpu userbenchmark........
-precisions="fp32 bf16 amp_bf16 fx_int8"
+# precisions="fp32 bf16 amp_bf16 fx_int8"
+# models="resnet50,hf_DistilBert,hf_Bert_large,BERT_pytorch,hf_GPT2_large,timm_vision_transformer_large,dcgan"
+precisions="fp32"
+models="attention_is_all_you_need_pytorch,functorch_maml_omniglot,mnasnet1_0,mobilenet_v3_large,pytorch_unet,shufflenet_v2_x1_0,pyhpc_isoneutral_mixing,LearningToPaint"
+
 for precision in ${precisions}; do
-        cmd_prefix="python run_benchmark.py cpu -m resnet50,hf_DistilBert,hf_Bert_large,BERT_pytorch,hf_GPT2_large,timm_vision_transformer_large,dcgan --precision ${precision} --channels-last --launcher --launcher-args=\"--throughput-mode\""
+        cmd_prefix="python run_benchmark.py cpu -m ${models}  --precision ${precision} --channels-last --launcher --launcher-args=\"--throughput-mode\""
 
         # eager
         ${cmd_prefix} 
