@@ -17,6 +17,7 @@ TORCH_BENCH=${13:-a0848e19}
 
 THREADS=${14:-all}
 CHANNELS=${15:-first}
+WRAPPER=${16:-default}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -33,6 +34,7 @@ echo "DATA" : $DATA
 echo "TORCH_BENCH" : $TORCH_BENCH
 echo "THREADS" : $THREADS
 echo "CHANNELS" : $CHANNELS
+echo "WRAPPER" : $WRAPPER
 
 # clean up
 docker stop $(docker ps -aq)
@@ -52,7 +54,7 @@ docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 
 if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER"
 elif [ $TEST_MODE == "training" ]; then
     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
 fi

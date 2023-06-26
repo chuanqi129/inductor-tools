@@ -245,6 +245,15 @@ if ('CHANNELS' in params) {
 }
 echo "CHANNELS: $CHANNELS"
 
+WRAPPER= 'default'
+if ('WRAPPER' in params) {
+    echo "WRAPPER in params"
+    if (params.WRAPPER != '') {
+        WRAPPER = params.WRAPPER
+    }
+}
+echo "WRAPPER: $WRAPPER"
+
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
     dash_board = params.dash_board
@@ -272,6 +281,7 @@ env._DATA = "$DATA"
 env._TORCH_BENCH = "$TORCH_BENCH"
 env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
+env._WRAPPER = "$WRAPPER"
 
 node(NODE_LABEL){
     stage("start instance")
@@ -297,7 +307,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} &>/dev/null &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} &>/dev/null &" &
             '''
         }
     }

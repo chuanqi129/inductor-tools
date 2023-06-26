@@ -18,6 +18,7 @@ TORCH_BENCH=${13:-a0848e19}
 
 THREADS=${14:-all}
 CHANNELS=${15:-first}
+WRAPPER=${16:-default}
 
 # kill unused process
 itm_1=$(ps -ef | grep entrance.sh | awk '{print $2}')
@@ -51,7 +52,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS} ${WRAPPER}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
