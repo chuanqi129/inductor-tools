@@ -34,8 +34,6 @@ known_failures ={
     "gcn":"ImportError: 'NeighborSampler' requires either 'pyg-lib' or 'torch-sparse'",
     "sage":"ImportError: 'NeighborSampler' requires either 'pyg-lib' or 'torch-sparse'",
     "torchrec_dlrm":"AttributeError: '_OpNamespace' 'fbgemm' object has no attribute 'jagged_2d_to_dense'",
-    "MBartForConditionalGeneration":"DataDependentOutputException: aten._local_scalar_dense.default",
-    "PLBartForConditionalGeneration":"DataDependentOutputException: aten._local_scalar_dense.default"
 }
 
 # SW info
@@ -403,7 +401,7 @@ def process(input):
         data.set_column_width(11, 28) 
         data.set_column_width(12, 28) 
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
-        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] < 0.9],styler_obj=regression_style)
+        data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)    
     else:
