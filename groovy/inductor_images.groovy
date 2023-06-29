@@ -191,11 +191,20 @@ node(NODE_LABEL){
     }
 
     stage('push image') {
-        echo 'push image......'
+        retry(3){
+            echo 'push image......'
+            sh '''
+            #!/usr/bin/env bash
+            docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
+            '''
+        }
+    }
+
+    stage('clean image') {
         sh '''
         #!/usr/bin/env bash
-        docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
         docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag}
         '''
     }
+    
 }
