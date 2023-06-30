@@ -33,7 +33,7 @@ echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."
-    Shape_extra="--dynamic-shapes "
+    Shape_extra="--dynamic-shapes --dynamic-batch-only "
 fi
 
 Wrapper_extra=""
