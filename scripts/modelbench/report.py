@@ -2,7 +2,7 @@
 Generate report or data compare report from specified inductor logs.
 Usage:
   python report.py -r WW48.2 -t WW48.4 -m all --html_off --md_off --precision bfloat16
-  python report.py -r WW48.2 -t WW48.4 -m all --gh_token github_pat_xxxxx
+  python report.py -r WW48.2 -t WW48.4 -m all --gh_token github_pat_xxxxx --dashboard dynamic
 Dependencies:
     styleframe
     PyGithub
@@ -24,6 +24,7 @@ parser.add_argument('-p','--precision',type=str,default='float32',help='precisio
 parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
 parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
 parser.add_argument('--gh_token', type=str,help='github token for issue comment creation')
+parser.add_argument('--dashboard', type=str,default='default',choices=["default", "dynamic", "cppwrapper"],help='determine title in dashboard report')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -565,7 +566,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         # mt
         mt_result=open(args.target+'/inductor_log/mt_'+args.target+'.md','a+')
         mt_folder = getfolder(args.target,'multi_threads_cf_logs')
-        mt_title=f'# Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        mt_title=f'# {args.dashboard} Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         mt_result.writelines(mt_title)
 
         mt_summary=mt_folder+'/gh_executive_summary.txt'
@@ -581,7 +582,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         # st
         st_result=open(args.target+'/inductor_log/st_'+args.target+'.md','a+')
         st_folder = getfolder(args.target,'single_thread_cf_logs')
-        st_title=f'# Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        st_title=f'# {args.dashboard} Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         st_result.writelines(st_title)
 
         st_summary=st_folder+'/gh_executive_summary.txt'

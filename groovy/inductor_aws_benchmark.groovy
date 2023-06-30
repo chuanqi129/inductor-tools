@@ -260,6 +260,12 @@ if( 'dash_board' in params && params.dash_board != '' ) {
 }
 echo "dash_board: $dash_board"
 
+dashboard_title = 'default'
+if( 'dashboard_title' in params && params.dashboard_title != '' ) {
+    dashboard_title = params.dashboard_title
+}
+echo "dashboard_title: $dashboard_title"
+
 env._aws_id = "$instance_ids"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
@@ -268,6 +274,7 @@ env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
 env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
+env._dashboard_title = "$dashboard_title"
 
 env._TORCH_REPO = "$TORCH_REPO"
 env._TORCH_BRANCH = "$TORCH_BRANCH"
@@ -385,7 +392,7 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
                 if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} && rm -rf refer
+                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} && rm -rf refer
                 else
                      cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} && rm -rf refer
                 fi
