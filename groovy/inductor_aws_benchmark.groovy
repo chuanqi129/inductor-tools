@@ -400,7 +400,12 @@ node(NODE_LABEL){
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -t ${_target} -m all --md_off --precision ${_precision}
+                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
+                if [ ${_dash_board} == "true" ]; then
+                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision}
+                else
+                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}
+                fi
                 '''
             }
         }
