@@ -50,7 +50,6 @@ cd /home/ubuntu/docker
 # rm finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt file
 if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
     rm finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
-    rm finished.txt
 fi
 
 # launch benchmark
@@ -59,5 +58,5 @@ bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_B
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
     echo "benchmark finished!"
-    touch finished.txt
+    touch finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
 fi
