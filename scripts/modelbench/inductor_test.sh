@@ -42,6 +42,10 @@ if [[ $WRAPPER == "cpp" ]]; then
     Wrapper_extra="--cpp-wrapper "
 fi
 
+if [[ $SHAPE == "static" ]]; then
+    export TORCHINDUCTOR_FREEZING=1
+fi
+
 # multi-threads
 multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
