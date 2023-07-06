@@ -599,11 +599,11 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         with open(st_inference,'r') as inference_file:
             st_result.writelines(inference_file.readlines())
         # create comment in github issue
-        ESI_SYD_TK = args.gh_token
-        g = Github(ESI_SYD_TK)
+        Diwei_GIT_TK = args.gh_token
+        g = Github(Diwei_GIT_TK)
         g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
         repo = g.get_repo("pytorch/pytorch")
-        issue = repo.get_issue(number=93531)
+        issue = repo.get_issue(number=101273)
         print(issue)
         try:
             mt_result.seek(0)
