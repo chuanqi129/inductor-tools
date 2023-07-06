@@ -31,6 +31,7 @@ echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 git reset --hard
 sed -i "s%torch._dynamo.config.base_dir%'/workspace/pytorch'%" ./benchmarks/dynamo/common.py
 sed -i '/\"inductor\": \"--inference -n50 --inductor \"/a\"ipex\": \"--backend=ipex --inference \",' ./benchmarks/dynamo/runner.py
+sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/torchbench.py
 
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
