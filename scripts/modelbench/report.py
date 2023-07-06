@@ -601,7 +601,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         # create comment in github issue
         Diwei_GIT_TK = args.gh_token
         g = Github(Diwei_GIT_TK)
-        g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
+        g = Github(base_url="https://api.github.com", login_or_token=Diwei_GIT_TK)
         repo = g.get_repo("pytorch/pytorch")
         issue = repo.get_issue(number=101273)
         print(issue)
@@ -715,4 +715,4 @@ if __name__ == '__main__':
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)
-    # update_issue_commits()
+    update_issue_commits()
