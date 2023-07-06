@@ -566,7 +566,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         # mt
         mt_result=open(args.target+'/inductor_log/mt_'+args.target+'.md','a+')
         mt_folder = getfolder(args.target,'multi_threads_cf_logs')
-        mt_title=f'# {args.dashboard} Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        mt_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         mt_result.writelines(mt_title)
 
         mt_summary=mt_folder+'/gh_executive_summary.txt'
@@ -582,7 +582,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         # st
         st_result=open(args.target+'/inductor_log/st_'+args.target+'.md','a+')
         st_folder = getfolder(args.target,'single_thread_cf_logs')
-        st_title=f'# {args.dashboard} Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        st_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         st_result.writelines(st_title)
 
         st_summary=st_folder+'/gh_executive_summary.txt'
