@@ -117,6 +117,7 @@ ARG BENCH_COMMIT=main
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
     pip install cpuid && \
+    pip install z3-solver && \
     python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
 
 # Clean for final image
