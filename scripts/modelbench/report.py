@@ -520,7 +520,7 @@ export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 CORES=$(lscpu | grep Core | awk '{print $4}')
 export OMP_NUM_THREADS=$CORES
-python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --devices=cpu --dtypes=float32 --inference --compilers=ipex --extra-args="--timeout 9000" 
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --devices=cpu --dtypes=float32 --inference --backend=ipex --extra-args="--timeout 9000" 
 
 ```
 '''
@@ -559,9 +559,9 @@ Test command
 ```bash
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
-export OMP_NUM_THREADS=1
-
-python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --compilers=ipex --batch_size=1 --threads 1 --extra-args="--timeout 9000"
+CORES=$(lscpu | grep Core | awk '{print $4}')
+export OMP_NUM_THREADS=$CORES
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args  "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --backend=ipex --batch_size=1 --threads 1 --extra-args="--timeout 9000"
 
 ```
 '''
