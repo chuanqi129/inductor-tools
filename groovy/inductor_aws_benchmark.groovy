@@ -345,8 +345,14 @@ node(NODE_LABEL){
         sh '''
         #!/usr/bin/env bash
         set +e
+        if [ "${_WRAPPER}" == "cpp" ]; then
+            reboot_time=84
+            echo "cppwrapper"
+        else
+            reboot_time=29
+        fi        
         current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-        for t in {1..30}
+        for t in {1..100}
         do
             timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
@@ -359,9 +365,9 @@ node(NODE_LABEL){
             else
                 sleep 1h
                 echo $t
-                if [ $t -eq 29 ]; then
+                if [ $t -eq $reboot_time ]; then
                     echo restart instance now...
-                    $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
+                    $aws ec2 reboot-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
                 fi
             fi
@@ -461,7 +467,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -470,7 +476,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-(AWS)_${env._target}",
+                    subject: "Failure occurs in Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -482,7 +488,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
