@@ -284,7 +284,7 @@ node(NODE_LABEL){
             set +e
             for t in {1..25}
             do
-                ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt"
+                ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_${precision }_${test_mode}_${shape}.txt"
                 if [ $? -eq 0 ]; then
                     if [ -d ${WORKSPACE}/${_target} ]; then
                         rm -rf ${WORKSPACE}/${_target}
