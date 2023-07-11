@@ -219,7 +219,7 @@ def parse_acc_failure(file,failed_model):
                     if model != failed_model:
                         continue
                     found =  True
-                if found ==  True and ("Error: " in line or "[ERROR]" in line or "FAIL" in line):
+                if found ==  True and ("Error: " in line or "[ERROR]" in line or "TIMEOUT" in line or "FAIL" in line):
                     line=line.replace(',',' ',20)
                     result.append(model+", "+ line)
                     break
@@ -240,8 +240,9 @@ def parse_failure(file,failed_model):
                     if model != failed_model:
                         continue
                     found =  True
-                elif found ==  True and line.find("Error: ")!=-1:
-                    line=line.replace(',',' ',20)
+                elif found ==  True and line.find("Error: ")!=-1 or line.find("TIMEOUT")!=-1:
+                    if line.find("Error: ")!=-1:
+                        line=line.replace(',',' ',20)
                     result.append(model+", "+ line)
                     break
     return result
