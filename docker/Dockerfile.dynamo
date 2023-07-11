@@ -115,7 +115,8 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
-RUN python -c "import torch, torchdynamo, torchvision, torchtext"
+RUN pip install z3-solver && \
+    python -c "import torch, torchdynamo, torchvision, torchtext"
 
 # Clean for final image
 FROM dev-base AS image

@@ -116,7 +116,8 @@ RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pyt
     python setup.py install
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
-RUN git checkout ${BENCH_COMMIT} benchmarks && \
+RUN git checkout ${BENCH_COMMIT} benchmarks && \ 
+    pip install z3-solver && \
     python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
 
 # Clean for final image
