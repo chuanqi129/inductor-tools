@@ -1,3 +1,4 @@
+set -x
 TAG=${1:-ww09.2}
 PRECISION=${2:-float32}
 TEST_MODE=${3:-inference}
