@@ -337,7 +337,7 @@ node(NODE_LABEL){
                     [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
                     [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
-                    [$class: 'StringParameterValue', name: 'tag', value: "${env._target}"],
+                    [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_${env._shape}_${env._WRAPPER}"],
                 ]
             }
     }
