@@ -346,10 +346,10 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         set +e
         if [ "${_WRAPPER}" == "cpp" ]; then
-            reboot_time=50
+            reboot_time=52
             echo "cppwrapper"
         else
-            reboot_time=31
+            reboot_time=33
         fi        
         current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         for t in {1..100}
