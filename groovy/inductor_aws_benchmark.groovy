@@ -346,7 +346,7 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         set +e
         if [ "${_WRAPPER}" == "cpp" ]; then
-            reboot_time=84
+            reboot_time=50
             echo "cppwrapper"
         else
             reboot_time=31
