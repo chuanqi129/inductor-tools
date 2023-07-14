@@ -176,10 +176,13 @@ node(NODE_LABEL){
     stage("benchmark") {
         sh '''
         #!/usr/bin/env bash    
-        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v ${INDUCTOR_CACHE}:/root/.cache -v ${WORKSPACE}/${_target}/inductor_log:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v ${INDUCTOR_CACHE}:/root/.cache -v ${WORKSPACE}/${_target}/inductor_log:/workspace/pytorch/${_target} ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
         docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
+        docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
         docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log nightly ${_WRAPPER}"
+        docker exec -i $USER bash -c "mv inductor_log ${_target}"
+
         '''
     }
 
@@ -194,21 +197,22 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE} && mkdir -p refer && mv inductor_log refer
+                docker cp ${WORKSPACE}/refer $USER:/workspace/pytorch/
                 if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} && rm -rf refer
+                     docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title}"
                 else
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} && rm -rf refer
+                     docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}"
                 fi
+                rm -rf refer
                 '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision}
+                    docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision}"
                 else
-                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}
+                     docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}"
                 fi
                 '''
             }
@@ -223,13 +227,15 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
+                cd ${WORKSPACE} && mkdir -p refer && mv inductor_log refer
+                docker cp ${WORKSPACE}/refer $USER:/workspace/pytorch/
+                docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report_train.py -r refer -t ${_target}"
+                rm -rf refer
                 '''
             }else{
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -t ${_target}
+                docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report_train.py -t ${_target}"
                 '''
             }
         }
