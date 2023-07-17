@@ -80,7 +80,7 @@ node(NODE_LABEL){
         )          
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && mkdir -p target_${_target_sc} && mv inductor_log target_${_target_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p target_${_target_sc} && mv inductor_log target_${_target_sc}
         '''
         copyArtifacts(
             projectName: "${refer_job}",
@@ -89,7 +89,7 @@ node(NODE_LABEL){
         )            
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && mkdir -p refer_${_refer_sc} && mv inductor_log refer_${_refer_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p refer_${_refer_sc} && mv inductor_log refer_${_refer_sc}
         '''        
     }
     stage("report"){
@@ -110,7 +110,7 @@ node(NODE_LABEL){
         }
         if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
             emailext(
-                subject: "inductor-${env._target_job}-${env._refer_job}-compare-report",
+                subject: "[report-compare]-${env._target_job}-${env._refer_job}",
                 mimeType: "text/html",
                 attachmentsPattern: "**/*.xlsx",
                 from: "pytorch_inductor_val@intel.com",
