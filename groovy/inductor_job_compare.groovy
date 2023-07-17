@@ -1,4 +1,4 @@
-NODE_LABEL = 'mlp-validate-icx24-ubuntu'
+NODE_LABEL = 'mlp-spr-04.sh.intel.com'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
@@ -66,25 +66,9 @@ env._target_sc = "$target_job_selector"
 env._refer_job = "$refer_job"
 env._refer_sc = "$refer_job_selector"
 
-def cleanup(){
-    try {
-        sh '''#!/bin/bash 
-        set -x
-        cd ${WORKSPACE} && sudo rm -rf *
-        '''
-    } catch(e) {
-        echo "==============================================="
-        echo "ERROR: Exception caught in cleanup()           "
-        echo "ERROR: ${e}"
-        echo "==============================================="
-        echo "Error while doing cleanup"
-    }
-}
-
 node(NODE_LABEL){
     stage("prepare"){
         echo 'prepare......'
-        cleanup()
         deleteDir()
         checkout scm   
     }
@@ -111,8 +95,9 @@ node(NODE_LABEL){
     stage("report"){
         sh '''
         #!/usr/bin/env bash
+        source activate pytorch
         cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off
-        mv target_${_target_sc}/*.xlsx ./ && mv target_${_target_sc}/*.html ./ && rm -rf refer_${_refer_sc} && rn -rf target_${_target_sc}
+        mv target_${_target_sc}/inductor_log/*.xlsx ./ && mv target_${_target_sc}/inductor_log/*.html ./ && rm -rf refer_${_refer_sc} && rm -rf target_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
     }
@@ -125,7 +110,7 @@ node(NODE_LABEL){
         }
         if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
             emailext(
-                subject: "Torchinductor-${env._target_job}-${env._refer_job}-result-compare-report",
+                subject: "inductor-${env._target_job}-${env._refer_job}-compare-report",
                 mimeType: "text/html",
                 attachmentsPattern: "**/*.xlsx",
                 from: "pytorch_inductor_val@intel.com",
