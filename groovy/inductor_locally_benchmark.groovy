@@ -136,6 +136,7 @@ def cleanup(){
         docker stop $(docker ps -a -q)
         docker container prune -f
         docker system prune -f
+        cd ${WORKSPACE} && sudo rm -rf *
         '''
     } catch(e) {
         echo "==============================================="
@@ -212,7 +213,7 @@ node(NODE_LABEL){
                 if [ ${_dash_board} == "true" ]; then
                     docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision}"
                 else
-                     docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}"
+                    docker exec -i $USER bash -c "pip install pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}"
                 fi
                 '''
             }
@@ -246,14 +247,14 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            cd ${WORKSPACE} && sudo mv ${WORKSPACE}/${_target}/inductor_log/ ./ && sudo rm -rf ${_target}
             '''
         }
         if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            cd ${WORKSPACE} && sudo mv ${WORKSPACE}/${_target}/inductor_log/ ./ && sudo rm -rf ${_target}
             '''
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
