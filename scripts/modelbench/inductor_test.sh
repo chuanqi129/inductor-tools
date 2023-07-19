@@ -30,6 +30,9 @@ python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
 	print("torchdata : ", torchdata.__version__)''' >>${curdir}/${LOG_DIR}/version.txt
 echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 
+# skip sam & nanogpt_generate for stable results
+sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py
+
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."
