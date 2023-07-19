@@ -292,8 +292,8 @@ def update_failures(excel,target_thread):
     failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'}) 
 
     # 1 -> failed
-    failures['accuracy'].replace(['infra_error','timeout',"fail_to_run","fail_accuracy","0.0000"],[1,1,1,1,1],inplace=True)
-    failures['perf'].replace([0,"infra_error"],[1,1],inplace=True)
+    failures['accuracy'].replace(['infra_error','timeout','fail_to_run','fail_accuracy','0.0000'],[1,1,1,1,1],inplace=True)
+    failures['perf'].replace([0,'infra_error','timeout'],[1,1,1],inplace=True)
     failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
     failures=failures.groupby(by=['name']).sum().reset_index()
     failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
