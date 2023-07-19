@@ -55,6 +55,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         Pillow \
         pkg-config \
         pybind11 \
+        pycocotools \
         pyyaml \
         setuptools \
         jemalloc \
@@ -69,8 +70,8 @@ ARG PT_REPO=https://github.com/blzheng/pytorch
 ARG PT_BRANCH=beilei/baseline
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
-ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
-ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
+# ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
+# ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
@@ -112,6 +113,8 @@ ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \
+    # Workaround for https://github.com/pytorch/benchmark/issues/1772
+    sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \      
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
