@@ -25,6 +25,132 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
+TORCH_REPO = 'https://github.com/pytorch/pytorch.git'
+if ('TORCH_REPO' in params) {
+    echo "TORCH_REPO in params"
+    if (params.TORCH_REPO != '') {
+        TORCH_REPO = params.TORCH_REPO
+    }
+}
+echo "TORCH_REPO: $TORCH_REPO"
+
+TORCH_BRANCH= 'nightly'
+if ('TORCH_BRANCH' in params) {
+    echo "TORCH_BRANCH in params"
+    if (params.TORCH_BRANCH != '') {
+        TORCH_BRANCH = params.TORCH_BRANCH
+    }
+}
+echo "TORCH_BRANCH: $TORCH_BRANCH"
+
+TORCH_COMMIT= 'nightly'
+if ('TORCH_COMMIT' in params) {
+    echo "TORCH_COMMIT in params"
+    if (params.TORCH_COMMIT != '') {
+        TORCH_COMMIT = params.TORCH_COMMIT
+    }
+}
+echo "TORCH_COMMIT: $TORCH_COMMIT"
+
+DYNAMO_BENCH= 'fea73cb'
+if ('DYNAMO_BENCH' in params) {
+    echo "DYNAMO_BENCH in params"
+    if (params.DYNAMO_BENCH != '') {
+        DYNAMO_BENCH = params.DYNAMO_BENCH
+    }
+}
+echo "DYNAMO_BENCH: $DYNAMO_BENCH"
+
+TORCH_AUDIO_BRANCH= 'nightly'
+if ('TORCH_AUDIO_BRANCH' in params) {
+    echo "TORCH_AUDIO_BRANCH in params"
+    if (params.TORCH_AUDIO_BRANCH != '') {
+        TORCH_AUDIO_BRANCH = params.TORCH_AUDIO_BRANCH
+    }
+}
+echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
+
+AUDIO= '0a652f5'
+if ('AUDIO' in params) {
+    echo "AUDIO in params"
+    if (params.AUDIO != '') {
+        AUDIO = params.AUDIO
+    }
+}
+echo "AUDIO: $AUDIO"
+
+TORCH_TEXT_BRANCH= 'nightly'
+if ('TORCH_TEXT_BRANCH' in params) {
+    echo "TORCH_TEXT_BRANCH in params"
+    if (params.TORCH_TEXT_BRANCH != '') {
+        TORCH_TEXT_BRANCH = params.TORCH_TEXT_BRANCH
+    }
+}
+echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
+
+TEXT= 'c4ad5dd'
+if ('TEXT' in params) {
+    echo "TEXT in params"
+    if (params.TEXT != '') {
+        TEXT = params.TEXT
+    }
+}
+echo "TEXT: $TEXT"
+
+TORCH_VISION_BRANCH= 'nightly'
+if ('TORCH_VISION_BRANCH' in params) {
+    echo "TORCH_VISION_BRANCH in params"
+    if (params.TORCH_VISION_BRANCH != '') {
+        TORCH_VISION_BRANCH = params.TORCH_VISION_BRANCH
+    }
+}
+echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
+
+VISION= 'f2009ab'
+if ('VISION' in params) {
+    echo "VISION in params"
+    if (params.VISION != '') {
+        VISION = params.VISION
+    }
+}
+echo "VISION: $VISION"
+
+TORCH_DATA_BRANCH= 'nightly'
+if ('TORCH_DATA_BRANCH' in params) {
+    echo "TORCH_DATA_BRANCH in params"
+    if (params.TORCH_DATA_BRANCH != '') {
+        TORCH_DATA_BRANCH = params.TORCH_DATA_BRANCH
+    }
+}
+echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
+
+DATA= '5cb3e6d'
+if ('DATA' in params) {
+    echo "DATA in params"
+    if (params.DATA != '') {
+        DATA = params.DATA
+    }
+}
+echo "DATA: $DATA"
+
+TORCH_BENCH_BRANCH= 'main'
+if ('TORCH_BENCH_BRANCH' in params) {
+    echo "TORCH_BENCH_BRANCH in params"
+    if (params.TORCH_BENCH_BRANCH != '') {
+        TORCH_BENCH_BRANCH = params.TORCH_BENCH_BRANCH
+    }
+}
+echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
+
+TORCH_BENCH= 'a0848e19'
+if ('TORCH_BENCH' in params) {
+    echo "TORCH_BENCH in params"
+    if (params.TORCH_BENCH != '') {
+        TORCH_BENCH = params.TORCH_BENCH
+    }
+}
+echo "TORCH_BENCH: $TORCH_BENCH"
+
 image_tag = 'nightly'
 if ('image_tag' in params) {
     echo "image_tag in params"
@@ -121,11 +247,23 @@ env._target = new Date().format('yyyy_MM_dd')
 env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
 env._dashboard_title = "$dashboard_title"
+
+env._TORCH_REPO = "$TORCH_REPO"
+env._TORCH_BRANCH = "$TORCH_BRANCH"
+env._TORCH_COMMIT = "$TORCH_COMMIT"
+env._DYNAMO_BENCH = "$DYNAMO_BENCH"
+
+env._AUDIO = "$AUDIO"
+env._TEXT = "$TEXT"
+env._VISION = "$VISION"
+env._DATA = "$DATA"
+env._TORCH_BENCH = "$TORCH_BENCH"
+
 env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
-env._image_tag = "$image_tag"
+env._image_tag = "${env._target}_${env._shape}_${env._WRAPPER}_local"
 
 env.INDUCTOR_CACHE = '/home2/yudongsi/.cache'
 
@@ -153,6 +291,8 @@ node(NODE_LABEL){
         cleanup()
         deleteDir()
         checkout scm
+    }
+    stage("prepare container"){  
         withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
             sh '''
             #!/usr/bin/env bash
@@ -168,6 +308,8 @@ node(NODE_LABEL){
                 docker rmi -f $old_image
             fi
             docker system prune -f
+            cp docker/Dockerfile ${WORKSPACE}
+            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t ${DOCKER_IMAGE_NAMESPACE}:${_image_tag} -f Dockerfile --target image .
             docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
             docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
             ''' 
@@ -181,7 +323,7 @@ node(NODE_LABEL){
         docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
-        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log nightly ${_WRAPPER}"
+        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_DYNAMO_BENCH} ${_WRAPPER}"
         docker exec -i $USER bash -c "mv inductor_log ${_target}"
 
         '''
