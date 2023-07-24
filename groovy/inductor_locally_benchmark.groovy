@@ -151,15 +151,6 @@ if ('TORCH_BENCH' in params) {
 }
 echo "TORCH_BENCH: $TORCH_BENCH"
 
-image_tag = 'nightly'
-if ('image_tag' in params) {
-    echo "image_tag in params"
-    if (params.image_tag != '') {
-        image_tag = params.image_tag
-    }
-}
-echo "image_tag: $image_tag"
-
 precision = 'float32'
 if ('precision' in params) {
     echo "precision in params"
