@@ -618,7 +618,7 @@ def html_head():
     return '''<!DOCTYPE html>
 <html lang="en">
 <head>
-<title> Inductor Regular Model Bench Report (AWS) </title>
+<title> Inductor Regular Model Bench Report </title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
@@ -635,7 +635,7 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>Inductor Regular Model Bench Report (AWS)</p></h3> '''
+  <p><h3>Inductor Regular Model Bench Report </p></h3> '''
 
 def html_tail():
     return '''<p>You can find perf regression or improvement from attachment report, Thanks</p>
