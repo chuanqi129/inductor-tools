@@ -80,7 +80,7 @@ node(NODE_LABEL){
         )          
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p cppwrapper_${_target_sc} && mv inductor_log cppwrapper_${_target_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p target_${_target_sc} && mv inductor_log target_${_target_sc}
         '''
         copyArtifacts(
             projectName: "${refer_job}",
@@ -89,15 +89,15 @@ node(NODE_LABEL){
         )            
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p default_${_refer_sc} && mv inductor_log default_${_refer_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p refer_${_refer_sc} && mv inductor_log refer_${_refer_sc}
         '''        
     }
     stage("report"){
         sh '''
         #!/usr/bin/env bash
         source activate pytorch
-        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r default_${_refer_sc} -t cppwrapper_${_target_sc} -m all --md_off
-        mv cppwrapper_${_target_sc}/inductor_log/*.xlsx ./ && mv cppwrapper_${_target_sc}/inductor_log/*.html ./ && rm -rf default_${_refer_sc} && rm -rf cppwrapper_${_target_sc}
+        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off
+        mv target_${_target_sc}/inductor_log/*.xlsx ./ && mv target_${_target_sc}/inductor_log/*.html ./ && rm -rf refer_${_refer_sc} && rm -rf target_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
     }
