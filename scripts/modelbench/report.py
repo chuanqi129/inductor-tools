@@ -24,7 +24,7 @@ parser.add_argument('-p','--precision',type=str,default='float32',help='precisio
 parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
 parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
 parser.add_argument('--gh_token', type=str,help='github token for issue comment creation')
-parser.add_argument('--dashboard', type=str,default='default',choices=["default", "dynamic", "cppwrapper"],help='determine title in dashboard report')
+parser.add_argument('--dashboard', type=str,default='default',help='determine title in dashboard report')
 args=parser.parse_args()
 
 # known failure @20230423
