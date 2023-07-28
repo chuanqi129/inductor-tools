@@ -18,6 +18,7 @@ import torch._inductor.config as config
 config.cpp.enable_kernel_profile=True
 config.profiler_mark_wrapper_call=True
 #config.cpp_wrapper = True
+config.freezing = True
 #import itt
 #itt.pause()
 torch._dynamo.config.verbose=True
