@@ -639,7 +639,8 @@ def html_head():
   <p><h3>Inductor Regular Model Bench Report </p></h3> '''
 
 def html_tail():
-    return f'''<p>You can find build url from {args.url}, perf regression or improvement from attachment report, Thanks</p>
+    return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
+    <p>find perf regression or improvement from attachment report, Thanks</p>
   </div>
   </div>
   </div>
