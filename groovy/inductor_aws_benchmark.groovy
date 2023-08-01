@@ -400,9 +400,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
                 if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} && rm -rf refer
+                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} && rm -rf refer
                 else
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} && rm -rf refer
+                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} && rm -rf refer
                 fi
                 '''
             }else{
@@ -410,9 +410,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision}
+                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL}
                 else
-                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision}
+                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL}
                 fi
                 '''
             }

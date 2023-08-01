@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
 parser.add_argument('-r','--reference',type=str,help='reference log file')
+parser.add_argument('-l', '--url', type=str, help='jenkins job build url')
 parser.add_argument('-m','--mode',type=str,help='multiple or single mode')
 parser.add_argument('-p','--precision',type=str,default='float32',help='precision')
 parser.add_argument('--md_off', action='store_true', help='turn off markdown files generate')
@@ -638,7 +639,7 @@ def html_head():
   <p><h3>Inductor Regular Model Bench Report </p></h3> '''
 
 def html_tail():
-    return '''<p>You can find perf regression or improvement from attachment report, Thanks</p>
+    return f'''<p>You can find build url from {args.url}, perf regression or improvement from attachment report, Thanks</p>
   </div>
   </div>
   </div>
