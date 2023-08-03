@@ -58,20 +58,20 @@ function collect_perf() {
     avg_latency=$(pre_collect 'Average 2... latency:' $log)
     p90_latency=$(pre_collect 'P90 2... latency:' $log)
     p99_latency=$(pre_collect 'P99 2... latency:' $log)
-    latency=()   
+    infer_latency=()   
     for i in $(seq $num_s); do
         r1=`echo $latency | awk '{print $'$i'}'`
-        latency[i]=$r1
+        infer_latency[$i]=$r1
         r2=`echo $first_latency| awk '{print $'$i'}'`
         r3=`echo $avg_latency| awk '{print $'$i'}'`
         r4=`echo $p90_latency| awk '{print $'$i'}'`
         r5=`echo $p99_latency| awk '{print $'$i'}'`
         printf "$r1,$r2,$r3,$r4,$r5\\n" | tee -a ${FILE}
     done
-    speedup1= awk 'BEGIN{printf "%.2f\n",'${latency[4]}' / '${latency[0]}'}'
-    speedup2= awk 'BEGIN{printf "%.2f\n",'${latency[5]}' / '${latency[1]}'}'
-    speedup3= awk 'BEGIN{printf "%.2f\n",'${latency[6]}' / '${latency[2]}'}'
-    speedup4= awk 'BEGIN{printf "%.2f\n",'${latency[7]}' / '${latency[3]}'}'
+    speedup1= `awk 'BEGIN{printf "%.2f",'${infer_latency[5]}' / '${infer_latency[1]}'}'`
+    speedup2= `awk 'BEGIN{printf "%.2f",'${infer_latency[6]}' / '${infer_latency[2]}'}'`
+    speedup3= `awk 'BEGIN{printf "%.2f",'${infer_latency[7]}' / '${infer_latency[3]}'}'`
+    speedup4= `awk 'BEGIN{printf "%.2f",'${infer_latency[8]}' / '${infer_latency[4]}'}'`
     printf "$speedup1,$speedup2,$speedup3,$speedup4\\n" | tee -a ${FILE}
 }
 
