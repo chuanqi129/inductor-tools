@@ -13,8 +13,11 @@ LOG_DIR=${2:-llm_bench}
 mkdir -p $LOG_DIR
 
 # install transformers
-pip uninstall transformers -y && pip install transformers
-
+cd .. && rm -rf transformers && pip uninstall transformers -y
+# release v4.31. + patch
+git clone -b v4.31.0 https://github.com/huggingface/transformers.git
+cd transformers && git apply ../token_latency.patch && python setup.py install && cd ..
+cd /workspace/pytorch
 # use offline mode for network issues
 export TRANSFORMERS_OFFLINE=1
 
@@ -38,9 +41,48 @@ python -c '''import torch,torchvision,torchtext,torchaudio,torchdata,transformer
         print("transformers : ", transformers.__version__)''' >>${FILE}
 echo precision : ${precision} >>${FILE}
 
+
+# result collect
+function pre_collect() {
+    key_word=$1
+    log_file=$2
+    res=$(grep "$key_word" "$log_file" | sed -e 's/.*latency: //;s/[^0-9.].*//')
+    echo "$res"
+}
+
+function collect_perf() {
+    log=$1
+    num_s=$(grep 'Inference latency:' $log | sed -e 's/.*latency: //;s/[^0-9.].*//' | wc -l)
+    latency=$(pre_collect 'Inference latency:' $log)
+    first_latency=$(pre_collect 'First token average latency:' $log)
+    avg_latency=$(pre_collect 'Average 2... latency:' $log)
+    p90_latency=$(pre_collect 'P90 2... latency:' $log)
+    p99_latency=$(pre_collect 'P99 2... latency:' $log)
+    latency=()   
+    for i in $(seq $num_s); do
+        r1=`echo $latency | awk '{print $'$i'}'`
+        latency[i]=$r1
+        r2=`echo $first_latency| awk '{print $'$i'}'`
+        r3=`echo $avg_latency| awk '{print $'$i'}'`
+        r4=`echo $p90_latency| awk '{print $'$i'}'`
+        r5=`echo $p99_latency| awk '{print $'$i'}'`
+        printf "$r1,$r2,$r3,$r4,$r5\\n" | tee -a ${FILE}
+    done
+    speedup1= awk 'BEGIN{printf "%.2f\n",'${latency[4]}' / '${latency[0]}'}'
+    speedup2= awk 'BEGIN{printf "%.2f\n",'${latency[5]}' / '${latency[1]}'}'
+    speedup3= awk 'BEGIN{printf "%.2f\n",'${latency[6]}' / '${latency[2]}'}'
+    speedup4= awk 'BEGIN{printf "%.2f\n",'${latency[7]}' / '${latency[3]}'}'
+    printf "$speedup1,$speedup2,$speedup3,$speedup4\\n" | tee -a ${FILE}
+}
+
+
 # run benchmark
 timestamp=$(date +%Y%m%d_%H%M%S)
-numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
-numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
-latency=$(grep "latency:" ${LOG_DIR}/llm_bench__${timestamp}.log | sed -e 's/.*latency//;s/[^0-9.]//')
-echo latency : ${latency} >>${FILE}
+# inductor
+numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --token_latency --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
+numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
+# eager
+numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
+numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
+# collect metrics
+collect_perf ${LOG_DIR}/llm_bench__${timestamp}.log

@@ -342,6 +342,7 @@ def llm_benchmark(node){
         fi
         docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${hf_cache}:/workspace/huggingface -v ${WORKSPACE}/llm_bench_${exec_node}:/workspace/pytorch/llm_bench_${exec_node} ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
         docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
+        docker cp scripts/llmbench/token_latency.patch $USER:/workspace
         docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
         docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench_${exec_node}
         docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench_${exec_node}"
