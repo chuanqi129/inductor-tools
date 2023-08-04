@@ -302,7 +302,7 @@ node(NODE_LABEL){
     stage("prepare container"){
         if ("${specify_image}" == "false"){
             withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                withCredentials([usernamePassword(credentialsId: 'remote_trigger_token', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
+                withCredentials([usernamePassword(credentialsId: 'syd_token_inteltf-jenk', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
                     sh '''
                     #!/usr/bin/env bash
                     old_container=`docker ps |grep $USER |awk '{print $1}'`
@@ -322,8 +322,8 @@ node(NODE_LABEL){
                     
                     for t in {1..6}
                     do
-                        build_result=`curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result"`
-                        if [ "${build_result}" == "SUCCESS" ]; then
+                        build_result=$(curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result")
+                        if [ "${build_result}" == "\"SUCCESS\"" ]; then
                             docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                             docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                             break
