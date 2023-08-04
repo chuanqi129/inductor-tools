@@ -96,7 +96,7 @@ node(NODE_LABEL){
         sh '''
         #!/usr/bin/env bash
         source activate pytorch
-        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off
+        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off --url ${BUILD_URL}
         mv target_${_target_sc}/inductor_log/*.xlsx ./ && mv target_${_target_sc}/inductor_log/*.html ./ && rm -rf refer_${_refer_sc} && rm -rf target_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
