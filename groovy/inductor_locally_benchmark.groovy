@@ -319,11 +319,12 @@ node(NODE_LABEL){
                     docker system prune -f
                     
                     curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`"
+                    sleep 10s
                     
                     for t in {1..6}
                     do
                         build_result=$(curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result")
-                        if [ "${build_result}" == "\"SUCCESS\"" ]; then
+                        if [ $build_result == '\"SUCCESS\"' ]; then
                             docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                             docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                             break
