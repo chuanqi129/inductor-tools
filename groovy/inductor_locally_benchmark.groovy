@@ -285,25 +285,37 @@ node(NODE_LABEL){
     }
     stage("prepare container"){  
         withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-            sh '''
-            #!/usr/bin/env bash
-            old_container=`docker ps |grep $USER |awk '{print $1}'`
-            if [ -n "${old_container}" ]; then
-                docker stop $old_container
-                docker rm $old_container
-                docker container prune -f
-            fi
-            old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
-            old_image=`echo $old_image_id| awk '{print $1}'`
-            if [ -n "${old_image}" ]; then
-                docker rmi -f $old_image
-            fi
-            docker system prune -f
-            cp docker/Dockerfile ${WORKSPACE}
-            DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t ${DOCKER_IMAGE_NAMESPACE}:${_image_tag} -f Dockerfile --target image .
-            docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-            docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-            ''' 
+            withCredentials([usernamePassword(credentialsId: 'remote_trigger_token', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
+                sh '''
+                #!/usr/bin/env bash
+                old_container=`docker ps |grep $USER |awk '{print $1}'`
+                if [ -n "${old_container}" ]; then
+                    docker stop $old_container
+                    docker rm $old_container
+                    docker container prune -f
+                fi
+                old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
+                old_image=`echo $old_image_id| awk '{print $1}'`
+                if [ -n "${old_image}" ]; then
+                    docker rmi -f $old_image
+                fi
+                docker system prune -f
+                
+                curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`"
+                
+                for t in {1..6}
+                do
+                    build_result=`curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result"`
+                    if [ "${build_result}" == "SUCCESS" ]; then
+                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+                        break
+                    else
+                        sleep 30m
+                    fi
+                done
+                ''' 
+            }
         }    
     }
 
