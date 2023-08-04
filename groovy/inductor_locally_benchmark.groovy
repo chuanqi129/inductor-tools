@@ -25,6 +25,15 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
+specify_image = 'false'
+if ('specify_image' in params) {
+    echo "specify_image in params"
+    if (params.specify_image != '') {
+        specify_image = params.specify_image
+    }
+}
+echo "specify_image: $specify_image"
+
 TORCH_REPO = 'https://github.com/pytorch/pytorch.git'
 if ('TORCH_REPO' in params) {
     echo "TORCH_REPO in params"
@@ -230,6 +239,12 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
+specify_image_tag = '2023_07_29_static_default_local'
+if( 'specify_image_tag' in params && params.specify_image_tag != '' ) {
+    specify_image_tag = params.specify_image_tag
+}
+echo "specify_image_tag: $specify_image_tag"
+
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._precision = "$precision"
@@ -238,6 +253,7 @@ env._target = new Date().format('yyyy_MM_dd')
 env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
 env._dashboard_title = "$dashboard_title"
+env._specify_image_tag = "$specify_image_tag"
 
 env._TORCH_REPO = "$TORCH_REPO"
 env._TORCH_BRANCH = "$TORCH_BRANCH"
@@ -283,9 +299,45 @@ node(NODE_LABEL){
         deleteDir()
         checkout scm
     }
-    stage("prepare container"){  
-        withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-            withCredentials([usernamePassword(credentialsId: 'remote_trigger_token', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
+    stage("prepare container"){
+        if ("${specify_image}" == "false"){
+            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                withCredentials([usernamePassword(credentialsId: 'remote_trigger_token', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
+                    sh '''
+                    #!/usr/bin/env bash
+                    old_container=`docker ps |grep $USER |awk '{print $1}'`
+                    if [ -n "${old_container}" ]; then
+                        docker stop $old_container
+                        docker rm $old_container
+                        docker container prune -f
+                    fi
+                    old_image_id=`docker images|grep pt_inductor|grep ${_image_tag}|awk '{print $3}'`
+                    old_image=`echo $old_image_id| awk '{print $1}'`
+                    if [ -n "${old_image}" ]; then
+                        docker rmi -f $old_image
+                    fi
+                    docker system prune -f
+                    
+                    curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`"
+                    
+                    for t in {1..6}
+                    do
+                        build_result=`curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result"`
+                        if [ "${build_result}" == "SUCCESS" ]; then
+                            docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+                            break
+                        else
+                            sleep 30m
+                        fi
+                    done
+                    ''' 
+                }
+            }              
+        }
+        if ("${specify_image}" == "true")
+        {
+            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
                 sh '''
                 #!/usr/bin/env bash
                 old_container=`docker ps |grep $USER |awk '{print $1}'`
@@ -299,24 +351,13 @@ node(NODE_LABEL){
                 if [ -n "${old_image}" ]; then
                     docker rmi -f $old_image
                 fi
-                docker system prune -f
-                
-                curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`"
-                
-                for t in {1..6}
-                do
-                    build_result=`curl -s -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/lastBuild/api/json?pretty=true" | jq ".result"`
-                    if [ "${build_result}" == "SUCCESS" ]; then
-                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
-                        break
-                    else
-                        sleep 30m
-                    fi
-                done
-                ''' 
-            }
-        }    
+                docker system prune -f                         
+                docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                docker pull ${DOCKER_IMAGE_NAMESPACE}:${_specify_image_tag}
+                '''                 
+            }          
+        }
+  
     }
 
     stage("benchmark") {
