@@ -341,14 +341,14 @@ def update_failures(excel,target_thread):
 def process_suite(suite,thread):
     target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
-    target_data=target_ori_data[['name','batch_size','speedup','abs_latency']]
+    target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
     target_data=target_data.copy()
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
         reference_file_path=getfolder(args.reference,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
-        reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency']]
+        reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
         reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)    
         data=pd.merge(target_data,reference_data,on=['name'],how= 'outer')
@@ -365,11 +365,11 @@ def process_thread(thread):
  
 def process(input):
     if args.reference is not None:
-        data_new=input[['name','batch_size_x','speedup_x','abs_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new'})
+        data_new=input[['name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
-        data_old=input[['batch_size_y','speedup_y','abs_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old'})    
+        data_old=input[['batch_size_y','speedup_y','abs_latency_y','compilation_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old',"compilation_latency_y":'compilation_latency_old'})    
         data_old['inductor_old']=data_old['inductor_old'].astype(float).div(1000)
         data_old['speed_up_old']=data_old['speed_up_old'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_old['eager_old'] = data_old['speed_up_old'] * data_old['inductor_old']
@@ -378,37 +378,44 @@ def process(input):
         data_ratio= pd.DataFrame(round(input['speedup_x'] / input['speedup_y'],2),columns=['Ratio Speedup(New/old)'])
         data_ratio['Eager Ratio(old/new)'] = pd.DataFrame(round(data_old['eager_old'] / data_new['eager_new'],2))
         data_ratio['Inductor Ratio(old/new)'] = pd.DataFrame(round(data_old['inductor_old'] / data_new['inductor_new'],2))
+        data_ratio['Compilation_latency_Ratio(old/new)'] = pd.DataFrame(round(data_old['compilation_latency_old'] / data_new['compilation_latency_new'],2))
 
         data = StyleFrame({'name': list(data_new['name']),
                     'batch_size_new': list(data_new['batch_size_new']),
                     'speed_up_new': list(data_new['speed_up_new']),
                     'inductor_new': list(data_new['inductor_new']),
                     'eager_new': list(data_new['eager_new']),
+                    'compilation_latency_new': list(data_new['compilation_latency_new']),
                     'batch_size_old': list(data_old['batch_size_old']),
                     'speed_up_old': list(data_old['speed_up_old']),
                     'inductor_old': list(data_old['inductor_old']),
                     'eager_old': list(data_old['eager_old']),
+                    'compilation_latency_old': list(data_old['compilation_latency_old']),
                     'Ratio Speedup(New/old)': list(data_ratio['Ratio Speedup(New/old)']),
                     'Eager Ratio(old/new)': list(data_ratio['Eager Ratio(old/new)']),
-                    'Inductor Ratio(old/new)': list(data_ratio['Inductor Ratio(old/new)'])})
+                    'Inductor Ratio(old/new)': list(data_ratio['Inductor Ratio(old/new)']),
+                    'Compilation_latency_Ratio(old/new)': list(data_ratio['Compilation_latency_Ratio(old/new)'])})
         data.set_column_width(1, 10)
         data.set_column_width(2, 18) 
         data.set_column_width(3, 18) 
         data.set_column_width(4, 18)
         data.set_column_width(5, 15)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 18) 
+        data.set_column_width(6, 20)
+        data.set_column_width(7, 18)
         data.set_column_width(8, 18) 
-        data.set_column_width(9, 15)
-        data.set_column_width(10, 28)
-        data.set_column_width(11, 28) 
-        data.set_column_width(12, 28) 
+        data.set_column_width(9, 18) 
+        data.set_column_width(10, 15)
+        data.set_column_width(11, 20)
+        data.set_column_width(12, 28)
+        data.set_column_width(13, 28) 
+        data.set_column_width(14, 28)
+        data.set_column_width(15, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)    
     else:
-        data_new=input[['name','batch_size','speedup','abs_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor'})
+        data_new=input[['name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
@@ -416,20 +423,22 @@ def process(input):
                     'batch_size': list(data_new['batch_size']),
                     'speedup': list(data_new['speedup']),
                     'inductor': list(data_new['inductor']),
-                    'eager': list(data_new['eager'])})
+                    'eager': list(data_new['eager']),
+                    'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
         data.set_column_width(2, 18) 
         data.set_column_width(3, 18) 
         data.set_column_width(4, 18)
         data.set_column_width(5, 15)
+        data.set_column_width(6, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
         data.set_row_height(rows=data.row_indexes, height=15)        
     return data
 
 def update_details(writer):
-    h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": '', "G": args.reference, "H": '', "I": '',"J": '',"K": 'Result Comp',"L": '',"M": ''}
+    h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
     if args.reference is None:
-        h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": ''}
+        h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": '',"G":''}
     head = StyleFrame(pd.DataFrame(h, index=[0]))
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
@@ -697,9 +706,9 @@ def excel_postprocess(file):
         wmt.merge_cells(start_row=torchbench_index+3,end_row=hf_index+2,start_column=1,end_column=1)
         wmt.merge_cells(start_row=hf_index+3,end_row=timm_index+2,start_column=1,end_column=1)
         wmt.merge_cells(start_row=timm_index+3,end_row=end_index+3,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=6)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=7,end_column=10)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=11,end_column=13)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     if args.mode == "single" or args.mode == 'all':
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
@@ -707,9 +716,9 @@ def excel_postprocess(file):
         wst.merge_cells(start_row=torchbench_index+3,end_row=hf_index+2,start_column=1,end_column=1)
         wst.merge_cells(start_row=hf_index+3,end_row=timm_index+2,start_column=1,end_column=1)
         wst.merge_cells(start_row=timm_index+3,end_row=end_index+3,start_column=1,end_column=1)    
-        wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=6)
-        wst.merge_cells(start_row=1,end_row=1,start_column=7,end_column=10)
-        wst.merge_cells(start_row=1,end_row=1,start_column=11,end_column=13)
+        wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wst.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wst.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     wb.save(file)
 
 if __name__ == '__main__':
