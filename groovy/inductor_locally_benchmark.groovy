@@ -363,8 +363,12 @@ node(NODE_LABEL){
 
     stage("benchmark") {
         sh '''
-        #!/usr/bin/env bash    
-        docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v ${INDUCTOR_CACHE}:/root/.cache -v ${WORKSPACE}/${_target}:/workspace/pytorch/${_target} ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        #!/usr/bin/env bash
+        if [ "${specify_image}" == "false" ]; then
+             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v ${INDUCTOR_CACHE}:/root/.cache -v ${WORKSPACE}/${_target}:/workspace/pytorch/${_target} ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
+        else
+             docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v ${INDUCTOR_CACHE}:/root/.cache -v ${WORKSPACE}/${_target}:/workspace/pytorch/${_target} ${DOCKER_IMAGE_NAMESPACE}:${_specify_image_tag}
+        fi
         docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
