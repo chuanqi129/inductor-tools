@@ -120,7 +120,7 @@ def run_benchmark(model):
                     total_time += (toc - tic)
                     if args.token_latency:
                         total_list.append(output[1])
-    print("Inference latency: %.3f ms." % (total_time / (num_iter - num_warmup) * 1000))
+    print("Inference latency: %.3f s." % (total_time / (num_iter - num_warmup)))
     # token_latency
     if args.token_latency:
         import numpy as np
