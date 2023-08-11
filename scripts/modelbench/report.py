@@ -6,9 +6,11 @@ Usage:
 Dependencies:
     styleframe
     PyGithub
+    datacompy
 """
 
 import argparse
+import datacompy
 from datetime import datetime,timedelta
 from styleframe import StyleFrame, Styler, utils
 import pandas as pd
@@ -52,6 +54,9 @@ torchaudio_main_commit=''
 torchtext_main_commit=''
 torchvision_main_commit=''
 torchdata_main_commit=''
+
+new_performance_regression=pd.DataFrame()
+new_failures=pd.DataFrame()
 
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
@@ -268,11 +273,11 @@ def failures_reason_parse(model,acc_tag,mode):
         pass
     return line
 
-def update_failures(excel,target_thread):
+def get_failures(target_path):
     tmp=[]
     for suite in 'torchbench','huggingface','timm_models':
-        perf_path=target_thread+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
-        acc_path=target_thread+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_accuracy.csv'
+        perf_path=target_path+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
+        acc_path=target_path+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_accuracy.csv'
 
         perf_data=pd.read_csv(perf_path)
         acc_data=pd.read_csv(acc_path)
@@ -284,7 +289,7 @@ def update_failures(excel,target_thread):
         perf_data=perf_data.loc[(perf_data['batch_size'] ==0) | (perf_data['speedup'] ==0) | (perf_data['speedup'] =='infra_error'),:]
         perf_data.insert(loc=3, column='pef_suite', value=suite)
         tmp.append(perf_data)
-
+    
     failures=pd.concat(tmp)
     failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
     failures['pef_suite'].fillna(0,inplace=True)
@@ -299,21 +304,32 @@ def update_failures(excel,target_thread):
     failures=failures.groupby(by=['name']).sum().reset_index()
     failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
     failures['perf'].replace([0,1],["√","X"],inplace=True)
-    failures['accuracy'].replace([0,1],["√","X"],inplace=True)
-
+    failures['accuracy'].replace([0,1],["√","X"],inplace=True)  
     # fill failure reasons
     failures['name']=failures['name'].drop_duplicates()
     failures_dict =  {key:values for key, values in zip(failures['name'], failures['accuracy'])}
     reason_content=[]
     for model in failures_dict.keys():
-        reason_content.append(failures_reason_parse(model,failures_dict[model],target_thread))
-    failures['reason(reference only)']=reason_content
+        reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
+    failures['reason(reference only)']=reason_content        
+    return failures
 
-    sf = StyleFrame({'suite': list(failures['suite']),
-                 'name': list(failures['name']),
-                 'accuracy': list(failures['accuracy']),
-                 'perf': list(failures['perf']),
-                 'reason(reference only)':(list(failures['reason(reference only)']))})
+def update_failures(excel,target_thread,refer_thread):
+    global new_failures
+    target_thread_failures = get_failures(target_thread)    
+    # new failures compare with reference logs
+    if args.reference is not None:
+        refer_thread_failures = get_failures(refer_thread)
+        compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
+        failure_regression = compare.df1_unq_rows.copy()
+        failure_regression.loc[0] = list(failure_regression.shape[1]*'*')
+        new_failures = pd.concat([new_failures,failure_regression])
+
+    sf = StyleFrame({'suite': list(target_thread_failures['suite']),
+                 'name': list(target_thread_failures['name']),
+                 'accuracy': list(target_thread_failures['accuracy']),
+                 'perf': list(target_thread_failures['perf']),
+                 'reason(reference only)':(list(target_thread_failures['reason(reference only)']))})
     sf.apply_style_by_indexes(indexes_to_style=sf[sf['accuracy'] == "X"],
                             cols_to_style='accuracy',
                             styler_obj=failed_style,
@@ -334,9 +350,12 @@ def update_failures(excel,target_thread):
     sf.set_column_width(2, 30)
     sf.set_column_width(3, 15)
     sf.set_column_width(4, 15)
-    sf.set_column_width(5, 100)              
-
+    sf.set_column_width(5, 100)
+    new_failures_list = new_failures['name'].values.tolist()
+    for failed_model in new_failures_list:
+        sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style) 
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
+
 
 def process_suite(suite,thread):
     target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
@@ -412,6 +431,11 @@ def process(input):
         data.set_column_width(15, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
+        global new_performance_regression
+        regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
+        regression = regression.copy()
+        regression.loc[0] = list(regression.shape[1]*'*')
+        new_performance_regression = pd.concat([new_performance_regression,regression])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)    
     else:
@@ -669,8 +693,10 @@ def html_generate(html_off):
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
             mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
             st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+            perf_regression= new_performance_regression.to_html(classes="table",index = False)
+            failures_regression= new_failures.to_html(classes="table",index = False)
             with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f:
-                f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+html_tail())
+                f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+"<p>new_perf_regression</p>"+perf_regression+"<p>new_failures</p>"+failures_regression+html_tail())
             f.close()
         except:
             print("html_generate_failed")
@@ -680,9 +706,9 @@ def generate_report(excel,reference,target):
     update_summary(excel,reference,target)
     update_swinfo(excel)
     if args.mode == 'multiple' or args.mode == 'all':
-        update_failures(excel,target_mt)
+        update_failures(excel,target_mt,reference_mt)
     if args.mode =='single' or args.mode == 'all':
-        update_failures(excel,target_st)
+        update_failures(excel,target_st,reference_st)
     update_details(excel)
 
 def excel_postprocess(file):
