@@ -56,7 +56,7 @@ refer_job_selector = 'lastSuccessfulBuild'
 if ('refer_job_selector' in params) {
     echo "refer_job_selector in params"
     if (params.refer_job_selector != '') {
-        trefer_job_selector = params.refer_job_selector
+        refer_job_selector = params.refer_job_selector
     }
 }
 echo "refer_job_selector: $refer_job_selector"
