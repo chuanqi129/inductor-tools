@@ -58,6 +58,7 @@ torchdata_main_commit=''
 new_performance_regression=pd.DataFrame()
 new_failures=pd.DataFrame()
 
+
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
         for d in dirs:
@@ -66,7 +67,8 @@ def getfolder(round,thread):
         for f in files:
             if thread in (os.path.join(root, f)):
                 return os.path.join(root, f)                 
-
+reference_mt=''
+reference_st=''
 if args.reference is not None:
     reference_mt=getfolder(args.reference,'multi_threads_cf_logs')
     reference_st=getfolder(args.reference,'single_thread_cf_logs')
@@ -351,9 +353,10 @@ def update_failures(excel,target_thread,refer_thread):
     sf.set_column_width(3, 15)
     sf.set_column_width(4, 15)
     sf.set_column_width(5, 100)
-    new_failures_list = new_failures['name'].values.tolist()
-    for failed_model in new_failures_list:
-        sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style) 
+    if args.reference is not None:    
+        new_failures_list = new_failures['name'].values.tolist()
+        for failed_model in new_failures_list:
+            sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style) 
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 
