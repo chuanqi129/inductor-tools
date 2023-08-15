@@ -7,6 +7,15 @@ if ('NODE_LABEL' in params) {
 }
 echo "NODE_LABEL: $NODE_LABEL"
 
+precision= 'float32'
+if ('precision' in params) {
+    echo "precision in params"
+    if (params.precision != '') {
+        precision = params.precision
+    }
+}
+echo "precision: $precision"
+
 debug = 'False'
 if ('debug' in params) {
     echo "debug in params"
@@ -61,10 +70,13 @@ if ('refer_job_selector' in params) {
 }
 echo "refer_job_selector: $refer_job_selector"
 
+env._precision = "$precision"
 env._target_job = "$target_job"
 env._target_sc = "$target_job_selector"
 env._refer_job = "$refer_job"
 env._refer_sc = "$refer_job_selector"
+
+env._NODE = "$NODE_LABEL"
 
 node(NODE_LABEL){
     stage("prepare"){
@@ -95,8 +107,10 @@ node(NODE_LABEL){
     stage("report"){
         sh '''
         #!/usr/bin/env bash
-        source activate pytorch
-        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off --url ${BUILD_URL}
+        if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
+            source activate pytorch
+        fi
+        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision}
         mv target_${_target_sc}/inductor_log/*.xlsx ./ && mv target_${_target_sc}/inductor_log/*.html ./ && rm -rf refer_${_refer_sc} && rm -rf target_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
