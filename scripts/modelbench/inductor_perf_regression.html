@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, follow">
+</head>
+
+<body>
+  <div class="limiter">
+    <div class="container-table100">
+      <div class="wrap-table100">
+        <div class="table100">
+          <p>Performance data</p>
+          <table border="1" class="dataframe table">
+            <tbody>
+              <tr>
+                <td></td>
+                <td colspan="4" align="center">target</td>
+                <td colspan="4" align="center">refer</td>
+                <td colspan="3" align="center">ratio</td>
+              </tr>
+              <tr>
+                <td>model</td>
+                <td>batch_size</td>
+                <td>speedup</td>
+                <td>inductor</td>
+                <td>eager</td>
+                <td>batch_size</td>
+                <td>speedup</td>
+                <td>inductor</td>
+                <td>eager</td>
+                <td>speedup ratio</td>
+                <td>eager ratio</td>
+                <td>inductor ratio</td>
+              </tr>
+              <tr>
+                <td>squeezenet1_1</td>
+                <td>16</td>
+                <td>1.936166</td>
+                <td>0.008108466</td>
+                <td>0.015699336</td>
+                <td>16</td>
+                <td>2.888515</td>
+                <td>0.005393675</td>
+                <td>0.015579711</td>
+                <td>0.67</td>
+                <td>0.99</td>
+                <td>0.67</td>
+              </tr>
+            </tbody>
+            <colgroup>
+              <col style="width: 10%;">
+              <col style="width: 11.4847%;">
+              <col style="width: 8.51528%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+              <col style="width: 10%;">
+            </colgroup>
+          </table>
+          <p>Repro</p><code>bash
+          [inductor_single_test.sh](https://github.com/chuanqi129/inductor-tools/blob/yudong/aws_auto/scripts/modelbench/inductor_single_run.sh)
+          multiple inference performance torchbench squeezenet1_1 float32 first static cpp 0</code>
+          <p>SW info</p>
+          <table border="1" class="dataframe table">
+            <thead>
+              <tr style="text-align: right;">
+                <th>SW</th>
+                <th>Nightly commit</th>
+                <th>Main commit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pytorch</td>
+                <td>abe3687</td>
+                <td>6691413</td>
+              </tr>
+              <tr>
+                <td>Torchbench</td>
+                <td>/</td>
+                <td>770d5cf7</td>
+              </tr>
+              <tr>
+                <td>torchaudio</td>
+                <td>dc83b38</td>
+                <td>66f661d</td>
+              </tr>
+              <tr>
+                <td>torchtext</td>
+                <td>c11d758</td>
+                <td>60bea66</td>
+              </tr>
+              <tr>
+                <td>torchvision</td>
+                <td>58366ab</td>
+                <td>a6dea86</td>
+              </tr>
+              <tr>
+                <td>torchdata</td>
+                <td>1d231d1</td>
+                <td>757c032</td>
+              </tr>
+              <tr>
+                <td>dynamo_benchmarks</td>
+                <td>f228c8b</td>
+                <td>/</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

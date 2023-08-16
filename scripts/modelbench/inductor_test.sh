@@ -18,6 +18,9 @@ WRAPPER=${7:-default}
 
 mkdir -p $LOG_DIR
 
+
+# https://github.com/pytorch/pytorch/issues/107200
+pip uninstall transformers -y && pip install transformers==4.30.2
 # collect sw info
 curdir=$(pwd)
 touch ${curdir}/${LOG_DIR}/version.txt
