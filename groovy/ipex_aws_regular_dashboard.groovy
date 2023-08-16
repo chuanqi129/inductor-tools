@@ -227,6 +227,14 @@ if ('THREADS' in params) {
 }
 echo "THREADS: $THREADS"
 
+FUSION_PATH= 'torchscript'
+if ('FUSION_PATH' in params) {
+    echo "FUSION_PATH in params"
+    if (params.FUSION_PATH != '') {
+        FUSION_PATH = params.FUSION_PATH
+    }
+}
+echo "FUSION_PATH: $FUSION_PATH"
 
 env._name = "$aws_hostname"
 env._reference = "$refer_build"
@@ -250,6 +258,7 @@ env._VISION = "$VISION"
 env._DATA = "$DATA"
 env._TORCH_BENCH = "$TORCH_BENCH"
 env._THREADS = "$THREADS"
+env._FUSION_PATH = "$FUSION_PATH"
 println(env._target)
 
 node(NODE_LABEL){
@@ -272,7 +281,7 @@ node(NODE_LABEL){
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_IPEX_REPO} ${_IPEX_BRANCH} ${_IPEX_COMMIT}  ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} > entrance.log 2>&1 &" &
+            ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_IPEX_REPO} ${_IPEX_BRANCH} ${_IPEX_COMMIT}  ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_FUSION_PATH} > entrance.log 2>&1 &" &
             '''
         }
     }

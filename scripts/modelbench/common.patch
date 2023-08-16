@@ -1,21 +1,22 @@
 diff --git a/benchmarks/dynamo/common.py b/benchmarks/dynamo/common.py
-index c00501c0166..0e73d1f8778 100644
+index c00501c0166..71ff97f2fdc 100644
 --- a/benchmarks/dynamo/common.py
 +++ b/benchmarks/dynamo/common.py
-@@ -2396,6 +2396,18 @@ class BenchmarkRunner:
+@@ -2396,6 +2396,19 @@ class BenchmarkRunner:
      ):
          mode = "train" if self.args.training else "eval"
          msg = f"{current_device:4} {mode:5} {current_name:34} "
-+        precision_flag = os.environ["precision_flag"]
-+        if args.backend == 'ipex':
++
++        fusion_path = os.environ["FUSION_PATH"]
++        if self.args.backend == 'ipex':
 +            import intel_extension_for_pytorch as ipex
 +
-+            if precision_flag == 'bfloat16':
++            if self.args.bfloat16:
 +                model = ipex.optimize(model, dtype=torch.bfloat16, weights_prepack=False)
-+            elif precision_flag == 'float32':
++            elif self.args.bfloat16:
 +                model = ipex.optimize(model, weights_prepack=False)
 +            
-+            ipex._set_compiler_backend("inductor") # jit path: "torchscript", inductor path: "inductor".
++            ipex._set_compiler_backend(fusion_path) # jit path: "torchscript", inductor path: "inductor".
 +            
 +
          if tag:

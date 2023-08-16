@@ -35,6 +35,9 @@ sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmar
 sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/huggingface.py
 sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/timm_models.py
 
+cd /workspace/pytorch
+git apply /workspace/common.patch
+
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."

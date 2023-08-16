@@ -20,6 +20,7 @@ VISION=${14:-f2009ab}
 DATA=${15:-5cb3e6d}
 TORCH_BENCH=${16:-a0848e19}
 THREAD=${17:-all}
+FUSION_PATH=${18:-torchscript}
 
 # kill unused process
 itm_1=$(ps -ef | grep entrance.sh | awk '{print $2}')
@@ -53,7 +54,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREAD}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREAD} ${FUSION_PATH}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
