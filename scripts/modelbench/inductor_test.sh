@@ -1,7 +1,7 @@
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 export USE_LLVM=False
-export HUGGINGFACE_HUB_TOKEN=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
+export HUGGING_FACE_HUB_TOKEN=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
 
 # multiple / single / all
 THREAD=${1:-all}
