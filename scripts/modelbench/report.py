@@ -699,9 +699,13 @@ def html_generate(html_off):
             st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
-            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f:
+            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f,open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f:
                 f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+"<p>new_perf_regression</p>"+perf_regression+"<p>new_failures</p>"+failures_regression+html_tail())
+                perf_f.write("<p>new_perf_regression</p>"+perf_regression)
+                failure_f.write("<p>new_failures</p>"+failures_regression)
             f.close()
+            perf_f.close()
+            failure_f.close()              
         except:
             print("html_generate_failed")
             pass
