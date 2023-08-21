@@ -63,6 +63,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         setuptools \
         jemalloc \
         openssl \
+        urllib3==1.26.16 \        
         weasyprint && \
     /opt/conda/bin/conda clean -ya
 
