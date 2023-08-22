@@ -92,7 +92,7 @@ node(NODE_LABEL){
         )          
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p target_${_target_sc} && mv inductor_log target_${_target_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_target_job}_${_target_sc} && mv inductor_log ${_target_job}_${_target_sc}
         '''
         copyArtifacts(
             projectName: "${refer_job}",
@@ -101,7 +101,7 @@ node(NODE_LABEL){
         )            
         sh '''
         #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p refer_${_refer_sc} && mv inductor_log refer_${_refer_sc}
+        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_refer_job}_${_refer_sc} && mv inductor_log ${_refer_job}_${_refer_sc}
         '''        
     }
     stage("report"){
@@ -110,8 +110,8 @@ node(NODE_LABEL){
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
             source activate pytorch
         fi
-        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer_${_refer_sc} -t target_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision}
-        mv target_${_target_sc}/inductor_log/*.xlsx ./ && mv target_${_target_sc}/inductor_log/*.html ./ && rm -rf refer_${_refer_sc} && rm -rf target_${_target_sc}
+        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision}
+        mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./ && rm -rf ${_refer_job}_${_refer_sc} && rm -rf ${_target_job}_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
     }
