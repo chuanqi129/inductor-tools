@@ -96,8 +96,7 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     git clone -b ${TORCH_AUDIO_BRANCH} https://github.com/pytorch/audio.git && \
     cd audio && git checkout ${TORCH_AUDIO_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     # Workaround for https://github.com/pytorch/audio/issues/2784
-    sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \
-    sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \
+    sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
@@ -105,7 +104,10 @@ ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \
-    python install.py && cd .. && \
+    # Workaround for https://github.com/pytorch/benchmark/issues/1772
+    sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \
+    sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \     
+    python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG IPEX_BRANCH=master
