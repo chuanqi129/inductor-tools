@@ -51,11 +51,10 @@ if [[ $WRAPPER == "cpp" ]]; then
 fi
 
 Flag_extra=""
-if [[ $SHAPE == "static" ]]; then
-    export TORCHINDUCTOR_FREEZING=1
-    echo "Testing with freezing on."
-    Flag_extra="--freezing "    
-fi
+export TORCHINDUCTOR_FREEZING=1
+echo "Testing with freezing on."
+Flag_extra="--freezing "    
+
 
 # multi-threads
 multi_threads_test() {
