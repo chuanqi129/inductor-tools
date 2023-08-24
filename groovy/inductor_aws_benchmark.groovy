@@ -25,6 +25,15 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
+default_mail = 'yudong.si@intel.com'
+if ('default_mail' in params) {
+    echo "default_mail in params"
+    if (params.default_mail != '') {
+        default_mail = params.default_mail
+    }
+}
+echo "default_mail: $default_mail"
+
 instance_ids = 'i-03aa90bc2017ba908'
 if ('instance_ids' in params) {
     echo "instance_ids in params"
@@ -439,6 +448,21 @@ node(NODE_LABEL){
         }
     }    
 
+    stage("regression issue create")
+    {
+        try{
+            sh '''
+            #!/usr/bin/env bash
+            source activate dev
+            cd ${HOME}/workspace/pytorch
+            git pull origin main
+            gh issue create --title "[inductor][cpu]Perf regression ${_precision}_${_test_mode}_${_shape}_${_WRAPPER} (Auto_generated" --body-file ${WORKSPACE}/${_target}/inductor_perf_regression.html
+            '''
+        }catch(err){
+            echo err.getMessage()   
+        }
+    }
+
     stage('archiveArtifacts') {
         if ("${test_mode}" == "inference")
         {
@@ -463,7 +487,7 @@ node(NODE_LABEL){
         if ("${debug}" == "true"){
             maillist="${debug_mail}"
         }else{
-            maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
+            maillist="${default_mail}"
         }
         if ("${test_mode}" == "inference")
         {
