@@ -448,20 +448,20 @@ node(NODE_LABEL){
         }
     }    
 
-    stage("regression issue create")
-    {
-        try{
-            sh '''
-            #!/usr/bin/env bash
-            source activate dev
-            cd ${HOME}/workspace/pytorch
-            git pull origin main
-            gh issue create --title "[inductor][cpu]Perf regression ${_precision}_${_test_mode}_${_shape}_${_WRAPPER} (Auto_generated" --body-file ${WORKSPACE}/${_target}/inductor_perf_regression.html
-            '''
-        }catch(err){
-            echo err.getMessage()   
-        }
-    }
+    // stage("regression issue create")
+    // {
+    //     try{
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         source activate dev
+    //         cd ${HOME}/workspace/pytorch
+    //         git pull origin main
+    //         gh issue create --title "[inductor][cpu]Perf regression ${_precision}_${_test_mode}_${_shape}_${_WRAPPER} (Auto_generated" --body-file ${WORKSPACE}/${_target}/inductor_perf_regression.html
+    //         '''
+    //     }catch(err){
+    //         echo err.getMessage()   
+    //     }
+    // }
 
     stage('archiveArtifacts') {
         if ("${test_mode}" == "inference")
