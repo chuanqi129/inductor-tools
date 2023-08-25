@@ -12,6 +12,7 @@ Dependencies:
 import argparse
 import datacompy
 from datetime import datetime,timedelta
+from scipy.stats import gmean
 from styleframe import StyleFrame, Styler, utils
 import pandas as pd
 import os
@@ -28,6 +29,11 @@ parser.add_argument('--md_off', action='store_true', help='turn off markdown fil
 parser.add_argument('--html_off', action='store_true', help='turn off html file generate')
 parser.add_argument('--gh_token', type=str,help='github token for issue comment creation')
 parser.add_argument('--dashboard', type=str,default='default',help='determine title in dashboard report')
+parser.add_argument('--cppwrapper_gm', action='store_true',help='turn on geomean speedup calculation on cppwrapper vs pythonwrapper')
+parser.add_argument('--mt_interval_start', type=float,default=0.04,help='cppwrapper gm mt interval start')
+parser.add_argument('--mt_interval_end', type=float,default=1.5,help='cppwrapper gm mt interval end')
+parser.add_argument('--st_interval_start', type=float,default=0.04,help='cppwrapper sm mt interval start')
+parser.add_argument('--st_interval_end', type=float,default=5,help='cppwrapper gm st interval end')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -58,6 +64,9 @@ torchdata_main_commit=''
 new_performance_regression=pd.DataFrame()
 new_failures=pd.DataFrame()
 
+# cppwrapper gm values
+multi_threads_gm={}
+single_thread_gm={}
 
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
@@ -83,6 +92,21 @@ improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
 
+def filter_df_by_threshold(df, interval_start,interval_end):
+    filtered_data_small = df[df['inductor_old'] <= interval_start]
+    filtered_data_medium = df[(df['inductor_old'] > interval_start)  & (df['inductor_old'] <= interval_end)]
+    filtered_data_large = df[df['inductor_old'] > interval_end]
+    return filtered_data_small, filtered_data_medium,filtered_data_large
+
+def get_passing_entries(df,column_name):
+    return df[column_name][df[column_name] > 0]
+
+def caculate_geomean(df,column_name):
+    cleaned_df = get_passing_entries(df,column_name).clip(1)
+    if cleaned_df.empty:
+        return "0.0x"
+    return f"{gmean(cleaned_df):.2f}x"
+
 def update_summary(excel,reference,target):
     data = {
         'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
@@ -101,7 +125,8 @@ def update_summary(excel,reference,target):
         'torchbench':[' ', ' ', ' ', ' '],
         'huggingface':[' ', ' ', ' ', ' '],
         'timm_models ':[' ', ' ', ' ', ' ']
-    }    
+    }
+
     if reference is not None:
         summary=pd.DataFrame(data)
         if args.mode == "multiple" or args.mode == 'all':
@@ -116,7 +141,7 @@ def update_summary(excel,reference,target):
             summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
-            summary.iloc[3:4,2]=target            
+            summary.iloc[3:4,2]=target
         if args.mode == "single" or args.mode == 'all':
             reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
@@ -129,9 +154,9 @@ def update_summary(excel,reference,target):
             summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
-            summary.iloc[7:8,2]=target
+            summary.iloc[7:8,2]=target      
         sf = StyleFrame(summary)
-        sf.apply_style_by_indexes(sf.index[[1,3,5,7]], styler_obj=target_style)         
+        sf.apply_style_by_indexes(sf.index[[1,3,5,7]], styler_obj=target_style) 
     else:
         summary=pd.DataFrame(data_target)
         if args.mode == "multiple" or args.mode == 'all':
@@ -360,7 +385,6 @@ def update_failures(excel,target_thread,refer_thread):
             sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style) 
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
-
 def process_suite(suite,thread):
     target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
@@ -386,7 +410,7 @@ def process_thread(thread):
         tmp.append(data)
     return pd.concat(tmp)
  
-def process(input):
+def process(input,thread):
     if args.reference is not None:
         data_new=input[['name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
@@ -402,22 +426,37 @@ def process(input):
         data_ratio['Eager Ratio(old/new)'] = pd.DataFrame(round(data_old['eager_old'] / data_new['eager_new'],2))
         data_ratio['Inductor Ratio(old/new)'] = pd.DataFrame(round(data_old['inductor_old'] / data_new['inductor_new'],2))
         data_ratio['Compilation_latency_Ratio(old/new)'] = pd.DataFrame(round(data_old['compilation_latency_old'] / data_new['compilation_latency_new'],2))
-
-        data = StyleFrame({'name': list(data_new['name']),
-                    'batch_size_new': list(data_new['batch_size_new']),
-                    'speed_up_new': list(data_new['speed_up_new']),
-                    'inductor_new': list(data_new['inductor_new']),
-                    'eager_new': list(data_new['eager_new']),
-                    'compilation_latency_new': list(data_new['compilation_latency_new']),
-                    'batch_size_old': list(data_old['batch_size_old']),
-                    'speed_up_old': list(data_old['speed_up_old']),
-                    'inductor_old': list(data_old['inductor_old']),
-                    'eager_old': list(data_old['eager_old']),
-                    'compilation_latency_old': list(data_old['compilation_latency_old']),
-                    'Ratio Speedup(New/old)': list(data_ratio['Ratio Speedup(New/old)']),
-                    'Eager Ratio(old/new)': list(data_ratio['Eager Ratio(old/new)']),
-                    'Inductor Ratio(old/new)': list(data_ratio['Inductor Ratio(old/new)']),
-                    'Compilation_latency_Ratio(old/new)': list(data_ratio['Compilation_latency_Ratio(old/new)'])})
+        
+        combined_data = pd.DataFrame({
+            'name': list(data_new['name']),
+            'batch_size_new': list(data_new['batch_size_new']),
+            'speed_up_new': list(data_new['speed_up_new']),
+            'inductor_new': list(data_new['inductor_new']),
+            'eager_new': list(data_new['eager_new']),
+            'compilation_latency_new': list(data_new['compilation_latency_new']),
+            'batch_size_old': list(data_old['batch_size_old']),
+            'speed_up_old': list(data_old['speed_up_old']),
+            'inductor_old': list(data_old['inductor_old']),
+            'eager_old': list(data_old['eager_old']),
+            'compilation_latency_old': list(data_old['compilation_latency_old']),
+            'Ratio Speedup(New/old)': list(data_ratio['Ratio Speedup(New/old)']),
+            'Eager Ratio(old/new)': list(data_ratio['Eager Ratio(old/new)']),
+            'Inductor Ratio(old/new)': list(data_ratio['Inductor Ratio(old/new)']),
+            'Compilation_latency_Ratio(old/new)': list(data_ratio['Compilation_latency_Ratio(old/new)'])
+            })
+        if args.cppwrapper_gm:
+            global multi_threads_gm, single_thread_gm
+            if thread == "multiple" or thread == 'all':
+                combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.mt_interval_start,args.mt_interval_end)             
+                multi_threads_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
+                multi_threads_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
+                multi_threads_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')
+            if thread == "single" or thread == 'all':
+                combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.st_interval_start,args.st_interval_end)
+                single_thread_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
+                single_thread_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
+                single_thread_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')      
+        data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
         data.set_column_width(2, 18) 
         data.set_column_width(3, 18) 
@@ -475,7 +514,7 @@ def update_details(writer):
         # mt
         head.to_excel(excel_writer=writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
         mt=process_thread('multi_threads_cf_logs')
-        mt_data=process(mt)
+        mt_data=process(mt,args.mode)
 
         global torchbench_index
         torchbench_index=mt_data.loc[mt_data['name']=='alexnet'].index[0]
@@ -499,7 +538,7 @@ def update_details(writer):
         # st
         head.to_excel(excel_writer=writer, sheet_name='Single-Core Single-thread', index=False,startrow=0,header=False) 
         st=process_thread('single_thread_cf_logs')
-        st_data=process(st)
+        st_data=process(st,args.mode)
 
         torchbench_index=st_data.loc[st_data['name']=='alexnet'].index[0]
         hf_index=st_data.loc[st_data['name']=='AlbertForMaskedLM'].index[0]
@@ -514,6 +553,37 @@ def update_details(writer):
         s= pd.Series(suite_list)
         s.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
         st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=1)   
+
+def update_cppwrapper_gm(excel,reference,target):
+    # cppwrapper vs pythonwrapper geomean speedup table
+    cppwrapper_gm = {
+        'Test Secnario':['Single Socket Multi-Threads', 'Test Secnario','Single Core Single-Thread'], 
+        'Comp Item':['Geomean Speedup','Comp Item','Geomean Speedup'],
+        'Date':[' ', ' Date', ' '],
+        'Compiler':['inductor', 'Compiler', 'inductor'],
+        'small(t<=40ms)':[' ', 'small(t<=40ms)', ' '],
+        'medium(40ms<t<=1.5s)':[' ', 'medium(40ms<t<=5s)', ' '],
+        'large(t>1.5s)':[' ', 'large(t>5s)', ' ']
+    }
+    if reference is not None:
+        cppwrapper_summary=pd.DataFrame(cppwrapper_gm)
+        if args.mode == "multiple" or args.mode == 'all':
+            cppwrapper_summary.iloc[0:1,4:5]=multi_threads_gm['small']
+            cppwrapper_summary.iloc[0:1,5:6]=multi_threads_gm['medium']
+            cppwrapper_summary.iloc[0:1,6:7]=multi_threads_gm['large']
+            cppwrapper_summary.iloc[0:1,2]=target
+            cppwrapper_summary.iloc[0:1,2]=target          
+        if args.mode == "single" or args.mode == 'all':
+            cppwrapper_summary.iloc[2:3,4:5]=single_thread_gm['small']
+            cppwrapper_summary.iloc[2:3,5:6]=single_thread_gm['medium']
+            cppwrapper_summary.iloc[2:3,6:7]=single_thread_gm['large']
+            cppwrapper_summary.iloc[2:3,2]=target
+            cppwrapper_summary.iloc[2:3,2]=target                    
+        cppwrapper_sf = StyleFrame(cppwrapper_summary)
+
+    for i in range(1,8):
+        cppwrapper_sf.set_column_width(i, 30) if i==6 else cppwrapper_sf.set_column_width(i, 18)
+    cppwrapper_sf.to_excel(sheet_name='Cppwrapper_GM',excel_writer=excel)
 
 def update_issue_commits():
     from github import Github
@@ -718,6 +788,8 @@ def generate_report(excel,reference,target):
     if args.mode =='single' or args.mode == 'all':
         update_failures(excel,target_st,reference_st)
     update_details(excel)
+    if args.cppwrapper_gm:
+        update_cppwrapper_gm(excel,reference,target)
 
 def excel_postprocess(file):
     wb=file.book
@@ -759,5 +831,4 @@ if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx')
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
-    html_generate(args.html_off)
-    update_issue_commits()
+    html_generate(args.html_off)     
