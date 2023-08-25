@@ -30,8 +30,8 @@ def authorize_request(browser):
     WebDriverWait(browser, 200).until(EC.element_to_be_clickable((By.XPATH, approval)))   
     sleep(10)       
     browser.find_element(By.XPATH, approval).click()
-    success='//*[@id="LoginForm"]/div/span'
-    WebDriverWait(browser, 60).until(EC.visibility_of_element_located((By.XPATH, success)))
+    # success='//*[@id="LoginForm"]/div/span'
+    # WebDriverWait(browser, 60).until(EC.visibility_of_element_located((By.XPATH, success)))
     print("AWS SSO Refresh Done")
     browser.quit()
 
