@@ -34,6 +34,42 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
+mt_start = '0.04'
+if ('mt_start' in params) {
+    echo "mt_start in params"
+    if (params.mt_start != '') {
+        mt_start = params.mt_start
+    }
+}
+echo "mt_start: $mt_start"
+
+mt_end = '1.5'
+if ('mt_end' in params) {
+    echo "mt_end in params"
+    if (params.mt_end != '') {
+        mt_end = params.mt_end
+    }
+}
+echo "mt_end: $mt_end"
+
+st_start = '0.04'
+if ('st_start' in params) {
+    echo "st_start in params"
+    if (params.st_start != '') {
+        st_start = params.st_start
+    }
+}
+echo "st_start: $st_start"
+
+st_end = '5'
+if ('st_end' in params) {
+    echo "st_end in params"
+    if (params.st_end != '') {
+        st_end = params.st_end
+    }
+}
+echo "st_end: $st_end"
+
 target_job = 'inductor_aws_regular_cppwrapper'
 if ('target_job' in params) {
     echo "target_job in params"
@@ -76,6 +112,12 @@ env._target_sc = "$target_job_selector"
 env._refer_job = "$refer_job"
 env._refer_sc = "$refer_job_selector"
 
+env._cppwp_gm = "$cppwp_gm"
+env._mt_start = "$mt_start"
+env._mt_end = "$mt_end"
+env._st_start = "$st_start"
+env._st_end = "$st_end"
+
 env._NODE = "$NODE_LABEL"
 
 node(NODE_LABEL){
@@ -110,7 +152,12 @@ node(NODE_LABEL){
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
             source activate pytorch
         fi
-        cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision}
+        cp scripts/modelbench/report.py ${WORKSPACE}
+        if [ ${_cppwp_gm} == 'True' ];then
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end}
+        else
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision}
+        fi
         mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./ && rm -rf ${_refer_job}_${_refer_sc} && rm -rf ${_target_job}_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"

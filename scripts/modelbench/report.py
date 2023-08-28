@@ -561,9 +561,9 @@ def update_cppwrapper_gm(excel,reference,target):
         'Comp Item':['Geomean Speedup','Comp Item','Geomean Speedup'],
         'Date':[' ', ' Date', ' '],
         'Compiler':['inductor', 'Compiler', 'inductor'],
-        'small(t<=40ms)':[' ', 'small(t<=40ms)', ' '],
-        'medium(40ms<t<=1.5s)':[' ', 'medium(40ms<t<=5s)', ' '],
-        'large(t>1.5s)':[' ', 'large(t>5s)', ' ']
+        f'small(t<={args.mt_interval_start}s)':[' ', f'small(t<={args.st_interval_start}s)', ' '],
+        f'medium({args.mt_interval_start}s<t<={args.mt_interval_end}s)':[' ', f'medium({args.st_interval_start}s<t<={args.st_interval_end}s)', ' '],
+        f'large(t>{args.mt_interval_end}s)':[' ', f'large(t>{args.st_interval_end}s)', ' ']
     }
     if reference is not None:
         cppwrapper_summary=pd.DataFrame(cppwrapper_gm)
@@ -832,3 +832,4 @@ if __name__ == '__main__':
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)     
+    update_issue_commits()
