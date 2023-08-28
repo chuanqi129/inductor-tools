@@ -34,6 +34,15 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
+cppwp_gm = 'False'
+if ('cppwp_gm' in params) {
+    echo "cppwp_gm in params"
+    if (params.cppwp_gm != '') {
+        cppwp_gm = params.cppwp_gm
+    }
+}
+echo "cppwp_gm: $cppwp_gm"
+
 mt_start = '0.04'
 if ('mt_start' in params) {
     echo "mt_start in params"
