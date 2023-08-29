@@ -34,6 +34,15 @@ if ('default_mail' in params) {
 }
 echo "default_mail: $default_mail"
 
+new_instance = 'False'
+if ('new_instance' in params) {
+    echo "new_instance in params"
+    if (params.new_instance != '') {
+        new_instance = params.new_instance
+    }
+}
+echo "new_instance: $new_instance"
+
 instance_ids = 'i-03aa90bc2017ba908'
 if ('instance_ids' in params) {
     echo "instance_ids in params"
@@ -275,6 +284,7 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
+env._new_instance = "$new_instance"
 env._aws_id = "$instance_ids"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
@@ -318,6 +328,11 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
+            if [ "${_new_instance}" == "True" ]; then
+                scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+                scp ${WORKSPACE}/scripts/aws/instance_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+                ssh ubuntu@${current_ip} "bash instance_prepare.sh"
+            fi
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker

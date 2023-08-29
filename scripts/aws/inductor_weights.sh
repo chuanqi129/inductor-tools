@@ -74,4 +74,4 @@ wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vt
 wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vt3p-weights/visformer_small-839e1f5b.pth 
 wget https://github.com/sail-sg/volo/releases/download/volo_1/d1_224_84.2.pth.tar 
 wget https://dl.fbaipublicfiles.com/xcit/xcit_large_24_p8_224.pth 
-
+touch inductor_weights_prepared.txt
