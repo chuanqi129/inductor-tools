@@ -12,6 +12,8 @@ DT=${3:-float32}
 SHAPE=${4:-static}
 LOG_DIR=${5:-ipex_log}
 DYNAMO_BENCH=${6:-1238ae3}
+SCENARIO=${7:-performance} # accuracy / performance
+MODE=${8:-inference} # inference / training
 mkdir -p $LOG_DIR
 
 # collect sw info
@@ -29,20 +31,46 @@ python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
 echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 
 git reset --hard
-sed -i "s%torch._dynamo.config.base_dir%'/workspace/pytorch'%" ./benchmarks/dynamo/common.py
-sed -i '/\"inductor\": \"--inference -n50 --inductor \"/a\"ipex\": \"--backend=ipex --inference \",' ./benchmarks/dynamo/runner.py
-sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/torchbench.py
-sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/huggingface.py
-sed -i '/import warning/a import intel_extension_for_pytorch as ipex' ./benchmarks/dynamo/timm_models.py
 
 cd /workspace/pytorch
 git apply /workspace/common.patch
 
+
+Mode_extra="--inference "
+if [[ $MODE == "training" ]]; then
+    echo "Testing with training mode."
+    Mode_extra="--training "
+fi
+
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."
-    Shape_extra="--dynamic-shapes "
+    Shape_extra="--dynamic-shapes --dynamic-batch-only "
 fi
+
+Wrapper_extra=""
+if [[ $WRAPPER == "cpp" ]]; then
+    echo "Testing with cpp wrapper."
+    Wrapper_extra="--cpp-wrapper "
+fi
+
+Channels_extra=""
+if [[ ${CHANNELS} == "last" ]]; then
+    Channels_extra="--channels-last "
+fi
+
+BS_extra=""
+if [[ ${BS} -gt 0 ]]; then
+    BS_extra="--batch_size=${BS} "
+fi
+
+Flag_extra=""
+if [[ $SHAPE == "static" ]]; then
+    export TORCHINDUCTOR_FREEZING=1
+    echo "Testing with freezing on."
+    Flag_extra="--freezing "    
+fi
+
 
 # multi-threads
 multi_threads_test() {
@@ -52,16 +80,15 @@ multi_threads_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference  --compilers=ipex --extra-args="--timeout 9000 ${Shape_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference  --compilers=ipex --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference  --compilers=ipex --extra-args="--timeout 9000 ${Shape_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference  --compilers=ipex --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
 }
-
 # single-thread
 single_thread_test() {
     export OMP_NUM_THREADS=1
@@ -69,11 +96,11 @@ single_thread_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=ipex --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=ipex --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=ipex --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=ipex --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
