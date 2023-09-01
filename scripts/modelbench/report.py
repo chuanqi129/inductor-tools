@@ -93,6 +93,7 @@ passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
 
 def filter_df_by_threshold(df, interval_start,interval_end):
+    df = df[df['inductor_new'] > 0]
     filtered_data_small = df[df['inductor_old'] <= interval_start]
     filtered_data_medium = df[(df['inductor_old'] > interval_start)  & (df['inductor_old'] <= interval_end)]
     filtered_data_large = df[df['inductor_old'] > interval_end]
@@ -329,7 +330,7 @@ def get_failures(target_path):
     failures['perf'].replace([0],['fail'],inplace=True)
     failures['perf'].replace(['fail','infra_error','timeout'],[1,1,1],inplace=True)
     failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
-    failures=failures.groupby(by=['name']).sum().reset_index()
+    failures=failures.groupby(by=['name']).sum(numeric_only=True).reset_index()
     failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
     failures['perf'].replace([0,1],["√","X"],inplace=True)
     failures['accuracy'].replace([0,1],["√","X"],inplace=True)  
@@ -446,12 +447,12 @@ def process(input,thread):
             })
         if args.cppwrapper_gm:
             global multi_threads_gm, single_thread_gm
-            if thread == "multiple" or thread == 'all':
+            if thread == "multiple":
                 combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.mt_interval_start,args.mt_interval_end)             
                 multi_threads_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
                 multi_threads_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
                 multi_threads_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')
-            if thread == "single" or thread == 'all':
+            if thread == "single":
                 combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.st_interval_start,args.st_interval_end)
                 single_thread_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
                 single_thread_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
@@ -514,7 +515,7 @@ def update_details(writer):
         # mt
         head.to_excel(excel_writer=writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
         mt=process_thread('multi_threads_cf_logs')
-        mt_data=process(mt,args.mode)
+        mt_data=process(mt,"multiple")
 
         global torchbench_index
         torchbench_index=mt_data.loc[mt_data['name']=='alexnet'].index[0]
@@ -538,7 +539,7 @@ def update_details(writer):
         # st
         head.to_excel(excel_writer=writer, sheet_name='Single-Core Single-thread', index=False,startrow=0,header=False) 
         st=process_thread('single_thread_cf_logs')
-        st_data=process(st,args.mode)
+        st_data=process(st,"single")
 
         torchbench_index=st_data.loc[st_data['name']=='alexnet'].index[0]
         hf_index=st_data.loc[st_data['name']=='AlbertForMaskedLM'].index[0]
