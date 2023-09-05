@@ -2,7 +2,7 @@ set +e
 
 # docker setup
 sudo apt update -y
-sudo apt install docker.io -y
+sudo snap install docker
 if [[ ! $(groups "${USER}" | grep -q docker) ]]; then
   echo "Adding Docker user group with ${USER} in it"
   sudo usermod -aG docker "${USER}"
