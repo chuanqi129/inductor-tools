@@ -4,9 +4,10 @@ set +e
 sudo apt update -y
 sudo snap install docker
 if [[ ! $(groups "${USER}" | grep -q docker) ]]; then
-  echo "Adding Docker user group with ${USER} in it"
-  sudo usermod -aG docker "${USER}"
-  echo "Using newgrp to check operation..."
+  sudo groupadd docker
+  sudo gpasswd -a ${USER} docker
+  sudo su
+  exit
   newgrp docker <<TEST
 echo "Running docker as ${USER} in docker group to see if it's working..."
 docker run hello-world
