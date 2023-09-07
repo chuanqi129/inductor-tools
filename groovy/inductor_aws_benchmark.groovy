@@ -330,8 +330,10 @@ node(NODE_LABEL){
             ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
             if [ "${_new_instance}" == "True" ]; then
                 scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/scripts/aws/instance_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-                ssh ubuntu@${current_ip} "bash instance_prepare.sh"
+                scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+                scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+                ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+                ssh ubuntu@${current_ip} "bash weights_prepare.sh"
             fi
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
