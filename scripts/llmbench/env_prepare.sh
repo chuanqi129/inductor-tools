@@ -1,3 +1,4 @@
+set +e
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 export KMP_AFFINITY=granularity=fine,compact,1,0
@@ -11,6 +12,16 @@ export OMP_NUM_THREADS=$CORES
 precision=${1:-float32}
 LOG_DIR=${2:-llm_bench}
 mkdir -p $LOG_DIR
+
+# kill unused process
+itm_1=$(ps -ef | grep run_dynamo_llm.py | awk '{print $2}')
+
+if [ -n "${itm_1:0}" ]; then
+    sudo kill -9 ${itm_1:0}
+    echo kill ${itm_1:0} successful
+else
+    echo not running ${itm_1:0}
+fi
 
 # install transformers
 cd .. && rm -rf transformers && pip uninstall transformers -y
