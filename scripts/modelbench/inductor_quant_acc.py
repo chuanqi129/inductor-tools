@@ -5,8 +5,8 @@ import torchvision.models as models
 import torch._dynamo as torchdynamo
 import copy
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e
-import torch.ao.quantization.pt2e.quantizer.x86_inductor_quantizer as xiq
-from torch.ao.quantization.pt2e.quantizer import X86InductorQuantizer
+import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
+from torch.ao.quantization.quantizer.x86_inductor_quantizer import X86InductorQuantizer
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
@@ -108,7 +108,7 @@ def run_model(model_name):
               .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
-    model_list=["alexnet","shufflenet_v2_x1_0","mobilenet_v3_large","vgg16","densenet121","mnasnet1_0","squeezenet1_1","mobilenet_v2","resnet50","resnet152","resnet18","resnext50_32x4d"]
+    model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
     for model in model_list:
         run_model(model)
 
