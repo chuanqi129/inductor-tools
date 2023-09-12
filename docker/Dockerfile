@@ -117,7 +117,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    pip install z3-solver && \
+    pip install z3-solver diffusers && \
     python -c "import torch, torchvision, torchtext"
 
 # Clean for final image
