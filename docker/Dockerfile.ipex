@@ -70,35 +70,11 @@ ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
+RUN pip3 install torch torchvision torchaudio torchtext torchdata --index-url https://download.pytorch.org/whl/test/cpu
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    python setup.py develop && cd .. 
-ARG TORCH_VISION_BRANCH=nightly
-ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
-ARG TORCH_DATA_BRANCH=nightly
-ARG TORCH_DATA_COMMIT=${TORCH_DATA_BRANCH}
-ARG TORCH_TEXT_BRANCH=nightly
-ARG TORCH_TEXT_COMMIT=${TORCH_TEXT_BRANCH}
-ARG TORCH_AUDIO_BRANCH=nightly
-ARG TORCH_AUDIO_COMMIT=${TORCH_AUDIO_BRANCH}
-RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
-    cd vision && git checkout ${TORCH_VISION_COMMIT} && \
-    python setup.py bdist_wheel && \
-    pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_DATA_BRANCH} https://github.com/pytorch/data.git && \
-    cd data && git checkout ${TORCH_DATA_COMMIT} && \
-    python setup.py bdist_wheel && \
-    pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_TEXT_BRANCH} https://github.com/pytorch/text.git && \
-    cd text && git checkout ${TORCH_TEXT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    python setup.py bdist_wheel && \
-    pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_AUDIO_BRANCH} https://github.com/pytorch/audio.git && \
-    cd audio && git checkout ${TORCH_AUDIO_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    # Workaround for https://github.com/pytorch/audio/issues/2784
-    sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
-    python setup.py bdist_wheel && \
-    pip install dist/*.whl && cd ..
+    rm -rf torch && cd .. 
+
 ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
@@ -110,6 +86,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
+
 ARG BENCH_COMMIT=main
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
