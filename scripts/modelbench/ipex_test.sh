@@ -15,6 +15,7 @@ DYNAMO_BENCH=${6:-1238ae3}
 SCENARIO=${7:-performance} # accuracy / performance
 MODE=${8:-inference} # inference / training
 mkdir -p $LOG_DIR
+pip install /workspace/intel*.whl
 
 # collect sw info
 curdir=$(pwd)

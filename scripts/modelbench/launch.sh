@@ -57,6 +57,7 @@ docker run -id --name $USER --privileged --env FUSION_PATH=${FUSION_PATH} --env 
 
 docker cp /home/ubuntu/docker/ipex_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/common.patch $USER:/workspace/
+docker cp /home/ubuntu/docker/intel*.whl $USER:/workspace/
 
 if (($TEST_MODE == "inference")); then
     docker exec -i $USER bash -c "bash ipex_test.sh ${THREAD} first $PRECISION $TEST_SHAPE ipex_log $DYNAMO_BENCH ${FUSION_PATH}"
