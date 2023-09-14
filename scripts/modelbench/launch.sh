@@ -51,6 +51,8 @@ if [ -d ipex_log ]; then
     sudo rm -rf ipex_log
 fi
 
+sudo chmod +777 -R /home/ubuntu/docker/download/
+
 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg IPEX_REPO=$IPEX_REPO --build-arg IPEX_BRANCH=$IPEX_BRANCH --build-arg IPEX_COMMIT=$IPEX_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} -t ipex_torchbench:$TAG -f Dockerfile.ipex --target image .
 
 docker run -id --name $USER --privileged --env FUSION_PATH=${FUSION_PATH} --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/ipex_log:/workspace/pytorch/ipex_log ipex_torchbench:$TAG
