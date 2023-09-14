@@ -72,6 +72,8 @@ if [[ $SHAPE == "static" ]]; then
     Flag_extra="--freezing "    
 fi
 
+rm -rf torch
+export LOG_DIR=/workspace/pytorch/$LOG_DIR
 
 # multi-threads
 multi_threads_test() {
