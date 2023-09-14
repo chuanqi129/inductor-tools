@@ -92,7 +92,7 @@ WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
     pip install cpuid && \
     pip install z3-solver && \
-    python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
+    python -c "import torch, torchvision, torchtext"
 
 # Clean for final image
 FROM dev-base AS image
