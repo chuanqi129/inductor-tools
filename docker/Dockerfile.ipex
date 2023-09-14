@@ -70,7 +70,7 @@ ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
-RUN pip3 install torch torchvision torchaudio torchtext torchdata --index-url https://download.pytorch.org/whl/test/cpu
+RUN pip3 install torch torchvision torchaudio torchtext torchdata --index-url https://download.pytorch.org/whl/test/cpu --no-deps
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     rm -rf torch && cd .. 
