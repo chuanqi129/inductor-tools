@@ -275,7 +275,7 @@ node(NODE_LABEL){
     stage("Instance Start") {
         sh '''
         /home2/diweisun/.local/bin/aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
-        init_ip=`/home2/diweisun/.local/bin/aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        init_ip=`/home2/diweisun/.local/bin/aws/aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         echo init_ip is $init_ip
         ssh -o StrictHostKeyChecking=no ubuntu@${init_ip} "pwd"
         '''
@@ -300,7 +300,7 @@ node(NODE_LABEL){
         retry(3){
             sh '''
             #!/usr/bin/env bash
-            _name=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            _name=`/home2/diweisun/.local/bin/aws/aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             ssh ubuntu@${_name} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_IPEX_REPO} ${_IPEX_BRANCH} ${_IPEX_COMMIT}  ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_FUSION_PATH} > entrance.log 2>&1 &" &
             '''
         }
@@ -311,7 +311,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             set +e
-            _name=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            _name=`/home2/diweisun/.local/bin/aws/aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             for t in {1..25}
             do
                 ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
@@ -368,7 +368,7 @@ node(NODE_LABEL){
     }
     stage("Instance ShutDown") {
         sh '''
-            /home2/diweisun/.local/bin/aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
+            /home2/diweisun/.local/bin/aws/aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
         '''
     }
     stage("Sent Email"){
