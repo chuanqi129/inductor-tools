@@ -99,6 +99,5 @@ FROM dev-base AS image
 ARG BENCH_COMMIT=${PT_COMMIT}
 COPY --from=build /opt/conda /opt/conda
 COPY --from=build /workspace/pytorch /workspace/pytorch
-COPY --from=build /workspace/ipex /workspace/ipex
 COPY --from=build /workspace/benchmark /workspace/benchmark
 WORKDIR /workspace/pytorch
