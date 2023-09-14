@@ -240,7 +240,7 @@ aws_id= 'i-009c3b5297e7029ad'
 if ('aws_id' in params) {
     echo "aws_id in params"
     if (params.aws_id != '') {
-        FUSION_PATH = params.aws_id
+        aws_id = params.aws_id
     }
 }
 echo "aws_id: $aws_id"
