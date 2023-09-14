@@ -262,6 +262,12 @@ env._FUSION_PATH = "$FUSION_PATH"
 println(env._target)
 
 node(NODE_LABEL){
+    stage("Instance Start") {
+        sh '''
+        if [ ${aws_host_name} == 'spr-new' ];then
+            /home2/diweisun/.local/bin/aws ec2 start-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
+        '''
+    }
     stage("prepare scripts") {
         deleteDir()
         checkout scm
@@ -345,7 +351,12 @@ node(NODE_LABEL){
             '''        
         archiveArtifacts artifacts: "**/ipex_log/**", fingerprint: true
     }
-
+    stage("Instance ShutDown") {
+        sh '''
+        if [ ${aws_host_name} == 'spr-new' ];then
+            /home2/diweisun/.local/bin/aws ec2 stop-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
+        '''
+    }
     stage("Sent Email"){
         if ("${debug}" == "true"){
             maillist="diwei.sun@intel.com"
