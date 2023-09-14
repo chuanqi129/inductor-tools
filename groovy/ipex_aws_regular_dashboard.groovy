@@ -265,7 +265,7 @@ node(NODE_LABEL){
     stage("Instance Start") {
         sh '''
         if [ ${aws_host_name} == 'spr-new' ];then
-            /home2/diweisun/.local/bin/aws ec2 start-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
+            /home2/yudongsi/.local/bin/aws ec2 start-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
         '''
     }
     stage("prepare scripts") {
@@ -354,7 +354,7 @@ node(NODE_LABEL){
     stage("Instance ShutDown") {
         sh '''
         if [ ${aws_host_name} == 'spr-new' ];then
-            /home2/diweisun/.local/bin/aws ec2 stop-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
+            /home2/yudongsi/.local/bin/aws ec2 stop-instances --instance-ids i-009c3b5297e7029ad --profile pytorch && sleep 2m
         '''
     }
     stage("Sent Email"){
