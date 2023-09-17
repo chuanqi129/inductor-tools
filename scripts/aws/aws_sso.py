@@ -46,6 +46,12 @@ def sso_refresh(ff,gd,code,user,passwd):
     print(url+code)
     driver.get(url+code)
     try:
+        # cli verification for enter code [new]
+        print("cli_verification_btn...")
+        cvb= '//*[@id="cli_verification_btn"]'
+        WebDriverWait(driver, 200).until(EC.element_to_be_clickable((By.XPATH, cvb)))   
+        sleep(5)       
+        driver.find_element(By.XPATH, cvb).click()        
         # intel azure portal login
         print("IAP...")
         iap='//*[@id="i0116"]'
