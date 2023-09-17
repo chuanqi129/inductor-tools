@@ -102,7 +102,7 @@ ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
