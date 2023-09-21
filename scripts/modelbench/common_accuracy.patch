@@ -1,0 +1,170 @@
+diff --git a/benchmarks/dynamo/common.py b/benchmarks/dynamo/common.py
+index 521618a9b35..4bfd635ab4f 100644
+--- a/benchmarks/dynamo/common.py
++++ b/benchmarks/dynamo/common.py
+@@ -654,7 +654,7 @@ def maybe_mark_step(args):
+         xm.mark_step()
+ 
+ 
+-def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
++def speedup_experiment(args, model_iter_fn, model, optimized_model, example_inputs, **kwargs):
+     """
+     Measure speedups over eager.
+ 
+@@ -693,7 +693,7 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
+             frozen_model_iter_fn = export_aot_inductor(model_iter_fn)
+         else:
+             frozen_model_iter_fn = torch._dynamo.run(model_iter_fn)
+-
++        
+         for rep in trange(args.repeat, desc="running benchmark"):
+             inputs = (
+                 randomize_input(copy.deepcopy(example_inputs))
+@@ -721,7 +721,7 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
+ 
+             with maybe_mark_profile(p=p, mark="actual"):
+                 timings[rep, 1], actual_output = timed(
+-                    model,
++                    optimized_model,
+                     frozen_model_iter_fn,
+                     inputs,
+                     return_result=True,
+@@ -731,7 +731,7 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
+ 
+     if args.export_profiler_trace:
+         name = args.profiler_trace_name + "_" + model.name + ".json"
+-        name = os.path.join(torch._dynamo.config.base_dir, name)
++        name = os.path.join('/workspace/pytorch', name)
+         p.export_chrome_trace(name)
+     median = np.median(timings, axis=0)
+     speedup = median[0] / median[1]
+@@ -2102,7 +2102,17 @@ class BenchmarkRunner:
+             reset_rng_state()
+             torch._dynamo.reset()
+             try:
+-                model_copy = self.deepcopy_and_maybe_ddp(model)
++                if self.args.backend == "ipex":
++                    print('In ipex!!!\n')
++                    optimized_model = copy.deepcopy(model)
++                    import intel_extension_for_pytorch as ipex
++                    if self.args.bfloat16 or self.args.amp:
++                        optimized_model = ipex.optimize(optimized_model, dtype=torch.bfloat16, weights_prepack=False)
++                    elif self.args.float32:
++                        optimized_model = ipex.optimize(optimized_model, weights_prepack=False)
++                else:
++                    optimized_model = model
++                model_copy = self.deepcopy_and_maybe_ddp(optimized_model)
+                 self.init_optimizer(name, current_device, model_copy.parameters())
+                 if self.args.export:
+                     # TB and TIMM use list example_inputs
+@@ -2267,6 +2277,18 @@ class BenchmarkRunner:
+     def run_performance_test(
+         self, name, model, example_inputs, optimize_ctx, experiment, tag=None
+     ):
++        if self.args.backend == "ipex":
++            optimized_model = copy.deepcopy(model)
++            fusion_path = os.environ["FUSION_PATH"]
++            import intel_extension_for_pytorch as ipex
++            if self.args.bfloat16:
++                optimized_model = ipex.optimize(optimized_model, dtype=torch.bfloat16, weights_prepack=False)
++            elif self.args.float32:
++                optimized_model = ipex.optimize(optimized_model, weights_prepack=False)
++            ipex._set_compiler_backend(fusion_path) # jit path: "torchscript", inductor path: "inductor".:
++
++        else:
++            optimized_model = model
+         if self.args.xla:
+             with self.pick_grad(name, self.args.training):
+                 return experiment(*self.maybe_cast(model, example_inputs))
+@@ -2298,6 +2320,7 @@ class BenchmarkRunner:
+ 
+         # Cast the model to float16/float32 as necessary
+         model, example_inputs = self.maybe_cast(model, example_inputs)
++        optimized_model, example_inputs = self.maybe_cast(model, example_inputs)
+ 
+         # Use distributed wrapping as necessary
+         model = self.deepcopy_and_maybe_ddp(model)
+@@ -2314,7 +2337,7 @@ class BenchmarkRunner:
+             )
+             optimized_model_iter_fn = optimize_ctx(self.model_iter_fn)
+             dynamo_latency, dynamo_peak_mem, dynamo_stats = warmup(
+-                optimized_model_iter_fn, model, example_inputs, "dynamo"
++                optimized_model_iter_fn, optimized_model, example_inputs, "dynamo"
+             )
+ 
+             compilation_time = dynamo_latency - eager_latency
+@@ -2354,7 +2377,7 @@ class BenchmarkRunner:
+ 
+             if not hasattr(model, name):
+                 model.name = name
+-            results.append(experiment(model, example_inputs, **experiment_kwargs))
++            results.append(experiment(model, optimized_model, example_inputs, **experiment_kwargs))
+             return " ".join(map(str, results))
+ 
+     def minify_model(
+@@ -2376,7 +2399,7 @@ class BenchmarkRunner:
+         if self.args.output_directory:
+             repro_dir = self.args.output_directory
+         else:
+-            repro_dir = torch._dynamo.config.base_dir
++            repro_dir = '/workspace/pytorch'
+ 
+         try:
+             shutil.move("repro.py", f"{repro_dir}/{name}_repro.py")
+@@ -3328,7 +3351,7 @@ def run(runner, args, original_dir=None):
+             output_filename = os.path.join(args.output_directory, output_filename)
+         else:
+             output_filename = os.path.join(
+-                torch._dynamo.config.base_dir, output_filename
++                '/workspace/pytorch', output_filename
+             )
+ 
+     if args.find_batch_sizes and args.only:
+diff --git a/benchmarks/dynamo/huggingface.py b/benchmarks/dynamo/huggingface.py
+index bd22cbff659..6bfbccfe966 100755
+--- a/benchmarks/dynamo/huggingface.py
++++ b/benchmarks/dynamo/huggingface.py
+@@ -6,6 +6,7 @@ import re
+ import subprocess
+ import sys
+ import warnings
++import intel_extension_for_pytorch as ipex
+ 
+ import torch
+ from common import BenchmarkRunner, download_retry_decorator, main, reset_rng_state
+diff --git a/benchmarks/dynamo/runner.py b/benchmarks/dynamo/runner.py
+index 637db26062f..cb5f9158a6f 100755
+--- a/benchmarks/dynamo/runner.py
++++ b/benchmarks/dynamo/runner.py
+@@ -86,6 +86,7 @@ TABLE = {
+         "trt": "--inference -n100 --speedup-trt ",
+         "ts_nvfuser_cudagraphs": "--inference --backend=cudagraphs_ts ",
+         "inductor": "--inference -n50 --inductor ",
++"ipex": "--backend=ipex --inference ",
+         "inductor_no_cudagraphs": "--inference -n50 --inductor --disable-cudagraphs ",
+         "inductor_max_autotune": "--inference -n50 --inductor --inductor-compile-mode max-autotune ",
+         "inductor_max_autotune_no_cudagraphs": (
+diff --git a/benchmarks/dynamo/timm_models.py b/benchmarks/dynamo/timm_models.py
+index 59fb18c70cc..91d48eccb98 100755
+--- a/benchmarks/dynamo/timm_models.py
++++ b/benchmarks/dynamo/timm_models.py
+@@ -6,6 +6,7 @@ import re
+ import subprocess
+ import sys
+ import warnings
++import intel_extension_for_pytorch as ipex
+ 
+ import torch
+ from common import BenchmarkRunner, download_retry_decorator, main
+diff --git a/benchmarks/dynamo/torchbench.py b/benchmarks/dynamo/torchbench.py
+index 8ffecb56aff..120121bee35 100755
+--- a/benchmarks/dynamo/torchbench.py
++++ b/benchmarks/dynamo/torchbench.py
+@@ -6,6 +6,7 @@ import os
+ import re
+ import sys
+ import warnings
++import intel_extension_for_pytorch as ipex
+ from os.path import abspath, exists
+ 
+ import torch
