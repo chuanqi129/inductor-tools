@@ -776,8 +776,8 @@ def html_generate(html_off):
             failures_regression= new_failures.to_html(classes="table",index = False)
             with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f,open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f:
                 f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+"<p>new_perf_regression</p>"+perf_regression+"<p>new_failures</p>"+failures_regression+html_tail())
-                perf_f.write("<p>new_perf_regression</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
-                failure_f.write("<p>new_failures</p>"+failures_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info(nightly)</p>"+refer_swinfo_html)
+                perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
+                failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>"+failures_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info(nightly)</p>"+refer_swinfo_html)
             f.close()
             perf_f.close()
             failure_f.close()              
