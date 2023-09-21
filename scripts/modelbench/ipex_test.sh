@@ -34,7 +34,7 @@ echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
 git reset --hard
 
 cd /workspace/pytorch
-git apply /workspace/common.patch
+git apply /workspace/common_accuracy.patch
 
 
 Mode_extra="--inference "

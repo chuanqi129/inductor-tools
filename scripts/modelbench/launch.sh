@@ -58,7 +58,7 @@ docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO
 docker run -id --name $USER --privileged --env FUSION_PATH=${FUSION_PATH} --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/ipex_log:/workspace/pytorch/ipex_log ipex_torchbench:$TAG
 
 docker cp /home/ubuntu/docker/ipex_test.sh $USER:/workspace/pytorch
-docker cp /home/ubuntu/docker/common.patch $USER:/workspace/
+docker cp /home/ubuntu/docker/common_accuracy.patch $USER:/workspace/
 docker cp /home/ubuntu/docker/intel*.whl $USER:/workspace/
 
 if (($TEST_MODE == "inference")); then

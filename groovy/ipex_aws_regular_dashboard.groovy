@@ -292,6 +292,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${_name}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/ipex_test.sh ubuntu@${_name}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/common_accuracy.patch ubuntu@${_name}:/home/ubuntu/docker
             '''
         }
     }
