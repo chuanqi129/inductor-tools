@@ -766,14 +766,18 @@ def html_generate(html_off):
             content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
+            refer_swinfo_html = ''
+            if args.reference is not None:
+                refer_swinfo = pd.read_table(args.reference+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+                refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
             mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
             st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f,open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f:
                 f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+"<p>new_perf_regression</p>"+perf_regression+"<p>new_failures</p>"+failures_regression+html_tail())
-                perf_f.write("<p>new_perf_regression</p>"+perf_regression+"<p>SW info</p>"+swinfo)
-                failure_f.write("<p>new_failures</p>"+failures_regression+"<p>SW info</p>"+swinfo)
+                perf_f.write("<p>new_perf_regression</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
+                failure_f.write("<p>new_failures</p>"+failures_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info(nightly)</p>"+refer_swinfo_html)
             f.close()
             perf_f.close()
             failure_f.close()              
