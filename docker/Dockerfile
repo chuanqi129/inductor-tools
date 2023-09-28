@@ -111,7 +111,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     # Workaround for https://github.com/pytorch/benchmark/issues/1772
     sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \
     sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \     
-    python install.py && \
+    python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
