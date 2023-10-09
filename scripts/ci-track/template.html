@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Table V01</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="css/animate.css">
+<link rel="stylesheet" type="text/css" href="css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
+<link rel="stylesheet" type="text/css" href="css/util.css">
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<meta name="robots" content="noindex, follow">
+</head>
+
+<body>
+  <div class="limiter">
+  <div class="container-table100">
+  <div class="wrap-table100">
+  <div class="table100">
+  <p><h3>Inductor Github Issues Least Recently Updated Track Report</p></h3> 
+  <table border="1">
+    <thead>
+      <tr class="table100-head">
+        <th class="column1">ID</th>
+        <th class="column5">Issue ID</th>
+        <th class="column2">Created by</th>
+        <th class="column2">Updated by</th>
+        <th class="column3">Status</th>
+        <th class="column4">Author</th>
+        <th class="column6">Title</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <TR>
+         <TD class="column1">{{item.id}}</TD>
+         <TD class="column5">{{item.issue_id}}</TD>
+         <TD class="column2">{{item.created_time}}</TD>
+         <TD class="column2">{{item.updated_time}}</TD>
+         <TD class="column3">{{item.state}}</TD>
+         <TD class="column4">{{item.author}}</TD>
+         <TD class="column6"><a href="{{item.link}}">{{item.title}}</a></TD>
+      </TR>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  </div>
+  </div>
+  </div>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/popper.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/select2/select2.min.js"></script>
+<script src="js/main.js"></script>
+<h4>Thanks.</h4>
+</body>
