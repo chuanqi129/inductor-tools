@@ -107,8 +107,8 @@ echo EdgeCNN_speedup : $(awk 'BEGIN{printf "%.2f\n",'$(parse_data "Vanilla" 4 7)
 # case 2
 # training vanilla
 trainning_vanilla_time=$(grep "Time" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Time://;s/[^0-9.]//' | awk 'NR==1{print}')
-vanilla_gnn_train_accuracy_use_sage=$(grep "Highest Train:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Train://;s/[^0-9.]//' | awk 'NR==1{print}')
-vanilla_gnn_valid_accuracy_use_sage=$(grep "Highest Valid:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Valid://;s/[^0-9.]//' | awk 'NR==1{print}')
+vanilla_gnn_train_accuracy_use_sage=$(grep "Highest Train:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Train://;s/[^0-9.]//' | awk 'END {print}' | awk 'NF>1{print $1}'
+vanilla_gnn_valid_accuracy_use_sage=$(grep "Highest Valid:" ${LOG_DIR}/gnn_bench__${timestamp}.log | sed -e 's/.*Highest Valid://;s/[^0-9.]//' | awk 'END {print}' | awk 'NF>1{print $1}'
 
 echo vanilla_gnn_train_accuracy_use_sage : ${vanilla_gnn_train_accuracy_use_sage} >>${FILE}
 echo vanilla_gnn_valid_accuracy_use_sage : ${vanilla_gnn_valid_accuracy_use_sage} >>${FILE}
