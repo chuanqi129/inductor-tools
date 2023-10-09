@@ -1,0 +1,10 @@
+[profile pytorch]
+sso_session = pytorch
+sso_account_id = 668882360624
+sso_role_name = LimitedAccess
+region = us-east-1
+output = json
+[sso-session pytorch]
+sso_start_url = https://intellogin.awsapps.com/start#
+sso_region = us-west-2
+sso_registration_scopes = sso:account:access
