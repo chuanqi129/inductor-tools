@@ -1,0 +1,76 @@
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} AS dev-base
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libtcmalloc-minimal4 \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        numactl \
+        pybind11-dev \
+        wget \
+        vim \
+    && rm -rf /var/lib/apt/lists/*
+RUN /usr/sbin/update-ccache-symlinks
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
+
+FROM dev-base AS conda
+ARG PYTHON_VERSION=3.8
+RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh  && \
+    chmod +x ~/miniconda.sh && \
+    # Fix conda install issue
+    sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
+    ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda config --set channel_priority strict && \
+    /opt/conda/bin/conda config --append channels conda-forge && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake>=3.13.0 \
+        dataclasses \
+        future \
+        git-lfs \
+        ipython \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \
+        weasyprint && \
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
+
+FROM dev-base AS image
+COPY --from=conda /opt/conda /opt/conda
+RUN pip install torch==2.0.1 torchvision torchaudio torchdata torchtext --no-deps --index-url https://download.pytorch.org/whl/cpu
+ARG TORCH_BENCH_BRANCH=main
+ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
+WORKDIR /workspace
+RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
+    cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 sympy && \
+    python install.py --continue_on_fail && \
+    # Need update numpy version to avoid some models crash
+    pip install --upgrade numpy
+WORKDIR /workspace/benchmark
+

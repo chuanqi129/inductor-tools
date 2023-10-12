@@ -70,8 +70,6 @@ ARG PT_REPO=https://github.com/pytorch/pytorch
 ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
-# ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
-# ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
@@ -110,7 +108,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 urllib3==1.26.16 && \
     # Workaround for https://github.com/pytorch/benchmark/issues/1772
     sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \
-    sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \     
+    sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
