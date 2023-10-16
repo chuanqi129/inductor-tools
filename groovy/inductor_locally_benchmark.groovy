@@ -227,6 +227,15 @@ if ('WRAPPER' in params) {
 }
 echo "WRAPPER: $WRAPPER"
 
+HF_TOKEN= 'default'
+if ('HF_TOKEN' in params) {
+    echo "HF_TOKEN in params"
+    if (params.HF_TOKEN != '') {
+        HF_TOKEN = params.HF_TOKEN
+    }
+}
+echo "HF_TOKEN: $HF_TOKEN"
+
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
     dash_board = params.dash_board
@@ -269,6 +278,7 @@ env._TORCH_BENCH = "$TORCH_BENCH"
 env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
+env._HF_TOKEN = "$HF_TOKEN"
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env._image_tag = "${env._target}_${env._shape}_${env._WRAPPER}_local"
 
@@ -371,8 +381,9 @@ node(NODE_LABEL){
         fi
         docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
+        docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
-        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_DYNAMO_BENCH} ${_WRAPPER}"
+        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_DYNAMO_BENCH} ${_WRAPPER} ${_HF_TOKEN}"
         docker exec -i $USER bash -c "mv inductor_log ${_target}"
 
         '''

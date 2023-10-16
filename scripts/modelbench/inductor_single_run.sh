@@ -13,6 +13,7 @@ CHANNELS=${7:-first} # first / last
 SHAPE=${8:-static} # static / dynamic
 WRAPPER=${9:-default} # default / cpp
 BS=${10:-0}
+FREEZE=${11:-on}
 
 Mode_extra="--inference "
 if [[ $MODE == "training" ]]; then
@@ -43,9 +44,11 @@ if [[ ${BS} -gt 0 ]]; then
 fi
 
 Flag_extra=""
-export TORCHINDUCTOR_FREEZING=1
-echo "Testing with freezing on."
-Flag_extra="--freezing "    
+if [[ ${FREEZE} == "on" ]]; then
+    export TORCHINDUCTOR_FREEZING=1
+    echo "Testing with freezing on."
+    Flag_extra="--freezing " 
+fi 
 
 
 

@@ -33,6 +33,33 @@ if ('reference' in params) {
 }
 echo "reference: $reference"
 
+THREAD = 'multiple'
+if ('THREAD' in params) {
+    echo "THREAD in params"
+    if (params.THREAD != '') {
+        THREAD = params.THREAD
+    }
+}
+echo "THREAD: $THREAD"
+
+MODE = 'inference'
+if ('MODE' in params) {
+    echo "MODE in params"
+    if (params.MODE != '') {
+        MODE = params.MODE
+    }
+}
+echo "MODE: $MODE"
+
+SCENARIO = 'performance'
+if ('SCENARIO' in params) {
+    echo "SCENARIO in params"
+    if (params.SCENARIO != '') {
+        SCENARIO = params.SCENARIO
+    }
+}
+echo "SCENARIO: $SCENARIO"
+
 channels = 'first'
 if ('channels' in params) {
     echo "channels in params"
@@ -142,7 +169,7 @@ node(NODE_LABEL){
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${DT} ${channels} ${SHAPE} ${WRAPPER} ${bs} ${target_tag}"
+            docker exec -i $USER bash -c "bash inductor_cosim.sh ${THREAD} ${MODE} ${SCENARIO} ${suite} ${SINGLE_MODEL} ${DT} ${channels} ${SHAPE} ${WRAPPER} ${bs} ${target_tag}"
         done        
         exit
         docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${target_tag}
@@ -167,7 +194,7 @@ node(NODE_LABEL){
         MODEL_LIST=($(echo "${model}" |sed 's/,/ /g'))
         for SINGLE_MODEL in ${MODEL_LIST[@]}
         do
-            docker exec -i $USER bash -c "bash inductor_cosim.sh ${suite} ${SINGLE_MODEL} ${DT} ${channels} ${SHAPE} ${WRAPPER} ${bs} ${reference_tag}"
+            docker exec -i $USER bash -c "bash inductor_cosim.sh ${THREAD} ${MODE} ${SCENARIO} ${suite} ${SINGLE_MODEL} ${DT} ${channels} ${SHAPE} ${WRAPPER} ${bs} ${reference_tag}"
         done
         exit
         docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:${reference_tag}

@@ -106,9 +106,6 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip uninstall botocore -y && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 urllib3==1.26.16 && \
-    # Workaround for https://github.com/pytorch/benchmark/issues/1772
-    sed -i '/pyworld/d' torchbenchmark/models/tts_angular/requirements.txt && \
-    sed -i '/torchrec-nightly/d' torchbenchmark/models/dlrm/requirements.txt && \
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy

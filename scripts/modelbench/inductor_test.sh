@@ -1,7 +1,6 @@
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 export USE_LLVM=False
-export HUGGING_FACE_HUB_TOKEN=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
 
 # multiple / single / all
 THREAD=${1:-all}
@@ -15,25 +14,15 @@ LOG_DIR=${5:-inductor_log}
 DYNAMO_BENCH=${6:-1238ae3}
 # default / cpp
 WRAPPER=${7:-default}
+HF_TOKEN=${8:-hf_xx}
 
 mkdir -p $LOG_DIR
 
-
+export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
 # https://github.com/pytorch/pytorch/issues/107200
 pip uninstall transformers -y && pip install transformers==4.30.2
 # collect sw info
-curdir=$(pwd)
-touch ${curdir}/${LOG_DIR}/version.txt
-cd /workspace/benchmark
-echo torchbench : $(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/version.txt
-cd /workspace/pytorch
-python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
-	print("torch : ", torch.__version__); \
-	print("torchvision : ", torchvision.__version__); \
-	print("torchtext : ", torchtext.__version__); \
-	print("torchaudio : ", torchaudio.__version__); \
-	print("torchdata : ", torchdata.__version__)''' >>${curdir}/${LOG_DIR}/version.txt
-echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
+bash version_collect.sh ${LOG_DIR} ${DYNAMO_BENCH}
 
 # skip sam & nanogpt_generate for stable results
 sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py

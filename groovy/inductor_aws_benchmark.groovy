@@ -272,6 +272,16 @@ if ('WRAPPER' in params) {
 }
 echo "WRAPPER: $WRAPPER"
 
+HF_TOKEN= 'hf_xx'
+if ('HF_TOKEN' in params) {
+    echo "HF_TOKEN in params"
+    if (params.HF_TOKEN != '') {
+        HF_TOKEN = params.HF_TOKEN
+    }
+}
+echo "HF_TOKEN: $HF_TOKEN"
+
+
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
     dash_board = params.dash_board
@@ -308,6 +318,7 @@ env._TORCH_BENCH = "$TORCH_BENCH"
 env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
+env._HF_TOKEN = "$HF_TOKEN"
 
 node(NODE_LABEL){
     stage("start instance")
@@ -323,28 +334,27 @@ node(NODE_LABEL){
         '''
     }
     stage("prepare scripts & benchmark") {
-        retry(3){
-            sh '''
-            #!/usr/bin/env bash
-            current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-            if [ "${_new_instance}" == "True" ]; then
-                scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-                ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-                ssh ubuntu@${current_ip} "bash weights_prepare.sh"
-            fi
-            scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} &>/dev/null &" &
-            '''
-        }
+        sh '''
+        #!/usr/bin/env bash
+        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
+        if [ "${_new_instance}" == "True" ]; then
+            scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+            ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+            ssh ubuntu@${current_ip} "bash weights_prepare.sh"
+        fi
+        scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
+        scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+        scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        ssh ubuntu@${current_ip} "bash pkill.sh"
+        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} &>/dev/null &" &
+        '''
     }
     stage("trigger inductor images job"){
             if ("${Build_Image}" == "true") {

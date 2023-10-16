@@ -18,6 +18,7 @@ TORCH_BENCH=${13:-a0848e19}
 THREADS=${14:-all}
 CHANNELS=${15:-first}
 WRAPPER=${16:-default}
+HF_TOKEN=${17:-hf_xx}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -52,9 +53,10 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 
 docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
+docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
 
 if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER"
+    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN"
 elif [ $TEST_MODE == "training" ]; then
     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
 fi
