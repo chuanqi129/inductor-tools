@@ -73,7 +73,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    python setup.py develop && cd .. 
+    pip install z3-solver && python setup.py develop && cd .. 
 ARG TORCH_VISION_BRANCH=nightly
 ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
 ARG TORCH_DATA_BRANCH=nightly
@@ -112,7 +112,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    pip install z3-solver diffusers && \
+    pip install diffusers && \
     python -c "import torch, torchvision, torchtext"
 
 # Clean for final image

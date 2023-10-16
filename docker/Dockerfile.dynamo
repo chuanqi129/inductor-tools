@@ -76,7 +76,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    python setup.py develop && cd ..
+    pip install z3-solver && python setup.py develop && cd ..
 # Build Torchdynamo
 ARG DYNAMO_BRANCH=beilei/baseline
 ARG DYNAMO_COMMIT=${DYNAMO_BRANCH}
@@ -117,8 +117,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
-RUN pip install z3-solver && \
-    python -c "import torch, torchdynamo, torchvision, torchtext"
+RUN python -c "import torch, torchdynamo, torchvision, torchtext"
 
 # Clean for final image
 FROM dev-base AS image

@@ -78,7 +78,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive 
-RUN cd pytorch && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
+RUN cd pytorch && pip install z3-solver && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
 ARG TRITON_BRANCH=main
 ARG TRITON_COMMIT=${TRITON_BRANCH}
 RUN git clone -b ${TRITON_BRANCH} https://github.com/openai/triton.git && \
@@ -120,7 +120,6 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    pip install z3-solver && \
     python -c "import torch, torchvision, torchtext"
 
 # Clean for final image
