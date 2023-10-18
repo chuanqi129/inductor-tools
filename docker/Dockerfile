@@ -25,7 +25,7 @@ RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.8
 RUN curl -fsSL -v -k -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
