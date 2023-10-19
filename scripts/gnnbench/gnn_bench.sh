@@ -12,11 +12,11 @@ export OMP_NUM_THREADS=$CORES
 LOG_DIR=${1:-gnn_bench}
 mkdir -p $LOG_DIR
 
-# uninstall pyg-lib torch_geometric
-pip uninstall pyg-lib -y && pip uninstall torch_geometric -y && pip uninstall ogb -y
+# uninstall  torch_geometric
+pip uninstall torch_geometric -y && pip uninstall ogb -y
 # install pyg-lib
-git clone https://github.com/pyg-team/pyg-lib.git && cd pyg-lib
-git checkout master && git submodule sync && git submodule update --init --recursive && python setup.py install && cd ..
+# git clone https://github.com/pyg-team/pyg-lib.git && cd pyg-lib
+# git checkout master && git submodule sync && git submodule update --init --recursive && python setup.py install && cd ..
 # install torch_geometric
 git clone https://github.com/pyg-team/pytorch_geometric && cd pytorch_geometric
 git checkout master && git submodule sync && git submodule update --init --recursive && pip install -e . && cd ..
@@ -28,7 +28,8 @@ git checkout master && git submodule sync && git submodule update --init --recur
 # install pytorch_sparse
 git clone https://github.com/rusty1s/pytorch_sparse.git && cd pytorch_sparse
 git checkout master && git submodule sync && git submodule update --init --recursive && python setup.py install && cd ..
-
+# fix issue: AttributeError: module 'importlib.resources' has no attribute 'files'
+pip uninstall networkx -y && pip install networkx
 # collect sw info
 curdir=$(pwd)
 FILE=${curdir}/${LOG_DIR}/result.txt

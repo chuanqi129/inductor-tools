@@ -639,6 +639,8 @@ stage('Benchmark') {
                 docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/dataset:/workspace/dataset -v ${WORKSPACE}/gnn_bench:/workspace/gnn_bench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                 docker cp scripts/gnnbench/gnn_bench.sh $USER:/workspace
                 docker cp scripts/gnnbench/generate_report.py $USER:/workspace/gnn_bench
+                #workaround for build failure when build pyg-lib outside container
+                docker exec -i $USER bash -c "pip uninstall pyg-lib -y;pip install git+https://github.com/pyg-team/pyg-lib.git"
                 docker exec -i $USER bash -c "cd /workspace;bash gnn_bench.sh gnn_bench"
                 '''
                 }
