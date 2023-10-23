@@ -26,7 +26,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -k -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Miniconda3-py38_23.9.0-0-Linux-x86_64.sh && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
     sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
