@@ -101,7 +101,9 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
-ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
+ARG HF_HUB_TOKEN=hf_xxx
+ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip uninstall botocore -y && \
@@ -112,7 +114,6 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    pip install diffusers && \
     python -c "import torch, torchvision, torchtext"
 
 # Clean for final image

@@ -376,6 +376,7 @@ node(NODE_LABEL){
                     [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
                     [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
                     [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_aws"],
+                    [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
                 ]
             }
     }

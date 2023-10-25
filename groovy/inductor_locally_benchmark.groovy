@@ -329,7 +329,7 @@ node(NODE_LABEL){
                     docker system prune -f
                     # workaround due to different jenkins server
                     # jenkins-aten-caffe2 for this job, inteltf-jenk for inductor_image job
-                    curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`"
+                    curl -s -I -k -u $TG_USERNAME:$TG_PASSWORD "https://inteltf-jenk.sh.intel.com/job/inductor_images/buildWithParameters?token=inductor_token&PT_REPO=`echo ${TORCH_REPO}`&PT_BRANCH=`echo ${TORCH_BRANCH}`&PT_COMMIT=`echo ${TORCH_COMMIT}`&TORCH_VISION_BRANCH=nightly&TORCH_VISION_COMMIT=`echo ${VISION}`&TORCH_TEXT_BRANCH=nightly&TORCH_TEXT_COMMIT=`echo ${TEXT}`&TORCH_DATA_BRANCH=nightly&TORCH_DATA_COMMIT=`echo ${DATA}`&TORCH_AUDIO_BRANCH=nightly&TORCH_AUDIO_COMMIT=`echo ${AUDIO}`&TORCH_BENCH_BRANCH=main&TORCH_BENCH_COMMIT=`echo ${TORCH_BENCH}`&BENCH_COMMIT=`echo ${DYNAMO_BENCH}`&tag=`echo ${_image_tag}`&HF_TOKEN=`echo ${HF_TOKEN}`"
                     sleep 10s
                     
                     for t in {1..6}

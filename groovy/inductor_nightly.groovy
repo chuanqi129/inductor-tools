@@ -293,6 +293,16 @@ if( 'refer_build' in params && params.refer_build != '' ) {
 }
 echo "refer_build: $refer_build"
 
+HF_TOKEN= 'hf_xx'
+if ('HF_TOKEN' in params) {
+    echo "HF_TOKEN in params"
+    if (params.HF_TOKEN != '') {
+        HF_TOKEN = params.HF_TOKEN
+    }
+}
+echo "HF_TOKEN: $HF_TOKEN"
+
+
 def get_time(){
     return new Date().format('yyyy-MM-dd')
 }
@@ -305,6 +315,7 @@ env.SPR04_HF_CACHE = '/home2/yudongsi/spr-04/huggingface'
 env._ICX_NODE = "$ICX_NODE_LABEL"
 env._SPR_NODE = "$SPR_NODE_LABEL"
 env._image_tag = "$image_tag"
+env._HF_TOKEN = "$HF_TOKEN"
 
 def cleanup(){
     try {
@@ -548,6 +559,7 @@ stage('Benchmark') {
             [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH_COMMIT}"],
             [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${BENCH_COMMIT}"],
             [$class: 'StringParameterValue', name: 'tag', value: "${image_tag}"],
+            [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
         ]
     }   
     parallel icx24: {

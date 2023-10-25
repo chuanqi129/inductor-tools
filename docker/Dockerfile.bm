@@ -68,6 +68,8 @@ COPY --from=conda /opt/conda /opt/conda
 RUN pip install torch torchvision torchaudio torchdata torchtext --index-url https://download.pytorch.org/whl/cpu
 ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
+ARG HF_HUB_TOKEN=hf_xxx
+ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 WORKDIR /workspace
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \

@@ -77,7 +77,7 @@ WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     cd third_party/ideep/mkl-dnn  && git checkout rls-v3.3 && git pull
-    cd /workspace/pytorch && python setup.py develop && cd .. 
+    cd /workspace/pytorch && pip install z3-solver && python setup.py develop && cd .. 
 ARG TORCH_VISION_BRANCH=nightly
 ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
 ARG TORCH_DATA_BRANCH=nightly
@@ -106,6 +106,8 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG HF_HUB_TOKEN=hf_xxx
+ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \  
@@ -115,7 +117,6 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    pip install z3-solver && \
     python -c "import torch, torchvision, torchtext"
 
 # Clean for final image
