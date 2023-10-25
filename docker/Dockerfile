@@ -26,7 +26,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+RUN wget -O ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-py39_23.9.0-0-Linux-x86_64.sh && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
     sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
@@ -72,36 +72,37 @@ WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd .. 
-ARG TORCH_VISION_BRANCH=nightly
-ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
-ARG TORCH_DATA_BRANCH=nightly
-ARG TORCH_DATA_COMMIT=${TORCH_DATA_BRANCH}
-ARG TORCH_TEXT_BRANCH=nightly
-ARG TORCH_TEXT_COMMIT=${TORCH_TEXT_BRANCH}
-ARG TORCH_AUDIO_BRANCH=nightly
-ARG TORCH_AUDIO_COMMIT=${TORCH_AUDIO_BRANCH}
+ARG TORCH_VISION_BRANCH=main
+ARG TORCH_VISION_COMMIT
+ARG TORCH_DATA_BRANCH=main
+ARG TORCH_DATA_COMMIT
+ARG TORCH_TEXT_BRANCH=main
+ARG TORCH_TEXT_COMMIT
+ARG TORCH_AUDIO_BRANCH=main
+ARG TORCH_AUDIO_COMMIT
 RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
-    cd vision && git checkout ${TORCH_VISION_COMMIT} && \
+    cd vision && if [ -z "${TORCH_VISION_COMMIT}" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_DATA_BRANCH} https://github.com/pytorch/data.git && \
-    cd data && git checkout ${TORCH_DATA_COMMIT} && \
+    cd data && if [ -z "${TORCH_DATA_COMMIT}" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_TEXT_BRANCH} https://github.com/pytorch/text.git && \
-    cd text && git checkout ${TORCH_TEXT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
+    cd text && if [ -z "${TORCH_TEXT_COMMIT}" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_AUDIO_BRANCH} https://github.com/pytorch/audio.git && \
-    cd audio && git checkout ${TORCH_AUDIO_COMMIT} && git submodule sync && git submodule update --init --recursive && \
+    cd audio && if [ -z "${TORCH_AUDIO_COMMIT}" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     # Workaround for https://github.com/pytorch/audio/issues/2784
     sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
-ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG TORCH_BENCH_COMMIT
+ARG HUGGINGFACE_HUB_TOKEN
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
-    cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
+    cd benchmark && if [ -z "${TORCH_BENCH_COMMIT}" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
     python install.py && \
     # Need update numpy version to avoid some models crash
