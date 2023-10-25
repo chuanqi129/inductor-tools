@@ -36,7 +36,6 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
     /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
-        boto3 \
         cffi \
         cython \
         cmake>=3.13.0 \
@@ -55,7 +54,6 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
         Pillow \
         pkg-config \
         pybind11 \
-        pycocotools \
         pyyaml \
         setuptools \
         jemalloc \
@@ -73,7 +71,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    pip install z3-solver && python setup.py develop && cd .. 
+    python setup.py develop && cd ..
 ARG TORCH_VISION_BRANCH=nightly
 ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
 ARG TORCH_DATA_BRANCH=nightly
@@ -106,8 +104,7 @@ ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
-    pip uninstall botocore -y && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 urllib3==1.26.16 && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
