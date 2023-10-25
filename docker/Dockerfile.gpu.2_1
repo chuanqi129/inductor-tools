@@ -1,0 +1,87 @@
+# syntax=docker/dockerfile:1
+ARG CUDA_VERSION=12.1.0
+ARG BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
+FROM ${BASE_IMAGE} AS dev-base
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libgoogle-perftools-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        numactl \
+        pybind11-dev \
+        wget \
+        vim \
+    && rm -rf /var/lib/apt/lists/*
+RUN /usr/sbin/update-ccache-symlinks
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
+FROM dev-base AS conda
+ARG PYTHON_VERSION=3.8
+RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-py39_23.9.0-0-Linux-x86_64.sh  && \
+    chmod +x ~/miniconda.sh && \
+    # Fix conda install issue
+    sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
+    ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda config --set channel_priority strict && \
+    /opt/conda/bin/conda config --append channels conda-forge && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake>=3.13.0 \
+        dataclasses \
+        future \
+        git-lfs \
+        intel-openmp \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \
+        weasyprint && \
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
+
+FROM dev-base AS build
+ARG PT_REPO=https://github.com/pytorch/pytorch
+ARG PT_BRANCH=v2.1.0
+ARG PT_COMMIT=${PT_BRANCH}
+COPY --from=conda /opt/conda /opt/conda
+WORKDIR /workspace
+RUN pip install pandas psutil scipy
+RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
+    cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive 
+RUN cd pytorch && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
+RUN pip install triton==2.1 transformers==4.34
+
+# Clean for final image
+FROM dev-base AS image
+ARG BENCH_COMMIT=${PT_COMMIT}
+COPY --from=build /opt/conda /opt/conda
+COPY --from=build /workspace/pytorch /workspace/pytorch
+WORKDIR /workspace/pytorch
