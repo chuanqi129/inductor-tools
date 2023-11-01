@@ -15,18 +15,14 @@ node(env.nodes_label){
                 conda create -n ${conda_env} cmake ninja pillow python=${python_version}
             fi
         else
-            wget -q -e "https_proxy=http://proxy-us.intel.com:912" https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+            wget -q -e https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
             bash Miniconda3-latest-Linux-x86_64.sh -b
-            source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
+            source ${HOME}/miniconda3/bin/activate
             conda create -n ${conda_env} cmake ninja pillow python=${python_version}
         fi
 
         # set gpu governor
-        if [[ -z "${USER_PASS}" ]];then USER_PASS="gta";fi
-        for i in $(seq 0 $(($(nproc)-1)))
-        do
-            echo "${USER_PASS}" | sudo -S sh -c "echo performance > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor"
-        done
+        if [[ -z "${USER_PASS}" ]];then USER_PASS="${USER_PASSWORD}";fi
         '''
     }//stage
     stage('Install Dependency') {
@@ -38,12 +34,8 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
+            source ${HOME}/env.sh oneapi_ver 
             python -m pip install numpy --upgrade --no-cache --force-reinstall
-
-            if [ ! -d inductor-tools ];then
-                git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-            fi
 
             if [[ -n ${torch_whl} ]] && [[ -n ${ipex_whl} ]];then
                 python -m pip uninstall -y torch || true
@@ -60,7 +52,7 @@ node(env.nodes_label){
                 ${ipex_repo} \
                 ${ipex_branch} \
                 ${ipex_commit} 
-                source ${HOME}/env.sh
+                source ${HOME}/env.sh oneapi_ver
                 python -c "import torch;import intel_extension_for_pytorch"
                 if [ ${PIPESTATUS[0]} -ne 0 ]; then
                     echo -e "[ERROR] Public-torch or IPEX BUILD FAIL"
@@ -79,7 +71,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
+            source ${HOME}/env.sh oneapi_ver 
             pip uninstall -y triton
             sudo update-ca-certificates --fresh
             export SSL_CERT_DIR=/etc/ssl/certs
@@ -99,7 +91,7 @@ node(env.nodes_label){
                 python setup.py clean
                 TRITON_CODEGEN_INTEL_XPU_BACKEND=1 python setup.py bdist_wheel
                 pip install dist/*.whl
-                source ${HOME}/env.sh 
+                cd ${WORKSPACE}/triton
                 python -c "import triton"
             '''
         }//retry
@@ -114,11 +106,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
-
-            if [ ! -d inductor-tools ];then
-                git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-            fi
+            source ${HOME}/env.sh oneapi_ver
 
             cp ${WORKSPACE}/inductor-tools/scripts/inductor_xpu_test.sh ${WORKSPACE}/pytorch
             cp ${WORKSPACE}/inductor-tools/scripts/inductor_perf_summary.py ${WORKSPACE}/pytorch
@@ -143,11 +131,7 @@ node(env.nodes_label){
                 set +x
                 source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
                 conda activate ${conda_env}
-                source ${HOME}/env.sh 
-
-                if [ ! -d inductor-tools ];then
-                    git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-                fi
+                source ${HOME}/env.sh oneapi_ver 
 
                 cd ${WORKSPACE}/pytorch/inductor_log/huggingface
                 cd amp_bf16
@@ -211,11 +195,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
-
-            if [ ! -d inductor-tools ];then
-                git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-            fi
+            source ${HOME}/env.sh oneapi_ver 
 
             cd ${WORKSPACE}/pytorch/inductor_log/huggingface
             cd amp_bf16
@@ -253,11 +233,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
-
-            if [ ! -d inductor-tools ];then
-                git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-            fi
+            source ${HOME}/env.sh oneapi_ver 
 
             pushd ${WORKSPACE}/pytorch
             bash inductor_xpu_test.sh huggingface amp_bf16 inference performance xpu 0 & \
@@ -278,11 +254,8 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh 
+            source ${HOME}/env.sh oneapi_ver 
 
-            if [ ! -d inductor-tools ];then
-                git clone --depth=1 https://github.com/chuanqi129/inductor-tools.git
-            fi
             pip install pandas styleframe
             pushd ${WORKSPACE}/pytorch
             python inductor_perf_summary.py -s huggingface -p amp_bf16 amp_fp16
