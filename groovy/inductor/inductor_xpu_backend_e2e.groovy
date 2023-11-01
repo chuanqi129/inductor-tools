@@ -227,7 +227,6 @@ node(env.nodes_label){
         println('================================================================')
         println('Performance-Test')
         println('================================================================')
-        try{
             sh'''
             set -e
             set +x
@@ -242,7 +241,6 @@ node(env.nodes_label){
             bash inductor_xpu_test.sh huggingface amp_fp16 training performance xpu 3 & wait
             popd
             '''
-        }//retry
     }//stage
     stage('Perf Test Results Generate and Overview') {
         println('================================================================')
