@@ -57,7 +57,7 @@ docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
 
 if [ $TEST_MODE == "inference" ]; then
     docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN inference"
-elif [ $TEST_MODE == "training full scope" ]; then
+elif [ $TEST_MODE == "training_full" ]; then
     docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN training"
 elif [ $TEST_MODE == "training" ]; then
     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
