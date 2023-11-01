@@ -34,7 +34,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh oneapi_ver 
+            source ${HOME}/env.sh ${oneapi_ver}
             python -m pip install numpy --upgrade --no-cache --force-reinstall
 
             if [[ -n ${torch_whl} ]] && [[ -n ${ipex_whl} ]];then
@@ -71,7 +71,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh oneapi_ver 
+            source ${HOME}/env.sh ${oneapi_ver}
             pip uninstall -y triton
             sudo update-ca-certificates --fresh
             export SSL_CERT_DIR=/etc/ssl/certs
@@ -131,7 +131,7 @@ node(env.nodes_label){
                 set +x
                 source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
                 conda activate ${conda_env}
-                source ${HOME}/env.sh oneapi_ver 
+                source ${HOME}/env.sh ${oneapi_ver}
 
                 cd ${WORKSPACE}/pytorch/inductor_log/huggingface
                 cd amp_bf16
@@ -195,7 +195,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh oneapi_ver 
+            source ${HOME}/env.sh ${oneapi_ver}
 
             cd ${WORKSPACE}/pytorch/inductor_log/huggingface
             cd amp_bf16
@@ -232,7 +232,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh oneapi_ver 
+            source ${HOME}/env.sh ${oneapi_ver}
 
             pushd ${WORKSPACE}/pytorch
             bash inductor_xpu_test.sh huggingface amp_bf16 inference performance xpu 0 & \
@@ -252,7 +252,7 @@ node(env.nodes_label){
             set +x
             source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
             conda activate ${conda_env}
-            source ${HOME}/env.sh oneapi_ver 
+            source ${HOME}/env.sh ${oneapi_ver}
 
             pip install pandas styleframe
             pushd ${WORKSPACE}/pytorch
