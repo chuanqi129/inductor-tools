@@ -82,10 +82,6 @@ single_thread_test() {
     fi
 }
 
-if [[ ${TEST_MODE} == "training_full" ]]; then
-    echo "For training, we could only validate the single-thread mode."
-    THREAD="single"
-fi
 
 if [[ $THREAD == "multiple" ]]; then
     echo "multi-threads testing...."
