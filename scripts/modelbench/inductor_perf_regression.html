@@ -1,120 +1,294 @@
-<!DOCTYPE html>
-<html lang="en">
+<p>new_perf_regression in 2023-10-22</p>
+<p>Note: multi threads secnario for models above first *, single thread for models between two *</p>
+<table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>name</th>
+      <th>batch_size_new</th>
+      <th>speed_up_new</th>
+      <th>inductor_new</th>
+      <th>eager_new</th>
+      <th>compilation_latency_new</th>
+      <th>batch_size_old</th>
+      <th>speed_up_old</th>
+      <th>inductor_old</th>
+      <th>eager_old</th>
+      <th>compilation_latency_old</th>
+      <th>Ratio Speedup(New/old)</th>
+      <th>Eager Ratio(old/new)</th>
+      <th>Inductor Ratio(old/new)</th>
+      <th>Compilation_latency_Ratio(old/new)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>basic_gnn_gin</td>
+      <td>1</td>
+      <td>1.108124</td>
+      <td>0.005866914</td>
+      <td>0.006501268209336001</td>
+      <td>14.090111</td>
+      <td>1</td>
+      <td>1.123217</td>
+      <td>0.005190271</td>
+      <td>0.0058298006218069996</td>
+      <td>14.043207</td>
+      <td>0.99</td>
+      <td>0.9</td>
+      <td>0.88</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>cm3leon_generate</td>
+      <td>1</td>
+      <td>0.497383</td>
+      <td>3.907282571</td>
+      <td>1.943415927011693</td>
+      <td>373.98615</td>
+      <td>1</td>
+      <td>0.616159</td>
+      <td>3.171211898</td>
+      <td>1.9539707518597822</td>
+      <td>453.802624</td>
+      <td>0.81</td>
+      <td>1.01</td>
+      <td>0.81</td>
+      <td>1.21</td>
+    </tr>
+    <tr>
+      <td>hf_Whisper</td>
+      <td>8</td>
+      <td>1.408156</td>
+      <td>0.126020063</td>
+      <td>0.17745590783382797</td>
+      <td>29.196827</td>
+      <td>8</td>
+      <td>1.703685</td>
+      <td>0.103420151</td>
+      <td>0.17619535995643498</td>
+      <td>29.233589</td>
+      <td>0.83</td>
+      <td>0.99</td>
+      <td>0.82</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>phlippe_densenet</td>
+      <td>128</td>
+      <td>1.558358</td>
+      <td>0.02617806</td>
+      <td>0.040794789225479994</td>
+      <td>55.679105</td>
+      <td>128</td>
+      <td>2.048464</td>
+      <td>0.01980409</td>
+      <td>0.04056796541776</td>
+      <td>55.710849</td>
+      <td>0.76</td>
+      <td>0.99</td>
+      <td>0.76</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+    </tr>
+    <tr>
+      <td>basic_gnn_edgecnn</td>
+      <td>1</td>
+      <td>0.871592</td>
+      <td>0.37231181199999996</td>
+      <td>0.324503996844704</td>
+      <td>11.772577</td>
+      <td>1</td>
+      <td>1.330474</td>
+      <td>0.24396664999999998</td>
+      <td>0.32459128469209997</td>
+      <td>11.120962</td>
+      <td>0.66</td>
+      <td>1.0</td>
+      <td>0.66</td>
+      <td>0.94</td>
+    </tr>
+    <tr>
+      <td>phlippe_densenet</td>
+      <td>1</td>
+      <td>0.900174</td>
+      <td>0.005640694</td>
+      <td>0.005077606080756</td>
+      <td>54.921562</td>
+      <td>1</td>
+      <td>1.328827</td>
+      <td>0.003758348</td>
+      <td>0.004994194297796</td>
+      <td>54.409835</td>
+      <td>0.68</td>
+      <td>0.98</td>
+      <td>0.67</td>
+      <td>0.99</td>
+    </tr>
+    <tr>
+      <td>mixnet_l</td>
+      <td>1</td>
+      <td>0.736023</td>
+      <td>0.050399831</td>
+      <td>0.037095434812113</td>
+      <td>91.170201</td>
+      <td>1</td>
+      <td>1.148282</td>
+      <td>0.032940426</td>
+      <td>0.037824898248132004</td>
+      <td>92.450105</td>
+      <td>0.64</td>
+      <td>1.02</td>
+      <td>0.65</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <td>tf_mixnet_l</td>
+      <td>1</td>
+      <td>1.088825</td>
+      <td>0.036983614000000005</td>
+      <td>0.04026868351355</td>
+      <td>111.028423</td>
+      <td>1</td>
+      <td>1.275501</td>
+      <td>0.031524481</td>
+      <td>0.040209507039981</td>
+      <td>112.353437</td>
+      <td>0.85</td>
+      <td>1.0</td>
+      <td>0.85</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+      <td>*</td>
+    </tr>
+  </tbody>
+</table>
+<p>SW info</p>
+<table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>SW</th>
+      <th>Nightly commit</th>
+      <th>Main commit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pytorch</td>
+      <td>f468e74</td>
+      <td>bf01a7b</td>
+    </tr>
+    <tr>
+      <td>Torchbench</td>
+      <td>/</td>
+      <td>7617d3f5</td>
+    </tr>
+    <tr>
+      <td>torchaudio</td>
+      <td>475b6ae</td>
+      <td>ede4309</td>
+    </tr>
+    <tr>
+      <td>torchtext</td>
+      <td>142d029</td>
+      <td>45e4b8c</td>
+    </tr>
+    <tr>
+      <td>torchvision</td>
+      <td>8636bf3</td>
+      <td>4ac707a</td>
+    </tr>
+    <tr>
+      <td>torchdata</td>
+      <td>eb9bf61</td>
+      <td>d76d92c</td>
+    </tr>
+    <tr>
+      <td>dynamo_benchmarks</td>
+      <td>0200b11</td>
+      <td>/</td>
+    </tr>
+  </tbody>
+</table>
+<p>Reference SW info (nightly)</p>
+<table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>item</th>
+      <th>commit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>torchbench</td>
+      <td>7617d3f5</td>
+    </tr>
+    <tr>
+      <td>torch</td>
+      <td>2.2.0a0+git8aa4019</td>
+    </tr>
+    <tr>
+      <td>torchvision</td>
+      <td>0.16.0a0+8636bf3</td>
+    </tr>
+    <tr>
+      <td>torchtext</td>
+      <td>0.16.0a0+142d029</td>
+    </tr>
+    <tr>
+      <td>torchaudio</td>
+      <td>2.2.0a0+475b6ae</td>
+    </tr>
+    <tr>
+      <td>torchdata</td>
+      <td>0.7.0a0+eb9bf61</td>
+    </tr>
+    <tr>
+      <td>dynamo_benchmarks</td>
+      <td>0200b11</td>
+    </tr>
+  </tbody>
+</table>
+<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:2023_10_23_aws</p>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, follow">
-</head>
+<p>Repro</p>
+<a href=https://github.com/chuanqi129/inductor-tools/blob/yudong/aws_auto/scripts/modelbench/inductor_single_run.sh>
+  inductor_single_run.sh </a>
+<code>
+bash inductor_single_run.sh multiple/single inference performance torchbench/huggingface/timm_models model float32 first static default 0
+</code>
 
-<body>
-  <div class="limiter">
-    <div class="container-table100">
-      <div class="wrap-table100">
-        <div class="table100">
-          <p>Performance data</p>
-          <table border="1" class="dataframe table">
-            <tbody>
-              <tr>
-                <td></td>
-                <td colspan="4" align="center">target</td>
-                <td colspan="4" align="center">refer</td>
-                <td colspan="3" align="center">ratio</td>
-              </tr>
-              <tr>
-                <td>model</td>
-                <td>batch_size</td>
-                <td>speedup</td>
-                <td>inductor</td>
-                <td>eager</td>
-                <td>batch_size</td>
-                <td>speedup</td>
-                <td>inductor</td>
-                <td>eager</td>
-                <td>speedup ratio</td>
-                <td>eager ratio</td>
-                <td>inductor ratio</td>
-              </tr>
-              <tr>
-                <td>squeezenet1_1</td>
-                <td>16</td>
-                <td>1.936166</td>
-                <td>0.008108466</td>
-                <td>0.015699336</td>
-                <td>16</td>
-                <td>2.888515</td>
-                <td>0.005393675</td>
-                <td>0.015579711</td>
-                <td>0.67</td>
-                <td>0.99</td>
-                <td>0.67</td>
-              </tr>
-            </tbody>
-            <colgroup>
-              <col style="width: 10%;">
-              <col style="width: 11.4847%;">
-              <col style="width: 8.51528%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-              <col style="width: 10%;">
-            </colgroup>
-          </table>
-          <p>Repro</p><code>bash
-          [inductor_single_test.sh](https://github.com/chuanqi129/inductor-tools/blob/yudong/aws_auto/scripts/modelbench/inductor_single_run.sh)
-          multiple inference performance torchbench squeezenet1_1 float32 first static cpp 0</code>
-          <p>SW info</p>
-          <table border="1" class="dataframe table">
-            <thead>
-              <tr style="text-align: right;">
-                <th>SW</th>
-                <th>Nightly commit</th>
-                <th>Main commit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Pytorch</td>
-                <td>abe3687</td>
-                <td>6691413</td>
-              </tr>
-              <tr>
-                <td>Torchbench</td>
-                <td>/</td>
-                <td>770d5cf7</td>
-              </tr>
-              <tr>
-                <td>torchaudio</td>
-                <td>dc83b38</td>
-                <td>66f661d</td>
-              </tr>
-              <tr>
-                <td>torchtext</td>
-                <td>c11d758</td>
-                <td>60bea66</td>
-              </tr>
-              <tr>
-                <td>torchvision</td>
-                <td>58366ab</td>
-                <td>a6dea86</td>
-              </tr>
-              <tr>
-                <td>torchdata</td>
-                <td>1d231d1</td>
-                <td>757c032</td>
-              </tr>
-              <tr>
-                <td>dynamo_benchmarks</td>
-                <td>f228c8b</td>
-                <td>/</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
+<p><a href=>
+  Suspected guilty commit </a></p>
+
+cc @ezyang @msaroufim @wconstab @bdhirsh @anijain2305 @zou3519
