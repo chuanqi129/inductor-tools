@@ -33,6 +33,9 @@ bash version_collect.sh ${LOG_DIR} ${DYNAMO_BENCH}
 # skip sam & nanogpt_generate for stable results
 sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py
 
+# skip hf_GPT2_large, cuz it will OOM after using jemalloc
+sed -i "/SKIP_TRAIN = {/a\    \"hf_GPT2_large\"," benchmarks/dynamo/torchbench.py
+
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."
