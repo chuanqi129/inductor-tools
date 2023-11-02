@@ -281,6 +281,14 @@ if ('HF_TOKEN' in params) {
 }
 echo "HF_TOKEN: $HF_TOKEN"
 
+suites= 'all'
+if ('suites' in params) {
+    echo "suites in params"
+    if (params.suites != '') {
+        suites = params.suites
+    }
+}
+echo "suites: $suites"
 
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
@@ -319,6 +327,7 @@ env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
+env._suites = "$suites"
 
 node(NODE_LABEL){
     stage("start instance")
@@ -354,7 +363,7 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
         timestamp=$(date +%Y%m%d_%H%M%S)
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} &> /home/ubuntu/docker/aws_benchmark_${timestamp}.log &" &
+        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_suites} &> /home/ubuntu/docker/aws_benchmark_${timestamp}.log &" &
         '''
     }
     stage("trigger inductor images job"){

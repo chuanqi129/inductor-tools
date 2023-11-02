@@ -17,6 +17,7 @@ WRAPPER=${7:-default}
 HF_TOKEN=${8:-hf_xx}
 # Test Mode
 TEST_MODE=${9:-inference}
+suites=${10:-all}
 
 mkdir -p $LOG_DIR
 
@@ -47,8 +48,13 @@ fi
 Flag_extra=""
 export TORCHINDUCTOR_FREEZING=1
 echo "Testing with freezing on."
-Flag_extra="--freezing "    
+Flag_extra="--freezing "
 
+if [[ $suites == "all" ]]; then
+    suites=""
+else
+    suites="--suites=${suites}"
+fi
 
 # multi-threads
 multi_threads_test() {
@@ -58,11 +64,11 @@ multi_threads_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=inductor --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=inductor $suites --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=inductor --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=inductor $suites --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi

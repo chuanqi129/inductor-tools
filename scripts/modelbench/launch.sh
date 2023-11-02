@@ -19,6 +19,7 @@ THREADS=${14:-all}
 CHANNELS=${15:-first}
 WRAPPER=${16:-default}
 HF_TOKEN=${17:-hf_xx}
+suites=${18:-all}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -56,9 +57,9 @@ docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
 
 if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN inference"
+    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN inference $suites"
 elif [ $TEST_MODE == "training_full" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN training"
+    docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN training $suites"
 elif [ $TEST_MODE == "training" ]; then
     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
 fi
