@@ -580,7 +580,7 @@ node(NODE_LABEL){
                 )
             }
         }//inference
-        if ("${test_mode}" == "training")
+        if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
