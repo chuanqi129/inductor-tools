@@ -423,6 +423,9 @@ node(NODE_LABEL){
         done
         '''
     }
+    stage('archive inductor_log') {
+        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+    }
     stage("stop instance")
     {
         try{
