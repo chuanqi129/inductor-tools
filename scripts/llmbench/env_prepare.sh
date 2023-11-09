@@ -94,6 +94,5 @@ numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --tok
 numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
 # eager
 numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
-numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
 # collect metrics
 collect_perf ${LOG_DIR}/llm_bench__${timestamp}.log

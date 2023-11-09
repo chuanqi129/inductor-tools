@@ -36,8 +36,6 @@ latency_dict["inductor_llama_cpp"] = result.loc[11,'item']
 
 latency_dict["eager_gptj_default"] = result.loc[12,'item']
 latency_dict["eager_llama_default"] = result.loc[13,'item']
-latency_dict["eager_gptj_cpp"] = result.loc[14,'item']
-latency_dict["eager_llama_cpp"] = result.loc[15,'item']
 
 # inductor speedup: 4 values
 gptj_default_inductor_speedup = result.loc[16,'item'].split(',')[0]
@@ -54,8 +52,6 @@ last_latency_dict["inductor_llama_cpp"] = 'None'
 
 last_latency_dict["eager_gptj_default"] = 'None'
 last_latency_dict["eager_llama_default"] = 'None'
-last_latency_dict["eager_gptj_cpp"] = 'None'
-last_latency_dict["eager_llama_cpp"] = 'None'
 
 last_gptj_default_inductor_speedup = 'None'
 last_gptj_cpp_inductor_speedup = 'None'
@@ -67,9 +63,7 @@ ratio_inductor_gtpj_cpp = 'None'
 ratio_inductor_llama_default = 'None'
 ratio_inductor_llama_cpp = 'None'
 ratio_eager_gtpj_default = 'None'
-ratio_eager_gtpj_cpp = 'None'
 ratio_eager_llama_default = 'None'
-ratio_eager_llama_cpp = 'None'
 ratio_speedup_gptj_default = 'None'
 ratio_speedup_gptj_cpp = 'None'
 ratio_speedup_llama_default = 'None'
@@ -84,8 +78,6 @@ try:
 
     last_latency_dict["eager_gptj_default"] = last_result.loc[12,'item']
     last_latency_dict["eager_llama_default"] = last_result.loc[13,'item']
-    last_latency_dict["eager_gptj_cpp"] = last_result.loc[14,'item']
-    last_latency_dict["eager_llama_cpp"] = last_result.loc[15,'item']
 
     last_gptj_default_inductor_speedup = last_result.loc[16,'item'].split(',')[0]
     last_gptj_cpp_inductor_speedup = last_result.loc[16,'item'].split(',')[1]
@@ -104,9 +96,7 @@ try:
     ratio_inductor_llama_cpp = calculate_ratio(last_latency_dict["inductor_llama_cpp"],latency_dict["inductor_llama_cpp"])
 
     ratio_eager_gtpj_default = calculate_ratio(last_latency_dict["eager_gptj_default"],latency_dict["eager_gptj_default"])
-    ratio_eager_gtpj_cpp = calculate_ratio(last_latency_dict["eager_gptj_cpp"],latency_dict["eager_gptj_cpp"])
     ratio_eager_llama_default = calculate_ratio(last_latency_dict["eager_llama_default"],latency_dict["eager_llama_default"])
-    ratio_eager_llama_cpp = calculate_ratio(last_latency_dict["eager_llama_cpp"],latency_dict["eager_llama_cpp"])
 
 
 
@@ -247,26 +237,6 @@ report_content=f'''<!DOCTYPE html>
         </tr>
         <tr>
             <td>
-                <p style="text-align:center">gptj6B</p>
-            </td>
-            <td>
-                <p style="text-align:center">{precision}</p>
-            </td>
-            <td>
-                <p style="text-align:center">True</p>
-            </td>
-            <td>
-                <p style="text-align:center">{latency_dict['eager_gptj_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{last_latency_dict['eager_gptj_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{ratio_eager_gtpj_cpp}</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
                 <p style="text-align:center">llama7B</p>
             </td>
             <td>
@@ -283,26 +253,6 @@ report_content=f'''<!DOCTYPE html>
             </td>
             <td>
                 <p style="text-align:center">{ratio_eager_llama_default}</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <p style="text-align:center">llama7B</p>
-            </td>
-            <td>
-                <p style="text-align:center">{precision}</p>
-            </td>
-            <td>
-                <p style="text-align:center">True</p>
-            </td>
-            <td>
-                <p style="text-align:center">{latency_dict['eager_llama_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{last_latency_dict['eager_llama_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{ratio_eager_llama_cpp}</p>
             </td>
         </tr>
     </table>
