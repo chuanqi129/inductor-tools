@@ -40,10 +40,10 @@ latency_dict["eager_gptj_cpp"] = result.loc[12,'item']
 latency_dict["eager_llama_cpp"] = result.loc[13,'item']
 
 # inductor speedup: 4 values
-gptj_default_inductor_speedup = result.loc[16,'item'].split(',')[0]
-llama_default_inductor_speedup = result.loc[16,'item'].split(',')[1]
-gptj_cpp_inductor_speedup = result.loc[16,'item'].split(',')[2]
-llama_cpp_inductor_speedup = result.loc[16,'item'].split(',')[3]
+gptj_default_inductor_speedup = result.loc[14,'item'].split(',')[0]
+llama_default_inductor_speedup = result.loc[14,'item'].split(',')[1]
+gptj_cpp_inductor_speedup = result.loc[14,'item'].split(',')[2]
+llama_cpp_inductor_speedup = result.loc[14,'item'].split(',')[3]
 
 # lastsucceful
 last_latency_dict = {}
@@ -87,10 +87,10 @@ try:
     last_latency_dict["eager_gptj_cpp"] = last_result.loc[12,'item']
     last_latency_dict["eager_llama_cpp"] = last_result.loc[13,'item']
 
-    last_gptj_default_inductor_speedup = last_result.loc[16,'item'].split(',')[0]
-    last_gptj_cpp_inductor_speedup = last_result.loc[16,'item'].split(',')[1]
-    last_llama_default_inductor_speedup = last_result.loc[16,'item'].split(',')[2]
-    last_llama_cpp_inductor_speedup = last_result.loc[16,'item'].split(',')[3]
+    last_gptj_default_inductor_speedup = last_result.loc[14,'item'].split(',')[0]
+    last_gptj_cpp_inductor_speedup = last_result.loc[14,'item'].split(',')[1]
+    last_llama_default_inductor_speedup = last_result.loc[14,'item'].split(',')[2]
+    last_llama_cpp_inductor_speedup = last_result.loc[14,'item'].split(',')[3]
 
     # round results ratio calculation
     ratio_speedup_gptj_default = round(float(gptj_default_inductor_speedup)/float(last_gptj_default_inductor_speedup),2)
