@@ -41,8 +41,8 @@ latency_dict["eager_llama_cpp"] = result.loc[15,'item']
 
 # inductor speedup: 4 values
 gptj_default_inductor_speedup = result.loc[16,'item'].split(',')[0]
-gptj_cpp_inductor_speedup = result.loc[16,'item'].split(',')[1]
-llama_default_inductor_speedup = result.loc[16,'item'].split(',')[2]
+llama_default_inductor_speedup = result.loc[16,'item'].split(',')[1]
+gptj_cpp_inductor_speedup = result.loc[16,'item'].split(',')[2]
 llama_cpp_inductor_speedup = result.loc[16,'item'].split(',')[3]
 
 # lastsucceful
