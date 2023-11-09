@@ -6,7 +6,7 @@ USER=${3:-0}
 PASSWD=${4:-0}
 
 cat /dev/null >nohup.out
-nohup echo -e '\n\n\n\n\n\n\n\n' | $aws configure sso --profile pytorch &>nohup.out &
+nohup echo -e 'pytorch\n\n\n\n\n\n\n\n' | $aws configure sso --profile pytorch &>nohup.out &
 sleep 8s
 FF_PID=$(ps -ef | grep firefox | grep -v grep | awk '{print $2}' | awk -F '/' '{print $1}')
 # SSO_PID=$(ps -ef | grep sso | grep -v grep | awk '{print $2}' | awk -F '/' '{print $1}')
