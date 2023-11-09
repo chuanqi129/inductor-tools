@@ -81,8 +81,8 @@ function collect_perf() {
     done
     speedup1=`awk 'BEGIN{printf "%.2f",'${infer_latency[5]}' / '${infer_latency[1]}'}'`
     speedup2=`awk 'BEGIN{printf "%.2f",'${infer_latency[6]}' / '${infer_latency[2]}'}'`
-    speedup3=`awk 'BEGIN{printf "%.2f",'${infer_latency[7]}' / '${infer_latency[3]}'}'`
-    speedup4=`awk 'BEGIN{printf "%.2f",'${infer_latency[8]}' / '${infer_latency[4]}'}'`
+    speedup3=`awk 'BEGIN{printf "%.2f",'${infer_latency[5]}' / '${infer_latency[3]}'}'`
+    speedup4=`awk 'BEGIN{printf "%.2f",'${infer_latency[6]}' / '${infer_latency[4]}'}'`
     printf "$speedup1,$speedup2,$speedup3,$speedup4\\n" | tee -a ${FILE}
 }
 
