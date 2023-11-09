@@ -52,6 +52,24 @@ if ('instance_ids' in params) {
 }
 echo "instance_ids: $instance_ids"
 
+backend = 'inductor'
+if ('backend' in params) {
+    echo "backend in params"
+    if (params.backend != '') {
+        backend = params.backend
+    }
+}
+echo "backend: $backend"
+
+extra_param = ''
+if ('extra_param' in params) {
+    echo "extra_param in params"
+    if (params.extra_param != '') {
+        extra_param = params.extra_param
+    }
+}
+echo "extra_param: $extra_param"
+
 precision = 'float32'
 if ('precision' in params) {
     echo "precision in params"
@@ -298,6 +316,8 @@ env._new_instance = "$new_instance"
 env._aws_id = "$instance_ids"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
+env._backend = "$backend"
+env._extra_param = "$extra_param"
 env._precision = "$precision"
 env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
@@ -353,7 +373,7 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} &>/dev/null &" &
+        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_extra_param} &>/dev/null &" &
         '''
     }
     stage("trigger inductor images job"){
@@ -521,7 +541,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -530,7 +550,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
+                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -542,7 +562,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",

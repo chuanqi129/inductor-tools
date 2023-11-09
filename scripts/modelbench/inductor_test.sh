@@ -11,21 +11,32 @@ DT=${3:-float32}
 # static / dynamic
 SHAPE=${4:-static}
 LOG_DIR=${5:-inductor_log}
-DYNAMO_BENCH=${6:-1238ae3}
 # default / cpp
-WRAPPER=${7:-default}
-HF_TOKEN=${8:-hf_xx}
+WRAPPER=${6:-default}
+HF_TOKEN=${7:-hf_xx}
+BACKEND=${8:-inductor}
+# Easy to enbale new test
+EXTRA=${9}
 
 mkdir -p $LOG_DIR
 
 export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
 # https://github.com/pytorch/pytorch/issues/107200
 pip uninstall transformers -y && pip install transformers==4.30.2
-# collect sw info
-bash version_collect.sh ${LOG_DIR} ${DYNAMO_BENCH}
 
 # skip sam & nanogpt_generate for stable results
 sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py
+
+Flag_extra="$EXTRA "
+if [[ $BACKEND == "aot_inductor" ]]; then
+    echo "Testing with aot_inductor."
+    # Workaround for test with runner.py
+    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' benchmarks/dynamo/runner.py
+elif [[ $BACKEND == "inductor" ]]; then
+    echo "Setting freezing for inductor backend by default."
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+fi
 
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
@@ -39,12 +50,6 @@ if [[ $WRAPPER == "cpp" ]]; then
     Wrapper_extra="--cpp-wrapper "
 fi
 
-Flag_extra=""
-export TORCHINDUCTOR_FREEZING=1
-echo "Testing with freezing on."
-Flag_extra="--freezing "    
-
-
 # multi-threads
 multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
@@ -53,11 +58,11 @@ multi_threads_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=inductor --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=${BACKEND} --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=inductor --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=${BACKEND} --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
@@ -70,11 +75,11 @@ single_thread_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=inductor --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=${BACKEND} --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=inductor --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --inference --compilers=${BACKEND} --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
