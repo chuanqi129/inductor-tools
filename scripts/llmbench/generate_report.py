@@ -165,26 +165,6 @@ report_content=f'''<!DOCTYPE html>
                 <p style="text-align:center">True</p>
             </td>
             <td>
-                <p style="text-align:center">{latency_dict['eager_gptj_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{last_latency_dict['eager_gptj_cpp']}</p>
-            </td>
-            <td>
-                <p style="text-align:center">{ratio_eager_gtpj_cpp}</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <p style="text-align:center">gptj6B</p>
-            </td>
-            <td>
-                <p style="text-align:center">{precision}</p>
-            </td>
-            <td>
-                <p style="text-align:center">True</p>
-            </td>
-            <td>
                 <p style="text-align:center">{latency_dict['inductor_gptj_cpp']}</p>
             </td>
             <td>
@@ -263,6 +243,26 @@ report_content=f'''<!DOCTYPE html>
             </td>
             <td>
                 <p style="text-align:center">{ratio_eager_gtpj_default}</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p style="text-align:center">gptj6B</p>
+            </td>
+            <td>
+                <p style="text-align:center">{precision}</p>
+            </td>
+            <td>
+                <p style="text-align:center">True</p>
+            </td>
+            <td>
+                <p style="text-align:center">{latency_dict['eager_gptj_cpp']}</p>
+            </td>
+            <td>
+                <p style="text-align:center">{last_latency_dict['eager_gptj_cpp']}</p>
+            </td>
+            <td>
+                <p style="text-align:center">{ratio_eager_gtpj_cpp}</p>
             </td>
         </tr>
         <tr>
