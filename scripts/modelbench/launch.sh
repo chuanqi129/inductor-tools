@@ -19,6 +19,8 @@ THREADS=${14:-all}
 CHANNELS=${15:-first}
 WRAPPER=${16:-default}
 HF_TOKEN=${17:-hf_xx}
+BACKEND=${18:-inductor}
+EXTRA=${19}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -36,6 +38,7 @@ echo "TORCH_BENCH" : $TORCH_BENCH
 echo "THREADS" : $THREADS
 echo "CHANNELS" : $CHANNELS
 echo "WRAPPER" : $WRAPPER
+echo "BACKEND" : $BACKEND
 
 # clean up
 docker stop $(docker ps -aq)
@@ -43,20 +46,24 @@ docker rm $(docker ps -aq)
 docker rmi $(docker images -q)
 docker system prune -af
 
-if [ -d inductor_log ]; then
-    sudo rm -rf inductor_log
+LOG_DIR="inductor_log"
+if [ -d ${LOG_DIR} ]; then
+    sudo rm -rf ${LOG_DIR}
 fi
 
 DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image .
 
-docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 20G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/inductor_log:/workspace/pytorch/inductor_log pt_inductor:$TAG
+docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 20G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} pt_inductor:$TAG
 
 docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
 docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
 
+# Generate SW info out of real test
+docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
+
 if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE inductor_log $DYNAMO_BENCH $WRAPPER $HF_TOKEN"
+    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND $EXTRA"
 elif [ $TEST_MODE == "training" ]; then
-    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION inductor_log $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
 fi
