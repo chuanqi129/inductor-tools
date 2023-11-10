@@ -81,8 +81,8 @@ function collect_perf() {
     done
     speedup1=`awk 'BEGIN{printf "%.2f",'${infer_latency[5]}' / '${infer_latency[1]}'}'`
     speedup2=`awk 'BEGIN{printf "%.2f",'${infer_latency[6]}' / '${infer_latency[2]}'}'`
-    speedup3=`awk 'BEGIN{printf "%.2f",'${infer_latency[7]}' / '${infer_latency[3]}'}'`
-    speedup4=`awk 'BEGIN{printf "%.2f",'${infer_latency[8]}' / '${infer_latency[4]}'}'`
+    speedup3=`awk 'BEGIN{printf "%.2f",'${infer_latency[5]}' / '${infer_latency[3]}'}'`
+    speedup4=`awk 'BEGIN{printf "%.2f",'${infer_latency[6]}' / '${infer_latency[4]}'}'`
     printf "$speedup1,$speedup2,$speedup3,$speedup4\\n" | tee -a ${FILE}
 }
 
@@ -94,6 +94,5 @@ numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --tok
 numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --use_dynamo --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
 # eager
 numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
-numactl -C 0-${end_core} --membind=0 python run_dynamo_llm.py --token_latency --cpp_wrapper --precision ${precision} 2>&1 | tee -a ${LOG_DIR}/llm_bench__${timestamp}.log
 # collect metrics
 collect_perf ${LOG_DIR}/llm_bench__${timestamp}.log
