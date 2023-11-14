@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -x
-FF=${1:-0}
-GD=${2:-0}
-IAP=${3:-0}
-PASSWD=${4:-0}
+AWS=${1}
+FF=${2}
+GD=${3}
+IAP=${4}
+PASSWD=${5}
+REMOTE=${6}
 
 cat /dev/null >nohup.out
-nohup echo -e 'pytorch\n\n\n\n\n\n\n\n' | $aws configure sso --profile pytorch &>nohup.out &
+nohup echo -e '\n\n\n\n\n\n\n\n' | $AWS configure sso --profile pytorch &>nohup.out &
 sleep 10s
 FF_PID=$(ps -ef | grep firefox/firefox | grep $USER | grep -v refresh | grep -v grep | awk '{print $2}' | awk -F '/' '{print $1}')
 # SSO_PID=$(ps -ef | grep sso | grep -v grep | awk '{print $2}' | awk -F '/' '{print $1}')
@@ -26,7 +28,12 @@ fi
 enter_code=$(grep -A 2 'enter the code' nohup.out | awk 'NR==3')
 echo $enter_code
 if [ -n "${enter_code}" ]; then
-    python aws_sso.py -f ${FF} -d ${GD} -c $enter_code -u ${IAP} -p ${PASSWD}
+    if [ "${REMOTE}" == "False" ]; then
+        scp aws_sso.py chuanqiw@aws-sso-remote:~/
+        ssh chuanqiw@aws-sso-remote "bash -c 'python aws_sso.py -f /localdisk/chuanqiw/firefox/firefox -d /localdisk/chuanqiw/geckodriver -c $enter_code -u ${IAP} -p ${PASSWD}'"
+    else
+        python aws_sso.py -f ${FF} -d ${GD} -c $enter_code -u ${IAP} -p ${PASSWD}
+    fi
 else
     echo Not Found enter_code, SSO configure may be still valid
 fi
