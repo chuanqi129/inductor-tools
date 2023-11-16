@@ -124,10 +124,15 @@ node(REFRESH_NODE_LABEL){
 node(NODE_LABEL){
     stage("Sanity test of the AWS SSO configure"){
         echo "All running instance.........."
-        sh '''
-        #!/usr/bin/env bash
-        ${_AWS} ec2 describe-instances --query 'Reservations[*].Instances[*].[InstanceId]' --filters Name=instance-state-name,Values=running --output text --profile pytorch
-        '''
+        try{
+            sh '''
+            #!/usr/bin/env bash
+            ${_AWS} ec2 describe-instances --query 'Reservations[*].Instances[*].{Name:Tags[?Key==`Name`].Value | [0],InstanceId:InstanceId}' --filters Name=instance-state-name,Values=running --output text --profile pytorch
+            '''
+        }catch(err){
+            echo err.getMessage()
+            currentBuild.result = "FAILURE"
+        }    
     }
     stage("Email"){
         if ("${debug}" == "true"){
