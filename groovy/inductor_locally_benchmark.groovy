@@ -160,6 +160,24 @@ if ('TORCH_BENCH' in params) {
 }
 echo "TORCH_BENCH: $TORCH_BENCH"
 
+backend = 'inductor'
+if ('backend' in params) {
+    echo "backend in params"
+    if (params.backend != '') {
+        backend = params.backend
+    }
+}
+echo "backend: $backend"
+
+extra_param = ''
+if ('extra_param' in params) {
+    echo "extra_param in params"
+    if (params.extra_param != '') {
+        extra_param = params.extra_param
+    }
+}
+echo "extra_param: $extra_param"
+
 precision = 'float32'
 if ('precision' in params) {
     echo "precision in params"
@@ -256,6 +274,8 @@ echo "specify_image_tag: $specify_image_tag"
 
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
+env._backend = "$backend"
+env._extra_param = "$extra_param"
 env._precision = "$precision"
 env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
@@ -384,7 +404,8 @@ node(NODE_LABEL){
         docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
-        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_DYNAMO_BENCH} ${_WRAPPER} ${_HF_TOKEN}"
+        docker exec -i $USER bash -c "bash version_collect.sh inductor_log $_DYNAMO_BENCH"
+        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_extra_param}"
         docker exec -i $USER bash -c "mv inductor_log ${_target}"
 
         '''

@@ -3,6 +3,7 @@ DYNAMO_BENCH=${2:-fea73cb}
 
 # collect sw info
 curdir=$(pwd)
+mkdir -p ${curdir}/${LOG_DIR}
 touch ${curdir}/${LOG_DIR}/version.txt
 cd /workspace/benchmark
 echo torchbench : $(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/version.txt
