@@ -21,7 +21,13 @@ CHANNELS=${15:-first}
 WRAPPER=${16:-default}
 HF_TOKEN=${17:-hf_xx}
 BACKEND=${18:-inductor}
-EXTRA=${19}
+SUITE=${19:-torchbench}
+MODEL=${20:-resnet50}
+TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
+TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
+SCENARIO=${24:-accuracy}
+KIND=${25:-crash} # issue kind crash/drop
+EXTRA=${26}
 # cd target dir
 echo cur_dir :$(pwd)
 cd /home/ubuntu/docker
@@ -32,7 +38,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS} ${WRAPPER} ${HF_TOKEN} ${BACKEND} ${EXTRA}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS} ${WRAPPER} ${HF_TOKEN} ${BACKEND} ${SUITE} ${MODEL} ${TORCH_START_COMMIT} ${TORCH_END_COMMIT} ${SCENARIO} ${KIND} ${EXTRA}
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
