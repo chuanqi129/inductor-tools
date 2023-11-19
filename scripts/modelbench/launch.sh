@@ -20,7 +20,13 @@ CHANNELS=${15:-first}
 WRAPPER=${16:-default}
 HF_TOKEN=${17:-hf_xx}
 BACKEND=${18:-inductor}
-EXTRA=${19}
+SUITE=${19:-torchbench}
+MODEL=${20:-resnet50}
+TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
+TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
+SCENARIO=${23:-accuracy}
+KIND=${24:-crash} # issue kind crash/drop
+EXTRA=${25}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -39,6 +45,12 @@ echo "THREADS" : $THREADS
 echo "CHANNELS" : $CHANNELS
 echo "WRAPPER" : $WRAPPER
 echo "BACKEND" : $BACKEND
+echo "SUITE" : $SUITE
+echo "MODEL" : $MODEL
+echo "TORCH_START_COMMIT" : $TORCH_START_COMMIT
+echo "TORCH_END_COMMIT" : $TORCH_END_COMMIT
+echo "SCENARIO" : $SCENARIO
+echo "KIND" : $KIND
 
 # clean up
 docker stop $(docker ps -aq)
@@ -55,15 +67,25 @@ DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} -
 
 docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 20G -v /home/ubuntu/docker/download/hub/checkpoints:/root/.cache/torch/hub/checkpoints -v /home/ubuntu/docker/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} pt_inductor:$TAG
 
-docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
-docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
-docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
+# Launch regular tests
+if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
+    docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
 
-# Generate SW info out of real test
-docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
+    # Generate SW info out of real test
+    docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
 
-if [ $TEST_MODE == "inference" ]; then
-    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND $EXTRA"
-elif [ $TEST_MODE == "training" ]; then
-    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
+    if [ $TEST_MODE == "inference" ]; then
+        docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND $EXTRA"
+    elif [ $TEST_MODE == "training" ]; then
+        docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
+    fi
+# Launch issue guilty commit search
+else
+    docker cp /home/ubuntu/docker/bisect_search.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
+    # TODO: Hard code freeze on and default bs, add them as params future
+    docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $EXTRA"
 fi
