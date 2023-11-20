@@ -54,12 +54,31 @@ run_acc_drop_test() {
 }
 
 run_crash_test() {
-    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE
+    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
-	echo "GOOD COMMIT!"
-        exit 0
+        acc_status=`tail -n 1 ./crash.log | grep pass | wc -l`
+        perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
+        echo $acc_status
+        echo $perf_status
+        if [ "$SCENARIO" == "accuracy" ]; then
+            if [ $acc_status -eq 0 ]; then
+                echo "BAD COMMIT!"
+                exit 1
+            else
+                echo "GOOD COMMIT!"
+                exit 0
+            fi
+        elif [ "$SCENARIO" == "performance" ]; then
+            if [[ ! -z $perf_status ]] && [ $perf_status -gt 0 ]; then
+                echo "GOOD COMMIT!"
+                exit 0
+            else
+                echo "BAD COMMIT!"
+                exit 1
+            fi
+        fi
     else
-	echo "BAD COMMIT!"
+        echo "BAD COMMIT!"
         exit 1
     fi
 }
