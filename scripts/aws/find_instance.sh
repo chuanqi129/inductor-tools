@@ -11,6 +11,26 @@ if [ $ins_name == "icx-guilty-search" ]; then
     max_ins_num=5
     ins_type="c6i.16xlarge"
     store_size=200
+elif [ $ins_name == "icx-ondemand" ]; then
+    max_ins_num=3
+    ins_type="c6i.16xlarge"
+    store_size=200
+elif [ $ins_name == "icx-regular" ]; then
+    max_ins_num=2
+    ins_type="c6i.16xlarge"
+    store_size=200
+elif [ $ins_name == "icx-regular-cppwrapper" ]; then
+    max_ins_num=2
+    ins_type="c6i.16xlarge"
+    store_size=200
+elif [ $ins_name == "spr-ondemand" ]; then
+    max_ins_num=3
+    ins_type="m7i.16xlarge"
+    store_size=200
+elif [ $ins_name == "spr-regular" ]; then
+    max_ins_num=1
+    ins_type="m7i.16xlarge"
+    store_size=200
 fi
 
 $aws ec2 describe-instances --query "Reservations[*].Instances[*].{PublicDnsName: PublicDnsName, InstanceType: InstanceType, State: State.Name, Name:Tags[?Key=='Name']|[0].Value, InstanceId:InstanceId}" --filters Name=tag:Name,Values=${ins_name} --output text --profile ${profile_name} > ${WORKSPACE}/${ins_name}.txt

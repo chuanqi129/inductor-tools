@@ -43,14 +43,14 @@ if ('new_instance' in params) {
 }
 echo "new_instance: $new_instance"
 
-instance_ids = 'i-03aa90bc2017ba908'
-if ('instance_ids' in params) {
-    echo "instance_ids in params"
-    if (params.instance_ids != '') {
-        instance_ids = params.instance_ids
+instance_name = 'icx-ondemand'
+if ('instance_name' in params) {
+    echo "instance_name in params"
+    if (params.instance_name != '') {
+        instance_name = params.instance_name
     }
 }
-echo "instance_ids: $instance_ids"
+echo "instance_name: $instance_name"
 
 backend = 'inductor'
 if ('backend' in params) {
@@ -312,8 +312,7 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
-env._new_instance = "$new_instance"
-env._aws_id = "$instance_ids"
+env._instance_name = "$instance_name"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
@@ -341,14 +340,33 @@ env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 
 node(NODE_LABEL){
-    stage("start instance")
-    {
+    stage("Find or create instance"){
         deleteDir()
         checkout scm
+        sh'''
+        #!/usr/bin/env bash
+        cd ${WORKSPACE}/scripts/aws/
+        while true;
+        do
+            bash find_instance.sh ${instance_name} 2>&1 | tee ${WORKSPACE}/instance_id.txt
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
+            if [ $ins_id != "waiting_instance" ]; then
+                echo "ins_id : $ins_id"
+                break
+            else
+                echo "Waiting for avaliable instance, will check after 10 min..."
+                sleep 10m
+            fi
+        done
+        '''
+    }
+    stage("start instance")
+    {
         sh '''
         #!/usr/bin/env bash
-        cd $HOME && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
-        init_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        ins_id=`cat ${WORKSPACE}/instance_id.txt`
+        cd $HOME && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+        init_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         echo init_ip is $init_ip
         ssh -o StrictHostKeyChecking=no ubuntu@${init_ip} "pwd"
         '''
@@ -356,15 +374,14 @@ node(NODE_LABEL){
     stage("prepare scripts & benchmark") {
         sh '''
         #!/usr/bin/env bash
-        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        ins_id=`cat ${WORKSPACE}/instance_id.txt`
+        current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-        if [ "${_new_instance}" == "True" ]; then
-            scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-            ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-            ssh ubuntu@${current_ip} "bash weights_prepare.sh"
-        fi
+        scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+        scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+        scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+        ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+        ssh ubuntu@${current_ip} "bash weights_prepare.sh"
         scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
         scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
         scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
@@ -409,8 +426,9 @@ node(NODE_LABEL){
             echo "cppwrapper"
         else
             reboot_time=33
-        fi        
-        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        fi
+        ins_id=`cat ${WORKSPACE}/instance_id.txt`        
+        current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         for t in {1..100}
         do
             timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
@@ -426,7 +444,7 @@ node(NODE_LABEL){
                 echo $t
                 if [ $t -eq $reboot_time ]; then
                     echo restart instance now...
-                    $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
+                    $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
                 fi
             fi
@@ -438,7 +456,8 @@ node(NODE_LABEL){
         try{
             sh '''
             #!/usr/bin/env bash
-            $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
+            $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
             '''
         }catch(err){
             echo err.getMessage()   
