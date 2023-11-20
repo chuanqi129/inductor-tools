@@ -17,7 +17,7 @@ EXTRA=${14}
 
 prepare_test() {
     git reset --hard HEAD && git submodule sync && git submodule update --init --recursive
-    python setup.py clean && python setup.py develop
+    python setup.py clean && python setup.py develop 
 }
 
 run_perf_drop_test() {
@@ -27,8 +27,10 @@ run_perf_drop_test() {
     ratio=$(echo "$result $EXP_PERF" | awk '{ printf "%.2f\n", $1/$2 }')
     echo "=====ratio: $ratio======="
     if [[ $ratio > 1.1 ]]; then
+	echo "BAD COMMIT!"
         exit 1
     else
+	echo "GOOD COMMIT!"
         exit 0
     fi
 }
@@ -37,8 +39,10 @@ run_acc_drop_test() {
     acc_res=$(bash ./inductor_single_run.sh $THREAD $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ $acc_res != "pass" ]; then
+	echo "BAD COMMIT!"
         exit 1
     else
+	echo "GOOD COMMIT!"
         exit 0
     fi
 }
@@ -46,13 +50,22 @@ run_acc_drop_test() {
 run_crash_test() {
     bash ./inductor_single_run.sh $THREAD $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE
     if [ $? -eq 0 ]; then
-        exit 1
-    else
+	echo "GOOD COMMIT!"
         exit 0
+    else
+	echo "BAD COMMIT!"
+        exit 1
     fi
 }
 
-prepare_test
+prepare_test > inductor_log/bisect_pt_build.log 2>&1
+
+if [ $? -eq 0 ]; then
+    echo "PT build success!"
+else
+    echo "PT build failed!"
+fi
+
 if [ $KIND == "drop" ]; then
     if [ $SCENARIO == "performance" ]; then
         run_perf_drop_test
