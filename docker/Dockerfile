@@ -105,7 +105,7 @@ ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
-    python install.py && \
+    python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
