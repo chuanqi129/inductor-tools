@@ -34,14 +34,23 @@ if ('default_mail' in params) {
 }
 echo "default_mail: $default_mail"
 
-new_instance = 'False'
-if ('new_instance' in params) {
-    echo "new_instance in params"
-    if (params.new_instance != '') {
-        new_instance = params.new_instance
+terminate_instance = 'False'
+if ('terminate_instance' in params) {
+    echo "terminate_instance in params"
+    if (params.terminate_instance != '') {
+        terminate_instance = params.terminate_instance
     }
 }
-echo "new_instance: $new_instance"
+echo "terminate_instance: $terminate_instance"
+
+instance_ids = '0'
+if ('instance_ids' in params) {
+    echo "instance_ids in params"
+    if (params.instance_ids != '') {
+        instance_ids = params.instance_ids
+    }
+}
+echo "instance_ids: $instance_ids"
 
 instance_name = 'icx-ondemand'
 if ('instance_name' in params) {
@@ -312,6 +321,8 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
+env._terminate_ins = "$terminate_instance"
+env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
@@ -348,7 +359,7 @@ node(NODE_LABEL){
         cd ${WORKSPACE}/scripts/aws/
         while true;
         do
-            bash find_instance.sh ${instance_name} 2>&1 | tee ${WORKSPACE}/instance_id.txt
+            bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt
             ins_id=`cat ${WORKSPACE}/instance_id.txt`
             if [ $ins_id != "waiting_instance" ]; then
                 echo "ins_id : $ins_id"
@@ -426,9 +437,9 @@ node(NODE_LABEL){
             reboot_time=33
         fi
         ins_id=`cat ${WORKSPACE}/instance_id.txt`        
-        current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         for t in {1..100}
         do
+            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
@@ -444,18 +455,32 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                    break
                 fi
             fi
         done
         '''
     }
-    stage("stop instance")
+    // Add raw log artifact stage in advance to avoid crash in report generate stage
+    stage("archive raw test results"){
+        sh '''
+            #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard
+            cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
+        '''
+        archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
+    }
+    stage("stop or terminate instance")
     {
         try{
             sh '''
             #!/usr/bin/env bash
             ins_id=`cat ${WORKSPACE}/instance_id.txt`
             $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+            if [ "$_terminate_ins" == "True" ]; then
+                $aws ec2 terminate-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+            fi
             '''
         }catch(err){
             echo err.getMessage()   
@@ -529,10 +554,16 @@ node(NODE_LABEL){
     // }
 
     stage('archiveArtifacts') {
+        // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+        sh '''
+        #!/usr/bin/env bash
+        rm -rf ${WORKSPACE}/raw_log
+        '''
         if ("${test_mode}" == "inference")
         {
             sh '''
             #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
             cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''
@@ -541,6 +572,7 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
             cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''
