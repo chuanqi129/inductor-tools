@@ -8,9 +8,9 @@ MODE=${5:-inference}
 SCENARIO=${6:-accuracy}
 PRECISION=${7:-float32}
 SHAPE=${8:-static}
-WAPPER=${9:-default}
+WRAPPER=${9:-default}
 KIND=${10:-crash}
-TREADS=${11:-multiple}
+THREADS=${11:-multiple}
 CHANNELS=${12:-first}
 FREEZE=${13:-on}
 BS=${14:0}
@@ -28,7 +28,7 @@ expected_perf=0
 if [ $SCENARIO == "performacne" && $KIND == "drop" ]; then
     git reset --hard HEAD && git checkout main && git checkout ${START_COMMIT} && git submodule sync && git submodule update --init --recursive
     python setup.py clean && python setup.py develop
-    detected_value=$(bash ./inductor_single_run.sh $THREAD $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
     expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Expected performance: $expected_perf s"
 fi
