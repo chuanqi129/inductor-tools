@@ -6,15 +6,15 @@ MODE=${3:-inference} # inference / training
 DT=${4:-float32} # float32 / amp
 SHAPE=${5:-static} # static / dynamic
 WRAPPER=${6:-default} # default / cpp
-SCENARIO=${6:-accuracy} # accuracy / performance
-KIND=${7:-drop} # crash / drop
-THREADS=${8:-multiple} # multiple / single
-CHANNELS=${9:-first} # first / last
-FREEZE=${10:-on} # on / off
-BS=${11:-0} # default / specific
-EXP_PERF=${12:-0} 
-BACKEND=${13:-inductor}
-EXTRA=${14}
+SCENARIO=${7:-accuracy} # accuracy / performance
+KIND=${8:-drop} # crash / drop
+THREADS=${9:-multiple} # multiple / single
+CHANNELS=${10:-first} # first / last
+FREEZE=${11:-on} # on / off
+BS=${12:-0} # default / specific
+EXP_PERF=${13:-0}
+BACKEND=${14:-inductor}
+EXTRA=${15}
 
 prepare_test() {
     git reset --hard HEAD && git submodule sync && git submodule update --init --recursive
