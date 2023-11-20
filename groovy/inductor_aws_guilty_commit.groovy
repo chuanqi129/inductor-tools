@@ -34,15 +34,6 @@ if ('default_mail' in params) {
 }
 echo "default_mail: $default_mail"
 
-instance_ids = 'i-03aa90bc2017ba908'
-if ('instance_ids' in params) {
-    echo "instance_ids in params"
-    if (params.instance_ids != '') {
-        instance_ids = params.instance_ids
-    }
-}
-echo "instance_ids: $instance_ids"
-
 instance_name = 'icx-guilty-search'
 if ('instance_name' in params) {
     echo "instance_name in params"
@@ -328,8 +319,6 @@ if ('HF_TOKEN' in params) {
 }
 echo "HF_TOKEN: $HF_TOKEN"
 
-
-env._aws_id = "$instance_ids"
 env._instance_name = "$instance_name"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
@@ -446,6 +435,7 @@ node(NODE_LABEL){
         try{
             sh '''
             #!/usr/bin/env bash
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
             $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
             '''
         }catch(err){
