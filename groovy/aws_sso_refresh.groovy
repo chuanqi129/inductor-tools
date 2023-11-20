@@ -127,7 +127,7 @@ node(NODE_LABEL){
         try{
             sh '''
             #!/usr/bin/env bash
-            ${_AWS} ec2 describe-instances --query 'Reservations[*].Instances[*].{Name:Tags[?Key==`Name`].Value | [0],InstanceId:InstanceId}' --filters Name=instance-state-name,Values=running --output text --profile pytorch
+            ${_AWS} ec2 describe-instances --query "Reservations[*].Instances[*].{PublicDnsName: PublicDnsName, InstanceType: InstanceType, State: State.Name, Name:Tags[?Key=='Name']|[0].Value, InstanceId:InstanceId}" --filters Name=instance-state-name,Values=running --output table --profile pytorch
             '''
         }catch(err){
             echo err.getMessage()

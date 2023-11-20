@@ -9,7 +9,7 @@ profile_name=${5:-pytorch}
 max_ins_num=1
 # TODO: use instance config file to instead of hard code
 if [ $ins_name == "icx-guilty-search" ]; then
-    max_ins_num=5
+    max_ins_num=20
     ins_type="c6i.16xlarge"
     store_size=200
 elif [ $ins_name == "icx-ondemand" ]; then
@@ -25,7 +25,7 @@ elif [ $ins_name == "icx-regular-cppwrapper" ]; then
     ins_type="c6i.16xlarge"
     store_size=250
 elif [ $ins_name == "spr-guilty-search" ]; then
-    max_ins_num=3
+    max_ins_num=5
     ins_type="m7i.16xlarge"
     store_size=200
 elif [ $ins_name == "spr-ondemand" ]; then

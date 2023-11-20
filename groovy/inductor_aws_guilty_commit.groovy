@@ -130,7 +130,7 @@ if ('TORCH_START_COMMIT' in params) {
 }
 echo "TORCH_START_COMMIT: $TORCH_START_COMMIT"
 
-TORCH_END_COMMIT= "$TORCH_END_COMMIT"
+TORCH_END_COMMIT= "$TORCH_START_COMMIT"
 if ('TORCH_END_COMMIT' in params) {
     echo "TORCH_END_COMMIT in params"
     if (params.TORCH_END_COMMIT != '') {
@@ -139,7 +139,7 @@ if ('TORCH_END_COMMIT' in params) {
 }
 echo "TORCH_END_COMMIT: $TORCH_END_COMMIT"
 
-TORCH_COMMIT= "$TORCH_START_COMMIT"
+TORCH_COMMIT= "$TORCH_END_COMMIT"
 if ('TORCH_COMMIT' in params) {
     echo "TORCH_COMMIT in params"
     if (params.TORCH_COMMIT != '') {
@@ -407,9 +407,9 @@ node(NODE_LABEL){
         set +e
         reboot_time=60
         ins_id=`cat ${WORKSPACE}/instance_id.txt`     
-        current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         for t in {1..70}
         do
+            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
@@ -461,7 +461,7 @@ node(NODE_LABEL){
             maillist="${default_mail}"
         }
 
-        if (fileExists("${WORKSPACE}/inductor_log/${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WAPPER}-${env._scenario}-${env._threads}-${env._kind}_guilty_commit.log") == true){
+        if (fileExists("${WORKSPACE}/${_target}/inductor_log/guitly_commit.log") == true){
             emailext(
                 subject: "Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WAPPER}-${env._scenario}-${env._threads}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
                 mimeType: "text/html",
