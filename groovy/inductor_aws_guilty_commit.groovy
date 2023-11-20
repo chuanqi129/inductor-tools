@@ -425,18 +425,24 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
+                    if [ -d ${WORKSPACE}/${_target} ]; then
+                        rm -rf ${WORKSPACE}/${_target}
+                    fi
+                    mkdir -p ${WORKSPACE}/${_target}
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                    break
                 fi
             fi
         done
         '''
     }
-    stage("stop instance")
+    stage("terminate instance")
     {
         try{
             sh '''
             #!/usr/bin/env bash
             ins_id=`cat ${WORKSPACE}/instance_id.txt`
-            $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+            $aws ec2 terminate-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
             '''
         }catch(err){
             echo err.getMessage()   

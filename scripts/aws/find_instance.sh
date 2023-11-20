@@ -36,14 +36,9 @@ fi
 $aws ec2 describe-instances --query "Reservations[*].Instances[*].{PublicDnsName: PublicDnsName, InstanceType: InstanceType, State: State.Name, Name:Tags[?Key=='Name']|[0].Value, InstanceId:InstanceId}" --filters Name=tag:Name,Values=${ins_name} --output text --profile ${profile_name} > ${WORKSPACE}/${ins_name}.txt
 
 run_num=`cat ${WORKSPACE}/${ins_name}.txt | grep running | wc -l`
-stop_num=`cat ${WORKSPACE}/${ins_name}.txt | grep stopped | wc -l`
 
 if [[ $run_num < $max_ins_num ]]; then
-    if [[ $stop_num > 0 ]]; then
-	cat ${WORKSPACE}/${ins_name}.txt | grep stopped | head -n 1 | awk '{print $1}'
-    else
 	bash create_instance.sh $ins_type $ins_name $store_size
-    fi
 else
     echo "waiting_instance"	
 fi
