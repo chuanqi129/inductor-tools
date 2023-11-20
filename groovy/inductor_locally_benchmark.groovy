@@ -61,7 +61,7 @@ if ('TORCH_COMMIT' in params) {
 }
 echo "TORCH_COMMIT: $TORCH_COMMIT"
 
-DYNAMO_BENCH= 'fea73cb'
+DYNAMO_BENCH= "$TORCH_COMMIT"
 if ('DYNAMO_BENCH' in params) {
     echo "DYNAMO_BENCH in params"
     if (params.DYNAMO_BENCH != '') {
@@ -70,7 +70,7 @@ if ('DYNAMO_BENCH' in params) {
 }
 echo "DYNAMO_BENCH: $DYNAMO_BENCH"
 
-TORCH_AUDIO_BRANCH= 'nightly'
+TORCH_AUDIO_BRANCH= 'main'
 if ('TORCH_AUDIO_BRANCH' in params) {
     echo "TORCH_AUDIO_BRANCH in params"
     if (params.TORCH_AUDIO_BRANCH != '') {
@@ -79,7 +79,7 @@ if ('TORCH_AUDIO_BRANCH' in params) {
 }
 echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
 
-AUDIO= '0a652f5'
+AUDIO= 'default'
 if ('AUDIO' in params) {
     echo "AUDIO in params"
     if (params.AUDIO != '') {
@@ -88,7 +88,7 @@ if ('AUDIO' in params) {
 }
 echo "AUDIO: $AUDIO"
 
-TORCH_TEXT_BRANCH= 'nightly'
+TORCH_TEXT_BRANCH= 'main'
 if ('TORCH_TEXT_BRANCH' in params) {
     echo "TORCH_TEXT_BRANCH in params"
     if (params.TORCH_TEXT_BRANCH != '') {
@@ -97,7 +97,7 @@ if ('TORCH_TEXT_BRANCH' in params) {
 }
 echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
-TEXT= 'c4ad5dd'
+TEXT= 'default'
 if ('TEXT' in params) {
     echo "TEXT in params"
     if (params.TEXT != '') {
@@ -106,7 +106,7 @@ if ('TEXT' in params) {
 }
 echo "TEXT: $TEXT"
 
-TORCH_VISION_BRANCH= 'nightly'
+TORCH_VISION_BRANCH= 'main'
 if ('TORCH_VISION_BRANCH' in params) {
     echo "TORCH_VISION_BRANCH in params"
     if (params.TORCH_VISION_BRANCH != '') {
@@ -115,7 +115,7 @@ if ('TORCH_VISION_BRANCH' in params) {
 }
 echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
 
-VISION= 'f2009ab'
+VISION= 'default'
 if ('VISION' in params) {
     echo "VISION in params"
     if (params.VISION != '') {
@@ -124,7 +124,7 @@ if ('VISION' in params) {
 }
 echo "VISION: $VISION"
 
-TORCH_DATA_BRANCH= 'nightly'
+TORCH_DATA_BRANCH= 'main'
 if ('TORCH_DATA_BRANCH' in params) {
     echo "TORCH_DATA_BRANCH in params"
     if (params.TORCH_DATA_BRANCH != '') {
@@ -133,7 +133,7 @@ if ('TORCH_DATA_BRANCH' in params) {
 }
 echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
 
-DATA= '5cb3e6d'
+DATA= 'default'
 if ('DATA' in params) {
     echo "DATA in params"
     if (params.DATA != '') {
@@ -151,7 +151,7 @@ if ('TORCH_BENCH_BRANCH' in params) {
 }
 echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
-TORCH_BENCH= 'a0848e19'
+TORCH_BENCH= 'default'
 if ('TORCH_BENCH' in params) {
     echo "TORCH_BENCH in params"
     if (params.TORCH_BENCH != '') {

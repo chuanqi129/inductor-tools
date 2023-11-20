@@ -55,12 +55,10 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/M
         Pillow \
         pkg-config \
         pybind11 \
-        pycocotools \
         pyyaml \
         setuptools \
         jemalloc \
-        openssl \
-        urllib3==1.26.16 \        
+        openssl \     
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
@@ -70,48 +68,47 @@ FROM dev-base AS build
 ARG PT_REPO=https://github.com/pytorch/pytorch
 ARG PT_BRANCH=main
 ARG PT_COMMIT=${PT_BRANCH}
+ARG DNNL_BRANCH=rls-v3.3
 COPY --from=conda /opt/conda /opt/conda
-# ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
-# ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    cd third_party/ideep/mkl-dnn  && git checkout rls-v3.3 && git pull
+    cd third_party/ideep/mkl-dnn  && git checkout ${DNNL_BRANCH} && git pull
     cd /workspace/pytorch && pip install z3-solver && python setup.py develop && cd .. 
-ARG TORCH_VISION_BRANCH=nightly
-ARG TORCH_VISION_COMMIT=${TORCH_VISION_BRANCH}
-ARG TORCH_DATA_BRANCH=nightly
-ARG TORCH_DATA_COMMIT=${TORCH_DATA_BRANCH}
-ARG TORCH_TEXT_BRANCH=nightly
-ARG TORCH_TEXT_COMMIT=${TORCH_TEXT_BRANCH}
-ARG TORCH_AUDIO_BRANCH=nightly
-ARG TORCH_AUDIO_COMMIT=${TORCH_AUDIO_BRANCH}
+ARG TORCH_VISION_BRANCH=main
+ARG TORCH_VISION_COMMIT=default
+ARG TORCH_DATA_BRANCH=main
+ARG TORCH_DATA_COMMIT=default
+ARG TORCH_TEXT_BRANCH=main
+ARG TORCH_TEXT_COMMIT=default
+ARG TORCH_AUDIO_BRANCH=main
+ARG TORCH_AUDIO_COMMIT=default
 RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
-    cd vision && git checkout ${TORCH_VISION_COMMIT} && \
+    cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_DATA_BRANCH} https://github.com/pytorch/data.git && \
-    cd data && git checkout ${TORCH_DATA_COMMIT} && \
+    cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_TEXT_BRANCH} https://github.com/pytorch/text.git && \
-    cd text && git checkout ${TORCH_TEXT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
+    cd text && if [ "${TORCH_TEXT_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_AUDIO_BRANCH} https://github.com/pytorch/audio.git && \
-    cd audio && git checkout ${TORCH_AUDIO_COMMIT} && git submodule sync && git submodule update --init --recursive && \
+    cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     # Workaround for https://github.com/pytorch/audio/issues/2784
     sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
-ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG TORCH_BENCH_COMMIT=default
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
-    cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
+    cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \  
-    python install.py && \
+    python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}

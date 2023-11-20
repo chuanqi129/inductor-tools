@@ -166,7 +166,7 @@ if ('DYNAMO_BENCH_COMMIT' in params) {
 }
 echo "DYNAMO_BENCH_COMMIT: $DYNAMO_BENCH_COMMIT"
 
-TORCH_AUDIO_BRANCH= 'nightly'
+TORCH_AUDIO_BRANCH= 'main'
 if ('TORCH_AUDIO_BRANCH' in params) {
     echo "TORCH_AUDIO_BRANCH in params"
     if (params.TORCH_AUDIO_BRANCH != '') {
@@ -175,7 +175,7 @@ if ('TORCH_AUDIO_BRANCH' in params) {
 }
 echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
 
-TORCH_AUDIO_COMMIT= "$TORCH_AUDIO_BRANCH"
+TORCH_AUDIO_COMMIT= 'default'
 if ('TORCH_AUDIO_COMMIT' in params) {
     echo "TORCH_AUDIO_COMMIT in params"
     if (params.TORCH_AUDIO_COMMIT != '') {
@@ -184,7 +184,7 @@ if ('TORCH_AUDIO_COMMIT' in params) {
 }
 echo "TORCH_AUDIO_COMMIT: $TORCH_AUDIO_COMMIT"
 
-TORCH_TEXT_BRANCH= 'nightly'
+TORCH_TEXT_BRANCH= 'main'
 if ('TORCH_TEXT_BRANCH' in params) {
     echo "TORCH_TEXT_BRANCH in params"
     if (params.TORCH_TEXT_BRANCH != '') {
@@ -193,7 +193,7 @@ if ('TORCH_TEXT_BRANCH' in params) {
 }
 echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
-TORCH_TEXT_COMMIT= "$TORCH_TEXT_BRANCH"
+TORCH_TEXT_COMMIT= 'default'
 if ('TORCH_TEXT_COMMIT' in params) {
     echo "TORCH_TEXT_COMMIT in params"
     if (params.TORCH_TEXT_COMMIT != '') {
@@ -202,7 +202,7 @@ if ('TORCH_TEXT_COMMIT' in params) {
 }
 echo "TORCH_TEXT_COMMIT: $TORCH_TEXT_COMMIT"
 
-TORCH_VISION_BRANCH= 'nightly'
+TORCH_VISION_BRANCH= 'main'
 if ('TORCH_VISION_BRANCH' in params) {
     echo "TORCH_VISION_BRANCH in params"
     if (params.TORCH_VISION_BRANCH != '') {
@@ -211,7 +211,7 @@ if ('TORCH_VISION_BRANCH' in params) {
 }
 echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
 
-TORCH_VISION_COMMIT= "$TORCH_VISION_BRANCH"
+TORCH_VISION_COMMIT= 'default'
 if ('TORCH_VISION_COMMIT' in params) {
     echo "TORCH_VISION_COMMIT in params"
     if (params.TORCH_VISION_COMMIT != '') {
@@ -220,7 +220,7 @@ if ('TORCH_VISION_COMMIT' in params) {
 }
 echo "TORCH_VISION_COMMIT: $TORCH_VISION_COMMIT"
 
-TORCH_DATA_BRANCH= 'nightly'
+TORCH_DATA_BRANCH= 'main'
 if ('TORCH_DATA_BRANCH' in params) {
     echo "TORCH_DATA_BRANCH in params"
     if (params.TORCH_DATA_BRANCH != '') {
@@ -229,7 +229,7 @@ if ('TORCH_DATA_BRANCH' in params) {
 }
 echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
 
-TORCH_DATA_COMMIT= "$TORCH_DATA_BRANCH"
+TORCH_DATA_COMMIT= 'default'
 if ('TORCH_DATA_COMMIT' in params) {
     echo "TORCH_DATA_COMMIT in params"
     if (params.TORCH_DATA_COMMIT != '') {
@@ -247,7 +247,7 @@ if ('TORCH_BENCH_BRANCH' in params) {
 }
 echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
-TORCH_BENCH_COMMIT= 'a0848e19'
+TORCH_BENCH_COMMIT= 'default'
 if ('TORCH_BENCH_COMMIT' in params) {
     echo "TORCH_BENCH_COMMIT in params"
     if (params.TORCH_BENCH_COMMIT != '') {
