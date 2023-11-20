@@ -25,9 +25,9 @@ SUITE=${19:-torchbench}
 MODEL=${20:-resnet50}
 TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
 TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
-SCENARIO=${24:-accuracy}
-KIND=${25:-crash} # issue kind crash/drop
-EXTRA=${26}
+SCENARIO=${23:-accuracy}
+KIND=${24:-crash} # issue kind crash/drop
+EXTRA=${25}
 # cd target dir
 echo cur_dir :$(pwd)
 cd /home/ubuntu/docker
