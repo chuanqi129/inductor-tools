@@ -30,7 +30,7 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-py38_23.9.0-0-Linux-x86_64.sh  && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
     sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
@@ -40,6 +40,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
     /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
+        boto3 \
         cffi \
         cython \
         cmake>=3.13.0 \
@@ -58,10 +59,12 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         Pillow \
         pkg-config \
         pybind11 \
+        pycocotools \
         pyyaml \
         setuptools \
         jemalloc \
         openssl \
+        urllib3==1.26.16 \          
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
@@ -75,7 +78,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive 
-RUN cd pytorch && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
+RUN cd pytorch && pip install z3-solver && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
 ARG TRITON_BRANCH=main
 ARG TRITON_COMMIT=${TRITON_BRANCH}
 RUN git clone -b ${TRITON_BRANCH} https://github.com/openai/triton.git && \
@@ -108,6 +111,8 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG HF_HUB_TOKEN=hf_xxx
+ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \

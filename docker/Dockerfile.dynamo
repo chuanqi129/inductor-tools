@@ -26,7 +26,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-py38_23.9.0-0-Linux-x86_64.sh  && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
     sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
@@ -36,6 +36,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
     /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
+        boto3 \        
         cffi \
         cython \
         cmake>=3.13.0 \
@@ -54,10 +55,12 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
         Pillow \
         pkg-config \
         pybind11 \
+        pycocotools \
         pyyaml \
         setuptools \
         jemalloc \
         openssl \
+        urllib3==1.26.16 \  
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
@@ -68,12 +71,12 @@ ARG PT_REPO=https://github.com/blzheng/pytorch
 ARG PT_BRANCH=beilei/baseline
 ARG PT_COMMIT=${PT_BRANCH}
 COPY --from=conda /opt/conda /opt/conda
-ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
-ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
+# ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
+# ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    python setup.py develop && cd ..
+    pip install z3-solver && python setup.py develop && cd ..
 # Build Torchdynamo
 ARG DYNAMO_BRANCH=beilei/baseline
 ARG DYNAMO_COMMIT=${DYNAMO_BRANCH}
@@ -108,9 +111,11 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH} 
+ARG HF_HUB_TOKEN=hf_xxx
+ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 && \  
     python install.py && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
