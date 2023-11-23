@@ -14,7 +14,8 @@ FREEZE=${11:-on} # on / off
 BS=${12:-0} # default / specific
 EXP_PERF=${13:-0}
 BACKEND=${14:-inductor}
-EXTRA=${15}
+PERF_RATIO=${15:-1.1} # default 10% perforamnce drop regard as issue
+EXTRA=${16}
 
 prepare_test() {
     git reset --hard HEAD && git submodule sync && git submodule update --init --recursive
@@ -32,7 +33,7 @@ run_perf_drop_test() {
     echo "=====result: $result======="
     ratio=$(echo "$result $EXP_PERF" | awk '{ printf "%.2f\n", $1/$2 }')
     echo "=====ratio: $ratio======="
-    if [[ $ratio > 1.1 ]]; then
+    if [[ $ratio > $PERF_RATIO ]]; then
 	echo "BAD COMMIT!"
         exit 1
     else
