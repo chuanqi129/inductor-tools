@@ -26,7 +26,8 @@ TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
 TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
 SCENARIO=${23:-accuracy}
 KIND=${24:-crash} # issue kind crash/drop
-EXTRA=${25}
+PERF_RATIO=${25:-1.1}
+EXTRA=${26}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -94,5 +95,5 @@ else
     docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
     # TODO: Hard code freeze on and default bs, add them as params future
-    docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $EXTRA"
+    docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $PERF_RATIO $EXTRA"
 fi

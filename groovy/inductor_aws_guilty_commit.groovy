@@ -274,6 +274,15 @@ if ('scenario' in params) {
 }
 echo "scenario: $scenario"
 
+perf_ratio= '1.1'
+if ('perf_ratio' in params) {
+    echo "perf_ratio in params"
+    if (params.perf_ratio != '') {
+        perf_ratio = params.perf_ratio
+    }
+}
+echo "perf_ratio: $perf_ratio"
+
 kind= 'crash'
 if ('kind' in params) {
     echo "kind in params"
@@ -331,6 +340,7 @@ env._suite = "$suite"
 env._model = "$model"
 env._scenario = "$scenario"
 env._kind = "$kind"
+env._perf_ratio = "$perf_ratio"
 
 env._TORCH_REPO = "$TORCH_REPO"
 env._TORCH_BRANCH = "$TORCH_BRANCH"
@@ -398,7 +408,7 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/bisect_run_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} ${_model} ${_start_commit} ${_end_commit} ${_scenario} ${_kind} ${_extra_param} &>/dev/null &" &
+        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} ${_model} ${_start_commit} ${_end_commit} ${_scenario} ${_kind} ${_perf_ratio} ${_extra_param} &>/dev/null &" &
         '''
     }
     stage("log query") {
