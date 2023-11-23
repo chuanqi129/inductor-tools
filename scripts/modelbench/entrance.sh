@@ -43,5 +43,8 @@ bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_B
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
     echo "benchmark finished!"
-    touch finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
+    echo "Finished!" > finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
+else
+    echo "benchmark failed!"
+    echo "Failed!" > finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt
 fi
