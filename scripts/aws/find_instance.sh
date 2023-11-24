@@ -12,7 +12,7 @@ if [ $ins_name == "icx-guilty-search" ]; then
     max_ins_num=20
     ins_type="c6i.16xlarge"
     store_size=200
-elif [ $ins_name == "icx-ondemand" ]; then
+elif [ $ins_name == "icx-ondemand-tmp" ]; then
     max_ins_num=3
     ins_type="c6i.16xlarge"
     store_size=300
@@ -28,7 +28,7 @@ elif [ $ins_name == "spr-guilty-search" ]; then
     max_ins_num=5
     ins_type="m7i.16xlarge"
     store_size=200
-elif [ $ins_name == "spr-ondemand" ]; then
+elif [ $ins_name == "spr-ondemand-tmp" ]; then
     max_ins_num=2
     ins_type="m7i.16xlarge"
     store_size=200
