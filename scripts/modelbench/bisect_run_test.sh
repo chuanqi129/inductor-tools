@@ -33,11 +33,11 @@ run_perf_drop_test() {
     echo "=====result: $result======="
     ratio=$(echo "$result $EXP_PERF" | awk '{ printf "%.2f\n", $1/$2 }')
     echo "=====ratio: $ratio======="
-    if [[ $ratio > $PERF_RATIO ]]; then
-	echo "BAD COMMIT!"
+    if (( $(echo "$ratio > $PERF_RATIO" | bc -l) )); then
+	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
         exit 1
     else
-	echo "GOOD COMMIT!"
+	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
         exit 0
     fi
 }
@@ -46,10 +46,10 @@ run_acc_drop_test() {
     acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ $acc_res != "pass" ]; then
-	echo "BAD COMMIT!"
+	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
         exit 1
     else
-	echo "GOOD COMMIT!"
+	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
         exit 0
     fi
 }
@@ -63,23 +63,23 @@ run_crash_test() {
         echo $perf_status
         if [ "$SCENARIO" == "accuracy" ]; then
             if [ $acc_status -eq 0 ]; then
-                echo "BAD COMMIT!"
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
                 exit 1
             else
-                echo "GOOD COMMIT!"
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
                 exit 0
             fi
         elif [ "$SCENARIO" == "performance" ]; then
             if [[ ! -z $perf_status ]] && [ $perf_status -gt 0 ]; then
-                echo "GOOD COMMIT!"
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
                 exit 0
             else
-                echo "BAD COMMIT!"
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
                 exit 1
             fi
         fi
     else
-        echo "BAD COMMIT!"
+        echo "`git rev-parse HEAD` is a BAD COMMIT!"
         exit 1
     fi
 }
