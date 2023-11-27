@@ -55,7 +55,7 @@ def run_model(model_name, args):
     torchinductor.config.freezing = True
     if args.cpp_wrapper:
         print("using cpp_wrapper")
-        torchinductor.config.cpp_wrapper = args.cpp_wrapper
+        torchinductor.config.cpp_wrapper = True
     valdir = "/workspace/benchmark/imagenet/val/"
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
@@ -122,19 +122,19 @@ def run_model(model_name, args):
     else:
         print("using ptq")
         with torch.no_grad():
-            exported_model = capture_pre_autograd_graph(
-                model,
-                example_inputs
-            )
-            quantizer = xiq.X86InductorQuantizer()
-            quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
+           # exported_model = capture_pre_autograd_graph(
+           #     model,
+           #     example_inputs
+           # )
+           # quantizer = xiq.X86InductorQuantizer()
+           # quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
             # PT2E Quantization flow
-            prepared_model = prepare_pt2e(exported_model, quantizer)
+           # prepared_model = prepare_pt2e(exported_model, quantizer)
             # Calibration
-            prepared_model(*example_inputs)
-            converted_model = convert_pt2e(prepared_model)
-            torch.ao.quantization.move_exported_model_to_eval(converted_model)
-            optimized_model = torch.compile(converted_model)
+           # prepared_model(*example_inputs)
+           # converted_model = convert_pt2e(prepared_model)
+           # torch.ao.quantization.move_exported_model_to_eval(converted_model)
+            optimized_model = torch.compile(model)
     # Benchmark
     for i, (images, target) in enumerate(val_loader):
         #output = model(images)
@@ -148,11 +148,11 @@ def run_model(model_name, args):
     #print(model_name + " fp32: ")
     #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
     #      .format(top1=top1, top5=top5))
-    print(model_name + " int8: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+    print(model_name + " fp32: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
         .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
-    model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
+    model_list=["resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16","alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large"]
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
