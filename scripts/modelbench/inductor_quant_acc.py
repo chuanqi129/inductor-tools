@@ -3,10 +3,11 @@
 import torch
 import torchvision.models as models
 import torch._dynamo as torchdynamo
+import torch._inductor as torchinductor
 import copy
-from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e
+from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e, prepare_qat_pt2e
 import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
-from torch.ao.quantization.quantizer.x86_inductor_quantizer import X86InductorQuantizer
+from torch._export import capture_pre_autograd_graph, dynamic_dim
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
@@ -50,7 +51,9 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-def run_model(model_name):
+def run_model(model_name, args):
+    torchinductor.config.freezing = True
+    torchinductor.config.cpp_wrapper = args.cpp_wrapper
     valdir = "/workspace/pt_data/val/"
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
@@ -64,51 +67,107 @@ def run_model(model_name):
     batch_size=50, shuffle=False,
     num_workers=4, pin_memory=True)
     cal_loader = copy.deepcopy(val_loader)
-    model = models.__dict__[model_name](pretrained=True).eval()
+    model = models.__dict__[model_name](pretrained=True)
+    if args.is_qat:
+        model = model.train()
+    else:
+        model =model.eval()
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
     quant_top1 = AverageMeter('Acc@1', ':6.2f')
     quant_top5 = AverageMeter('Acc@5', ':6.2f')
     x = torch.randn(50, 3, 224, 224).contiguous(memory_format=torch.channels_last)
     example_inputs = (x,)
-    with torch.no_grad():
-        # Generate the FX Module
-        exported_model, guards = torchdynamo.export(
-            model,
-            *copy.deepcopy(example_inputs),
-            aten_graph=True,
-        )
-        # Create X86InductorQuantizer
-        quantizer = X86InductorQuantizer()
-        quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
-        # PT2E Quantization flow
-        prepared_model = prepare_pt2e(exported_model, quantizer)
-        # Calibration
+
+    # Calibration
+    if args.is_qat:
         for i, (images, _) in enumerate(cal_loader):
-            prepared_model(images)
+            exported_model = capture_pre_autograd_graph(
+                model,
+                (images,)
+            )
             if i==10: break
-        converted_model = convert_pt2e(prepared_model).eval()
-        # Lower into Inductor
-        optimized_model = torch.compile(converted_model)
-        # Benchmark
+        quantizer = xiq.X86InductorQuantizer()
+        quantizer.set_global(xiq.get_default_x86_inductor_quantization_config(is_qat=True))
+        prepared_model = prepare_qat_pt2e(exported_model, quantizer)
+        lr = 0.0001
+        momentum = 0.9
+        weight_decay = 1e-4
+        optimizer = torch.optim.SGD(prepared_model.parameters(), lr,
+                                    momentum=momentum,
+                                    weight_decay=weight_decay)
+        optimizer.zero_grad()
+        criterion = torch.nn.CrossEntropyLoss()
         for i, (images, target) in enumerate(val_loader):
-            #output = model(images)
-            #acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            #top1.update(acc1[0], images.size(0))
-            #top5.update(acc5[0], images.size(0))
-            quant_output = optimized_model(images)
-            quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
-            quant_top1.update(quant_acc1[0], images.size(0))
-            quant_top5.update(quant_acc5[0], images.size(0))
-        #print(model_name + " fp32: ")
-        #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-        #      .format(top1=top1, top5=top5))
-        print(model_name + " int8: ")
-        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-              .format(top1=quant_top1, top5=quant_top5))
+        # print(" start QAT Calibration step: {}".format(i), flush=True)
+            images = images
+            target = target
+            output = prepared_model(images)
+            loss = criterion(output, target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()               
+            if i == 1:
+                break
+
+        with torch.no_grad():
+            converted_model = convert_pt2e(prepared_model)
+            torch.ao.quantization.move_exported_model_to_eval(converted_model)
+            # Lower into Inductor
+            optimized_model = torch.compile(converted_model)
+            
+    else:
+        with torch.no_grad():
+            exported_model = capture_pre_autograd_graph(
+                model,
+                example_inputs
+            )
+            quantizer = xiq.X86InductorQuantizer()
+            quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
+            # PT2E Quantization flow
+            prepared_model = prepare_pt2e(exported_model, quantizer)
+            # Calibration
+            prepared_model(*example_inputs)
+            converted_model = convert_pt2e(prepared_model)
+            torch.ao.quantization.move_exported_model_to_eval(converted_model)
+            optimized_model = torch.compile(converted_model)
+    # Benchmark
+    for i, (images, target) in enumerate(val_loader):
+        #output = model(images)
+        #acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        #top1.update(acc1[0], images.size(0))
+        #top5.update(acc5[0], images.size(0))
+        quant_output = optimized_model(images)
+        quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
+        quant_top1.update(quant_acc1[0], images.size(0))
+        quant_top5.update(quant_acc5[0], images.size(0))
+    #print(model_name + " fp32: ")
+    #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+    #      .format(top1=top1, top5=top5))
+    print(model_name + " int8: ")
+    print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+        .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
     model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--quantize",
+        action='store_true',
+        help="enable quantize for inductor",
+    )
+    parser.add_argument(
+        "--cpp_wrapper",
+        action='store_true',
+        help="enable cpp wrapper for inductor",
+    )
+    parser.add_argument(
+        "--is_qat",
+        action='store_true',
+        help="enable qat quantization for inductor",
+    )
+    args = parser.parse_args()
     for model in model_list:
-        run_model(model)
+        run_model(model, args)
 
