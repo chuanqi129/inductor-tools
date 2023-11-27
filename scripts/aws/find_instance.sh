@@ -26,15 +26,15 @@ elif [ $ins_name == "icx-regular-cppwrapper" ]; then
     store_size=250
 elif [ $ins_name == "spr-guilty-search" ]; then
     max_ins_num=5
-    ins_type="m7i.16xlarge"
+    ins_type="c7i.16xlarge"
     store_size=200
 elif [ $ins_name == "spr-ondemand-tmp" ]; then
     max_ins_num=2
-    ins_type="m7i.16xlarge"
-    store_size=200
+    ins_type="c7i.16xlarge"
+    store_size=300
 elif [ $ins_name == "spr-regular" ]; then
     max_ins_num=1
-    ins_type="m7i.16xlarge"
+    ins_type="c7i.16xlarge"
     store_size=200
 fi
 
