@@ -315,6 +315,12 @@ if( 'dash_board' in params && params.dash_board != '' ) {
 }
 echo "dash_board: $dash_board"
 
+report_only = 'false'
+if( 'report_only' in params && params.report_only != '' ) {
+    report_only = params.report_only
+}
+echo "report_only: $report_only"
+
 dashboard_title = 'default'
 if( 'dashboard_title' in params && params.dashboard_title != '' ) {
     dashboard_title = params.dashboard_title
@@ -333,6 +339,7 @@ env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
 env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
+env._report_only = "$report_only"
 env._dashboard_title = "$dashboard_title"
 
 env._TORCH_REPO = "$TORCH_REPO"
@@ -354,22 +361,32 @@ node(NODE_LABEL){
     stage("Find or create instance"){
         deleteDir()
         checkout scm
-        sh'''
-        #!/usr/bin/env bash
-        cd ${WORKSPACE}/scripts/aws/
-        while true;
-        do
-            bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt
-            ins_id=`cat ${WORKSPACE}/instance_id.txt`
-            if [ $ins_id != "waiting_instance" ]; then
-                echo "ins_id : $ins_id"
-                break
-            else
-                echo "Waiting for avaliable instance, will check after 10 min..."
-                sleep 10m
-            fi
-        done
-        '''
+        if  ("${report_only}" == "false")
+        {
+            sh'''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE}/scripts/aws/
+            while true;
+            do
+                bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt
+                ins_id=`cat ${WORKSPACE}/instance_id.txt`
+                if [ $ins_id != "waiting_instance" ]; then
+                    echo "ins_id : $ins_id"
+                    break
+                else
+                    echo "Waiting for avaliable instance, will check after 10 min..."
+                    sleep 10m
+                fi
+            done
+            '''
+        } else {
+            echo "report_only mode, will directly use the instance_id"
+            sh'''
+            #!/usr/bin/env bash
+            echo ${_instance_id} > ${WORKSPACE}/instance_id.txt
+            echo "ins_id : ${_instance_id}"
+            '''
+        }
     }
     stage("start instance")
     {
@@ -383,24 +400,27 @@ node(NODE_LABEL){
         '''
     }
     stage("prepare scripts & benchmark") {
-        sh '''
-        #!/usr/bin/env bash
-        ins_id=`cat ${WORKSPACE}/instance_id.txt`
-        current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-        ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-        scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-        ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-        scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        ssh ubuntu@${current_ip} "bash pkill.sh"
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} torchbench resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
-        '''
+        if  ("${report_only}" == "false")
+        {
+            sh '''
+            #!/usr/bin/env bash
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
+            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
+            scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+            ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+            scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            ssh ubuntu@${current_ip} "bash pkill.sh"
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} torchbench resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            '''
+        }
     }
     stage("trigger inductor images job"){
             if ("${Build_Image}" == "true") {
