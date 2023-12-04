@@ -45,7 +45,7 @@ run_perf_drop_test() {
 run_acc_drop_test() {
     acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
-    if [ $acc_res != "pass" ]; then
+    if [ "X$acc_res" != "Xpass" ]; then
 	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
         exit 1
     else
