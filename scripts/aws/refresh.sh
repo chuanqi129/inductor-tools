@@ -29,10 +29,10 @@ enter_code=$(grep -A 2 'enter the code' nohup.out | awk 'NR==3')
 echo $enter_code
 if [ -n "${enter_code}" ]; then
     if [ "${REMOTE}" == "False" ]; then
-        scp aws_sso.py chuanqiw@aws-sso-remote:~/
-        ssh chuanqiw@aws-sso-remote "bash -c 'python aws_sso.py -f /localdisk/chuanqiw/firefox/firefox -d /localdisk/chuanqiw/geckodriver -c $enter_code -u ${IAP} -p ${PASSWD} > ~/aws_sso_refresh.log' &"
+        sshpass -p${PASSWD} scp aws_sso.py chuanqiw@aws-sso-remote:~/
+        sshpass -p${PASSWD} ssh chuanqiw@aws-sso-remote "bash -c 'python aws_sso.py -f /localdisk/chuanqiw/firefox/firefox -d /localdisk/chuanqiw/geckodriver -c $enter_code -u ${IAP} -p ${PASSWD} > ~/aws_sso_refresh.log' &"
         sleep 30s
-        ssh chuanqiw@aws-sso-remote "cat ~/aws_sso_refresh.log"
+        sshpass -p${PASSWD} ssh chuanqiw@aws-sso-remote "cat ~/aws_sso_refresh.log"
     else
         python aws_sso.py -f ${FF} -d ${GD} -c $enter_code -u ${IAP} -p ${PASSWD}
     fi
