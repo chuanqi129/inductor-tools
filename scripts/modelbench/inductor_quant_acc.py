@@ -7,7 +7,7 @@ import torch._inductor as torchinductor
 import copy
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e, prepare_qat_pt2e
 import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
-from torch._export import capture_pre_autograd_graph, dynamic_dim
+from torch._export import capture_pre_autograd_graph
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
@@ -53,8 +53,10 @@ def accuracy(output, target, topk=(1,)):
 
 def run_model(model_name, args):
     torchinductor.config.freezing = True
-    torchinductor.config.cpp_wrapper = args.cpp_wrapper
-    valdir = "/workspace/pt_data/val/"
+    if args.cpp_wrapper:
+        print("using cpp_wrapper")
+        torchinductor.config.cpp_wrapper = args.cpp_wrapper
+    valdir = "/workspace/benchmark/imagenet/val/"
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     val_loader = torch.utils.data.DataLoader(
@@ -81,6 +83,7 @@ def run_model(model_name, args):
 
     # Calibration
     if args.is_qat:
+        print("using qat")
         for i, (images, _) in enumerate(cal_loader):
             exported_model = capture_pre_autograd_graph(
                 model,
@@ -117,6 +120,7 @@ def run_model(model_name, args):
             optimized_model = torch.compile(converted_model)
             
     else:
+        print("using ptq")
         with torch.no_grad():
             exported_model = capture_pre_autograd_graph(
                 model,
