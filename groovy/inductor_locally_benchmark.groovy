@@ -272,7 +272,12 @@ if( 'specify_image_tag' in params && params.specify_image_tag != '' ) {
 }
 echo "specify_image_tag: $specify_image_tag"
 
+suite = 'all'
+if( 'suite' in params && params.suite != '' ) {
+    suite = params.suite
+}
 echo "suite: ${suite}"
+
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
