@@ -327,7 +327,7 @@ def get_failures(target_path):
     failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'}) 
 
     # 1 -> failed
-    failures['accuracy'].replace(['infra_error','timeout','fail_to_run','fail_accuracy','0.0000'],[1,1,1,1,1],inplace=True)
+    failures['accuracy'].replace(['infra_error','timeout','fail_to_run','fail_accuracy','0.0000','model_fail_to_load','eager_fail_to_run'],[1,1,1,1,1,1,1],inplace=True)
     failures['perf'].replace([0],['fail'],inplace=True)
     failures['perf'].replace(['fail','infra_error','timeout'],[1,1,1],inplace=True)
     failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
