@@ -272,6 +272,7 @@ if( 'specify_image_tag' in params && params.specify_image_tag != '' ) {
 }
 echo "specify_image_tag: $specify_image_tag"
 
+echo "suite: ${suite}"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
@@ -405,7 +406,7 @@ node(NODE_LABEL){
         docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
         docker cp scripts/modelbench/report.py $USER:/workspace/pytorch
         docker exec -i $USER bash -c "bash version_collect.sh inductor_log $_DYNAMO_BENCH"
-        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_extra_param}"
+        docker exec -i $USER bash -c "export TRANSFORMERS_OFFLINE=1;bash inductor_test.sh ${_THREADS} ${_CHANNELS} ${_precision} ${_shape} inductor_log ${_WRAPPER} ${_HF_TOKEN} ${_backend} inference $suite ${_extra_param}"
         docker exec -i $USER bash -c "mv inductor_log ${_target}"
 
         '''
