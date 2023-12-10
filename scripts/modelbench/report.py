@@ -587,9 +587,47 @@ def update_cppwrapper_gm(excel,reference,target):
         cppwrapper_sf.set_column_width(i, 30) if i==6 else cppwrapper_sf.set_column_width(i, 18)
     cppwrapper_sf.to_excel(sheet_name='Cppwrapper_GM',excel_writer=excel)
 
-def update_issue_commits():
+def update_issue_commits(precision):
     from github import Github
     # generate md files
+    icx_hw_info=f'''
+|  Item  | Value  |
+|  ----  | ----  |
+| Manufacturer  | Amazon EC2 |
+| Product Name  | c6i.16xlarge |
+| CPU Model  | Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz |
+| Installed Memory  | 128GB (1x128GB DDR4 3200 MT/s [Unknown]) |
+| OS  | Ubuntu 22.04.2 LTS |
+| Kernel  | 5.19.0-1022-aws |
+| Microcode  | 0xd000389 |
+| GCC  | gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0 |
+| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.1) 2.35 |
+| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
+| Python  | Python 3.10.6 |
+| OpenSSL  | OpenSSL 3.0.2 15 Mar 2022 (Library: OpenSSL 3.0.2 15 Mar 2022) |
+'''
+    spr_hw_info=f'''
+|  Item  | Value  |
+|  ----  | ----  |
+| Manufacturer  | Amazon EC2 |
+| Product Name  | c7i.16xlarge |
+| CPU Model  | Intel(R) Xeon(R) Platinum 8488C CPU @ 2.40GHz |
+| Installed Memory  | 128GB (1x128GB DDR5 4800 MT/s [Unknown]) |
+| OS  | Ubuntu 22.04.3 LTS |
+| Kernel  | 6.2.0-1017-aws |
+| Microcode  | 0x2b0004b1 |
+| GCC  | gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 |
+| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35 |
+| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
+| Python  | Python 3.8.18 |
+| OpenSSL  | OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023) |
+'''
+    hw_info = ""
+    if precision == "float32":
+        hw_info = icx_hw_info
+    else:
+        hw_info = spr_hw_info
+    print(hw_info)
     mt_addtional=f'''
 SW information:
 
@@ -606,20 +644,7 @@ dynamo_benchmarks|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorc
 
 HW information
 
-|  Item  | Value  |
-|  ----  | ----  |
-| Manufacturer  | Amazon EC2 |
-| Product Name  | c6i.16xlarge |
-| CPU Model  | Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz |
-| Installed Memory  | 128GB (1x128GB DDR4 3200 MT/s [Unknown]) |
-| OS  | Ubuntu 22.04.2 LTS |
-| Kernel  | 5.19.0-1022-aws |
-| Microcode  | 0xd000389 |
-| GCC  | gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0 |
-| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.1) 2.35 |
-| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
-| Python  | Python 3.10.6 |
-| OpenSSL  | OpenSSL 3.0.2 15 Mar 2022 (Library: OpenSSL 3.0.2 15 Mar 2022) |
+{hw_info}
 '''+'''
 Test command
 
@@ -648,20 +673,7 @@ dynamo_benchmarks|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorc
 
 HW information
 
-|  Item  | Value  |
-|  ----  | ----  |
-| Manufacturer  | Amazon EC2 |
-| Product Name  | c6i.16xlarge |
-| CPU Model  | Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz |
-| Installed Memory  | 128GB (1x128GB DDR4 3200 MT/s [Unknown]) |
-| OS  | Ubuntu 22.04.2 LTS |
-| Kernel  | 5.19.0-1022-aws |
-| Microcode  | 0xd000389 |
-| GCC  | gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0 |
-| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.1) 2.35 |
-| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
-| Python  | Python 3.10.6 |
-| OpenSSL  | OpenSSL 3.0.2 15 Mar 2022 (Library: OpenSSL 3.0.2 15 Mar 2022) |
+{hw_info}
 '''+'''
 Test command
 
@@ -838,4 +850,4 @@ if __name__ == '__main__':
     generate_report(excel,args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)     
-    update_issue_commits()
+    update_issue_commits(args.precision)
