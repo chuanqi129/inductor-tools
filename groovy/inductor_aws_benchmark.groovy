@@ -34,16 +34,16 @@ if ('default_mail' in params) {
 }
 echo "default_mail: $default_mail"
 
-new_instance = 'False'
-if ('new_instance' in params) {
-    echo "new_instance in params"
-    if (params.new_instance != '') {
-        new_instance = params.new_instance
+terminate_instance = 'False'
+if ('terminate_instance' in params) {
+    echo "terminate_instance in params"
+    if (params.terminate_instance != '') {
+        terminate_instance = params.terminate_instance
     }
 }
-echo "new_instance: $new_instance"
+echo "terminate_instance: $terminate_instance"
 
-instance_ids = 'i-03aa90bc2017ba908'
+instance_ids = '0'
 if ('instance_ids' in params) {
     echo "instance_ids in params"
     if (params.instance_ids != '') {
@@ -51,6 +51,33 @@ if ('instance_ids' in params) {
     }
 }
 echo "instance_ids: $instance_ids"
+
+instance_name = 'icx-ondemand'
+if ('instance_name' in params) {
+    echo "instance_name in params"
+    if (params.instance_name != '') {
+        instance_name = params.instance_name
+    }
+}
+echo "instance_name: $instance_name"
+
+backend = 'inductor'
+if ('backend' in params) {
+    echo "backend in params"
+    if (params.backend != '') {
+        backend = params.backend
+    }
+}
+echo "backend: $backend"
+
+extra_param = ''
+if ('extra_param' in params) {
+    echo "extra_param in params"
+    if (params.extra_param != '') {
+        extra_param = params.extra_param
+    }
+}
+echo "extra_param: $extra_param"
 
 precision = 'float32'
 if ('precision' in params) {
@@ -146,7 +173,7 @@ if ('TORCH_COMMIT' in params) {
 }
 echo "TORCH_COMMIT: $TORCH_COMMIT"
 
-DYNAMO_BENCH= 'fea73cb'
+DYNAMO_BENCH= "$TORCH_COMMIT"
 if ('DYNAMO_BENCH' in params) {
     echo "DYNAMO_BENCH in params"
     if (params.DYNAMO_BENCH != '') {
@@ -155,7 +182,7 @@ if ('DYNAMO_BENCH' in params) {
 }
 echo "DYNAMO_BENCH: $DYNAMO_BENCH"
 
-TORCH_AUDIO_BRANCH= 'nightly'
+TORCH_AUDIO_BRANCH= 'main'
 if ('TORCH_AUDIO_BRANCH' in params) {
     echo "TORCH_AUDIO_BRANCH in params"
     if (params.TORCH_AUDIO_BRANCH != '') {
@@ -164,7 +191,7 @@ if ('TORCH_AUDIO_BRANCH' in params) {
 }
 echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
 
-AUDIO= '0a652f5'
+AUDIO= 'default'
 if ('AUDIO' in params) {
     echo "AUDIO in params"
     if (params.AUDIO != '') {
@@ -173,7 +200,7 @@ if ('AUDIO' in params) {
 }
 echo "AUDIO: $AUDIO"
 
-TORCH_TEXT_BRANCH= 'nightly'
+TORCH_TEXT_BRANCH= 'main'
 if ('TORCH_TEXT_BRANCH' in params) {
     echo "TORCH_TEXT_BRANCH in params"
     if (params.TORCH_TEXT_BRANCH != '') {
@@ -182,7 +209,7 @@ if ('TORCH_TEXT_BRANCH' in params) {
 }
 echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
-TEXT= 'c4ad5dd'
+TEXT= 'default'
 if ('TEXT' in params) {
     echo "TEXT in params"
     if (params.TEXT != '') {
@@ -191,7 +218,7 @@ if ('TEXT' in params) {
 }
 echo "TEXT: $TEXT"
 
-TORCH_VISION_BRANCH= 'nightly'
+TORCH_VISION_BRANCH= 'main'
 if ('TORCH_VISION_BRANCH' in params) {
     echo "TORCH_VISION_BRANCH in params"
     if (params.TORCH_VISION_BRANCH != '') {
@@ -200,7 +227,7 @@ if ('TORCH_VISION_BRANCH' in params) {
 }
 echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
 
-VISION= 'f2009ab'
+VISION= 'default'
 if ('VISION' in params) {
     echo "VISION in params"
     if (params.VISION != '') {
@@ -209,7 +236,7 @@ if ('VISION' in params) {
 }
 echo "VISION: $VISION"
 
-TORCH_DATA_BRANCH= 'nightly'
+TORCH_DATA_BRANCH= 'main'
 if ('TORCH_DATA_BRANCH' in params) {
     echo "TORCH_DATA_BRANCH in params"
     if (params.TORCH_DATA_BRANCH != '') {
@@ -218,7 +245,7 @@ if ('TORCH_DATA_BRANCH' in params) {
 }
 echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
 
-DATA= '5cb3e6d'
+DATA= 'default'
 if ('DATA' in params) {
     echo "DATA in params"
     if (params.DATA != '') {
@@ -236,7 +263,7 @@ if ('TORCH_BENCH_BRANCH' in params) {
 }
 echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
-TORCH_BENCH= 'a0848e19'
+TORCH_BENCH= 'default'
 if ('TORCH_BENCH' in params) {
     echo "TORCH_BENCH in params"
     if (params.TORCH_BENCH != '') {
@@ -281,14 +308,14 @@ if ('HF_TOKEN' in params) {
 }
 echo "HF_TOKEN: $HF_TOKEN"
 
-suites= 'all'
-if ('suites' in params) {
-    echo "suites in params"
-    if (params.suites != '') {
-        suites = params.suites
+suite= 'all'
+if ('suite' in params) {
+    echo "suite in params"
+    if (params.suite != '') {
+        suite = params.suite
     }
 }
-echo "suites: $suites"
+echo "suite: $suite"
 
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
@@ -296,21 +323,31 @@ if( 'dash_board' in params && params.dash_board != '' ) {
 }
 echo "dash_board: $dash_board"
 
+report_only = 'false'
+if( 'report_only' in params && params.report_only != '' ) {
+    report_only = params.report_only
+}
+echo "report_only: $report_only"
+
 dashboard_title = 'default'
 if( 'dashboard_title' in params && params.dashboard_title != '' ) {
     dashboard_title = params.dashboard_title
 }
 echo "dashboard_title: $dashboard_title"
 
-env._new_instance = "$new_instance"
-env._aws_id = "$instance_ids"
+env._terminate_ins = "$terminate_instance"
+env._instance_id = "$instance_ids"
+env._instance_name = "$instance_name"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
+env._backend = "$backend"
+env._extra_param = "$extra_param"
 env._precision = "$precision"
 env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
 env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
+env._report_only = "$report_only"
 env._dashboard_title = "$dashboard_title"
 
 env._TORCH_REPO = "$TORCH_REPO"
@@ -327,44 +364,72 @@ env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
-env._suites = "$suites"
+env._suite = "$suite"
 
 node(NODE_LABEL){
-    stage("start instance")
-    {
+    stage("Find or create instance"){
         deleteDir()
         checkout scm
+        if  ("${report_only}" == "false")
+        {
+            sh'''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE}/scripts/aws/
+            while true;
+            do
+                bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt
+                ins_id=`cat ${WORKSPACE}/instance_id.txt`
+                if [ $ins_id != "waiting_instance" ]; then
+                    echo "ins_id : $ins_id"
+                    break
+                else
+                    echo "Waiting for avaliable instance, will check after 10 min..."
+                    sleep 10m
+                fi
+            done
+            '''
+        } else {
+            echo "report_only mode, will directly use the instance_id"
+            sh'''
+            #!/usr/bin/env bash
+            echo ${_instance_id} > ${WORKSPACE}/instance_id.txt
+            echo "ins_id : ${_instance_id}"
+            '''
+        }
+    }
+    stage("start instance")
+    {
         sh '''
         #!/usr/bin/env bash
-        cd $HOME && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
-        init_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        ins_id=`cat ${WORKSPACE}/instance_id.txt`
+        cd $HOME && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+        init_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
         echo init_ip is $init_ip
         ssh -o StrictHostKeyChecking=no ubuntu@${init_ip} "pwd"
         '''
     }
     stage("prepare scripts & benchmark") {
-        sh '''
-        #!/usr/bin/env bash
-        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-        ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-        if [ "${_new_instance}" == "True" ]; then
+        if  ("${report_only}" == "false")
+        {
+            sh '''
+            #!/usr/bin/env bash
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
+            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
             scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/aws/weights_prepare.sh ubuntu@${current_ip}:/home/ubuntu
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-            ssh ubuntu@${current_ip} "bash weights_prepare.sh"
-        fi
-        scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        ssh ubuntu@${current_ip} "bash pkill.sh"
-        timestamp=$(date +%Y%m%d_%H%M%S)
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_suites} &> /home/ubuntu/docker/aws_benchmark_${timestamp}.log &" &
-        '''
+            scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            ssh ubuntu@${current_ip} "bash pkill.sh"
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            '''
+        }
     }
     stage("trigger inductor images job"){
             if ("${Build_Image}" == "true") {
@@ -399,10 +464,11 @@ node(NODE_LABEL){
             echo "cppwrapper"
         else
             reboot_time=33
-        fi        
-        current_ip=`$aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+        fi
+        ins_id=`cat ${WORKSPACE}/instance_id.txt`        
         for t in {1..100}
         do
+            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
             timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
@@ -416,29 +482,41 @@ node(NODE_LABEL){
                 echo $t
                 if [ $t -eq $reboot_time ]; then
                     echo restart instance now...
-                    $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${_aws_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
+                    $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                    break
                 fi
             fi
         done
         '''
     }
-    stage('archive inductor_log') {
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+    // Add raw log artifact stage in advance to avoid crash in report generate stage
+    stage("archive raw test results"){
+        sh '''
+            #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard
+            cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
+        '''
+        archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
     }
-    stage("stop instance")
+    stage("stop or terminate instance")
     {
         try{
             sh '''
             #!/usr/bin/env bash
-            $aws ec2 stop-instances --instance-ids ${_aws_id} --profile pytorch && sleep 2m
+            ins_id=`cat ${WORKSPACE}/instance_id.txt`
+            $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+            if [ "$_terminate_ins" == "True" ]; then
+                $aws ec2 terminate-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+            fi
             '''
         }catch(err){
             echo err.getMessage()   
         }
     }
     stage("generate report"){
-        if ("${test_mode}" == "inference")
+        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
             if(refer_build != '0') {
                 copyArtifacts(
@@ -450,9 +528,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
                 if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
                 else
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
                 fi
                 '''
             }else{
@@ -460,9 +538,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
                 else
-                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
                 fi
                 '''
             }
@@ -487,35 +565,6 @@ node(NODE_LABEL){
                 '''
             }
         }
-        if ("${test_mode}" == "training_full")
-        {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
-                )           
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-                else
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-                fi
-                '''
-            }else{
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
-                if [ ${_dash_board} == "true" ]; then
-                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-                else
-                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-                fi
-                '''
-            }
-        }
     }    
 
     // stage("regression issue create")
@@ -534,10 +583,16 @@ node(NODE_LABEL){
     // }
 
     stage('archiveArtifacts') {
-        if ("${test_mode}" == "inference")
+        // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+        sh '''
+        #!/usr/bin/env bash
+        rm -rf ${WORKSPACE}/raw_log
+        '''
+        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
             sh '''
             #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
             cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''
@@ -546,6 +601,7 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
             cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''
@@ -563,7 +619,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -572,7 +628,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
+                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -584,7 +640,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -600,6 +656,6 @@ node(NODE_LABEL){
                     body: 'Job build failed, please double check in ${BUILD_URL}'
                 )
             }           
-        }//training
+        }//training training_full
     }//email
 }

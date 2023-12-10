@@ -161,6 +161,8 @@ node(NODE_LABEL){
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
             source activate pytorch
         fi
+        # Install dependencies
+        pip install scipy datacompy PyGithub styleframe pandas bs4 requests
         cp scripts/modelbench/report.py ${WORKSPACE}
         if [ ${_cppwp_gm} == 'True' ];then
             python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end}
@@ -176,7 +178,7 @@ node(NODE_LABEL){
         if ("${debug}" == "true"){
             maillist="${debug_mail}"
         }else{
-            maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
+            maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
         }
         if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
             emailext(

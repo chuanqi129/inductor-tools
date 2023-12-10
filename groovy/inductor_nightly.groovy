@@ -232,23 +232,23 @@ if ('op_repeats' in params) {
 }
 echo "op_repeats: $op_repeats"
 
-DT = 'float32'
-if ('DT' in params) {
-    echo "DT in params"
-    if (params.DT != '') {
-        DT = params.DT
+PRECISION = 'float32'
+if ('PRECISION' in params) {
+    echo "PRECISION in params"
+    if (params.PRECISION != '') {
+        PRECISION = params.PRECISION
     }
 }
-echo "DT: $DT"
+echo "PRECISION: $PRECISION"
 
-SHAPE = 'static'
-if ('SHAPE' in params) {
-    echo "SHAPE in params"
-    if (params.SHAPE != '') {
-        SHAPE = params.SHAPE
+TEST_SHAPE = 'static'
+if ('TEST_SHAPE' in params) {
+    echo "TEST_SHAPE in params"
+    if (params.TEST_SHAPE != '') {
+        TEST_SHAPE = params.TEST_SHAPE
     }
 }
-echo "SHAPE: $SHAPE"
+echo "TEST_SHAPE: $TEST_SHAPE"
 
 THREAD = 'all'
 if ('THREAD' in params) {
@@ -346,17 +346,17 @@ def llm_benchmark(node){
         fi
         if [ ${exec_node} == ${_SPR_NODE} ];then
             hf_cache=${SPR04_HF_CACHE}
-            DT=bfloat16
+            PRECISION=bfloat16
         else
             hf_cache=${ICX24_HF_CACHE}
-            DT=float32
+            PRECISION=float32
         fi
         docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${hf_cache}:/workspace/huggingface -v ${WORKSPACE}/llm_bench_${exec_node}:/workspace/pytorch/llm_bench_${exec_node} ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
         docker cp scripts/llmbench/env_prepare.sh $USER:/workspace/pytorch
         docker cp scripts/llmbench/token_latency.patch $USER:/workspace
         docker cp scripts/llmbench/run_dynamo_llm.py $USER:/workspace/pytorch
         docker cp scripts/llmbench/generate_report.py $USER:/workspace/pytorch/llm_bench_${exec_node}
-        docker exec -i $USER bash -c "bash env_prepare.sh ${DT} llm_bench_${exec_node}"
+        docker exec -i $USER bash -c "bash env_prepare.sh ${PRECISION} llm_bench_${exec_node}"
         ''' 
         try{
             if(refer_build != '0') {
@@ -429,7 +429,7 @@ def mail_sent(node){
     if ("${debug}" == "true"){
         maillist="yudong.si@intel.com"
     }else{
-        maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiaobing.zhang@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com;yanbing.jiang@intel.com"
+        maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com;yanbing.jiang@intel.com"
     } 
     withEnv(["exec_node=${node}"]){
         if("${exec_node}" == "${_ICX_NODE}"){
@@ -604,9 +604,9 @@ stage('Benchmark') {
                     docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v ${WORKSPACE}/opbench_log:/workspace/pytorch/dynamo_opbench ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     docker cp scripts/microbench/microbench_parser.py $USER:/workspace/pytorch
                     docker cp scripts/microbench/microbench.sh $USER:/workspace/pytorch
-                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench timm ${op_repeats} ${DT}"
-                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench torchbench ${op_repeats} ${DT}"
-                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench huggingface ${op_repeats} ${DT}"
+                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench timm ${op_repeats} ${PRECISION}"
+                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench torchbench ${op_repeats} ${PRECISION}"
+                    docker exec $USER bash -c "bash microbench.sh dynamo_opbench huggingface ${op_repeats} ${PRECISION}"
                     docker exec $USER bash -c "cp microbench_parser.py dynamo_opbench;cd dynamo_opbench;pip install openpyxl;python microbench_parser.py -o ${_VERSION} -l ${BUILD_URL} -n ${_ICX_NODE};rm microbench_parser.py"
                     '''
                 }
@@ -626,7 +626,7 @@ stage('Benchmark') {
                     docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host  --shm-size 1G -v /home/torch/.cache:/root/.cache -v ${WORKSPACE}/inductor_log:/workspace/pytorch/inductor_log ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
                     docker cp scripts/modelbench/log_parser.py $USER:/workspace/pytorch
-                    docker exec -i $USER bash -c "bash inductor_test.sh ${THREAD} ${CHANNELS} ${DT} ${SHAPE} inductor_log ${MODEL_SUITE};pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log;cp inductor_model_bench.html inductor_log"
+                    docker exec -i $USER bash -c "bash inductor_test.sh ${THREADS} ${CHANNELS} ${PRECISION} ${TEST_SHAPE} inductor_log ${WRAPPER} ${HF_TOKEN} inductor inference $SUITE $EXTRA;pip install styleframe;python log_parser.py --target inductor_log -m ${THREAD};cp inductor_dashboard_regression_check.xlsx inductor_log;cp inductor_model_bench.html inductor_log"
                     '''
                 }
             }//ModelBench
