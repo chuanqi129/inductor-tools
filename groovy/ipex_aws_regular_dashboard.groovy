@@ -292,7 +292,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             set +e
-            for t in {1..25}
+            for t in {1..80}
             do
                 ssh ubuntu@${_name} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
                 if [ $? -eq 0 ]; then
@@ -303,7 +303,7 @@ node(NODE_LABEL){
                     scp -r ubuntu@${_name}:/home/ubuntu/docker/ipex_log ${WORKSPACE}/${_target}
                     break
                 else
-                    sleep 1h
+                    sleep 0.5h
                     echo $t
                 fi
             done
