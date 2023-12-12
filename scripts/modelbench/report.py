@@ -352,7 +352,6 @@ def update_failures(excel,target_thread,refer_thread):
         refer_thread_failures = get_failures(refer_thread)
         compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = compare.df1_unq_rows.copy()
-        failure_regression.loc[0] = list(failure_regression.shape[1]*'*')
         new_failures = pd.concat([new_failures,failure_regression])
 
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
