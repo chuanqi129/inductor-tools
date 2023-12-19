@@ -323,6 +323,9 @@ def get_failures(target_path):
     failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
     failures['pef_suite'].fillna(0,inplace=True)
     failures['acc_suite'].fillna(0,inplace=True)
+    # There is no failure in accuracy and performance, just return
+    if (len(failures['acc_suite']) == 0) and (len(failures['pef_suite']) == 0):
+        return failures
     failures['suite'] = failures.apply(lambda x: x['pef_suite'] if x['acc_suite']==0 else x['acc_suite'], axis=1) 
     failures=failures.rename(columns={'suite':'suite','name':'name','accuracy':'accuracy','speedup':'perf'}) 
 
@@ -354,6 +357,9 @@ def update_failures(excel,target_thread,refer_thread):
         failure_regression = compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
 
+    # There is no failure in target, just return
+    if (len(target_thread_failures) == 0):
+        return
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
                  'name': list(target_thread_failures['name']),
                  'accuracy': list(target_thread_failures['accuracy']),
