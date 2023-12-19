@@ -308,6 +308,14 @@ if ('HF_TOKEN' in params) {
 }
 echo "HF_TOKEN: $HF_TOKEN"
 
+suite= 'all'
+if ('suite' in params) {
+    echo "suite in params"
+    if (params.suite != '') {
+        suite = params.suite
+    }
+}
+echo "suite: $suite"
 
 dash_board = 'false'
 if( 'dash_board' in params && params.dash_board != '' ) {
@@ -356,6 +364,7 @@ env._THREADS = "$THREADS"
 env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
+env._suite = "$suite"
 
 node(NODE_LABEL){
     stage("Find or create instance"){
@@ -418,7 +427,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} torchbench resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
             '''
         }
     }
@@ -475,10 +484,6 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
-                    if [ -d ${WORKSPACE}/${_target} ]; then
-                        rm -rf ${WORKSPACE}/${_target}
-                    fi
-                    mkdir -p ${WORKSPACE}/${_target}
                     scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                     break
                 fi
@@ -511,7 +516,7 @@ node(NODE_LABEL){
         }
     }
     stage("generate report"){
-        if ("${test_mode}" == "inference")
+        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
             if(refer_build != '0') {
                 copyArtifacts(
@@ -523,9 +528,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
                 if [ ${_dash_board} == "true" ]; then
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
                 else
-                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
                 fi
                 '''
             }else{
@@ -533,9 +538,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
                 else
-                     python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
                 fi
                 '''
             }
@@ -583,7 +588,7 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         rm -rf ${WORKSPACE}/raw_log
         '''
-        if ("${test_mode}" == "inference")
+        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
             sh '''
             #!/usr/bin/env bash
@@ -631,7 +636,7 @@ node(NODE_LABEL){
                 )
             }
         }//inference
-        if ("${test_mode}" == "training")
+        if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
@@ -651,6 +656,6 @@ node(NODE_LABEL){
                     body: 'Job build failed, please double check in ${BUILD_URL}'
                 )
             }           
-        }//training
+        }//training training_full
     }//email
 }

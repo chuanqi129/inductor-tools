@@ -20,7 +20,7 @@ CHANNELS=${15:-first}
 WRAPPER=${16:-default}
 HF_TOKEN=${17:-hf_xx}
 BACKEND=${18:-inductor}
-SUITE=${19:-torchbench}
+SUITE=${19:-all}
 MODEL=${20:-resnet50}
 TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
 TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
@@ -85,7 +85,9 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
 
     if [ $TEST_MODE == "inference" ]; then
-        docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND $EXTRA"
+        docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND inference $SUITE $EXTRA"
+    elif [ $TEST_MODE == "training_full" ]; then
+        docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND training $SUITE $EXTRA"
     elif [ $TEST_MODE == "training" ]; then
         docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
     fi
