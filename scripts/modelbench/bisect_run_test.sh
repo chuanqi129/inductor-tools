@@ -18,6 +18,7 @@ PERF_RATIO=${15:-1.1} # default 10% perforamnce drop regard as issue
 EXTRA=${16}
 
 prepare_test() {
+    rm -rf /tmp/*
     git reset --hard HEAD && git submodule sync && git submodule update --init --recursive
     python setup.py clean && python setup.py develop && cd .. && \
     rm -rf vision && git clone -b main https://github.com/pytorch/vision.git && cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
