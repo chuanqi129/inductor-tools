@@ -25,8 +25,10 @@ fi
 
 # install transformers
 cd .. && rm -rf transformers && pip uninstall transformers -y
-# release v4.31. + patch
-git clone -b v4.31.0 https://github.com/huggingface/transformers.git
+# required by tokenizers
+pip install tokenizers==0.15.0 huggingface_hub==0.20.1
+# release v4.36. + patch
+git clone -b v4.36.2 --depth 1 https://github.com/huggingface/transformers.git
 cd transformers && git apply ../token_latency.patch && python setup.py install && cd ..
 cd /workspace/pytorch
 # use offline mode for network issues
