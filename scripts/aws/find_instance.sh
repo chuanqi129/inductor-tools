@@ -36,11 +36,7 @@ elif [ $ins_name == "spr-regular" ]; then
     max_ins_num=1
     ins_type="c7i.16xlarge"
     store_size=200
-elif [ $ins_name == "spr-regular" ]; then
-    max_ins_num=1
-    ins_type="c7i.16xlarge"
-    store_size=200
-elif [ $ins_name == "icx-regular" ]; then
+elif [ $ins_name == "icx-ipex-molly" ]; then
     max_ins_num=2
     ins_type="c6i.16xlarge"
     store_size=150
