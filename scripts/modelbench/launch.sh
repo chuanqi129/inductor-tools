@@ -29,6 +29,10 @@ KIND=${24:-crash} # issue kind crash/drop
 PERF_RATIO=${25:-1.1}
 EXTRA=${26}
 
+IPEX_REPO=${27:-https://github.com/intel/intel-extension-for-pytorch.git}
+IPEX_BRANCH=${28:-main}
+IPEX_COMMIT=${29:-main}
+
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
 echo "TEST_MODE" : $TEST_MODE
@@ -65,7 +69,12 @@ if [ -d ${LOG_DIR} ]; then
 fi
 mkdir -p ${LOG_DIR}
 
-DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
+if [ $BACKEND == "ipex" ];then
+    DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN --build-arg IPEX_BRANCH=$IPEX_BRANCH --build-arg IPEX_COMMIT=$IPEX_COMMIT -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
+fi
+else
+    DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
+fi
 # Early exit for docker image build issue
 image_status=`tail -n 5 ${LOG_DIR}/image_build.log | grep ${TAG} | wc -l`
 if [ $image_status -eq 0 ]; then

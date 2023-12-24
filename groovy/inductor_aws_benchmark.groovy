@@ -335,6 +335,33 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
+IPEX_REPO= 'https://github.com/intel/intel-extension-for-pytorch.git'
+if ('IPEX_REPO' in params) {
+    echo "IPEX_REPO in params"
+    if (params.IPEX_REPO != '') {
+        IPEX_REPO = params.IPEX_REPO
+    }
+}
+echo "IPEX_REPO: $IPEX_REPO"
+
+IPEX_BRANCH= 'main'
+if ('IPEX_BRANCH' in params) {
+    echo "IPEX_BRANCH in params"
+    if (params.IPEX_BRANCH != '') {
+        IPEX_BRANCH = params.IPEX_BRANCH
+    }
+}
+echo "IPEX_BRANCH: $IPEX_BRANCH"
+
+IPEX_COMMIT= 'main'
+if ('IPEX_COMMIT' in params) {
+    echo "IPEX_COMMIT in params"
+    if (params.IPEX_COMMIT != '') {
+        IPEX_COMMIT = params.IPEX_COMMIT
+    }
+}
+echo "IPEX_COMMIT: $IPEX_COMMIT"
+
 env._terminate_ins = "$terminate_instance"
 env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
@@ -365,6 +392,10 @@ env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
+
+env._IPEX_REPO = "$IPEX_REPO"
+env._IPEX_BRANCH = "$IPEX_BRANCH"
+env._IPEX_COMMIT = "$IPEX_COMMIT"
 
 node(NODE_LABEL){
     stage("Find or create instance"){
@@ -426,8 +457,9 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/ipex_backend.patch ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param}  ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} &>/dev/null &" &
             '''
         }
     }
