@@ -119,7 +119,7 @@ node(env.nodes_label){
                 bash inductor_xpu_test.sh ${SUITE} ${DT} ${MODE} ${SCENARIO} xpu 1 static 4 1 & \
                 bash inductor_xpu_test.sh ${SUITE} ${DT} ${MODE} ${SCENARIO} xpu 2 static 4 2 & \
                 bash inductor_xpu_test.sh ${SUITE} ${DT} ${MODE} ${SCENARIO} xpu 3 static 4 3 & wait
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface ${WORKSPACE}/logs
+                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log ${WORKSPACE}/logs
                 popd
                 '''
             }catch (Exception e) {
@@ -158,6 +158,9 @@ node(env.nodes_label){
                 cp ${WORKSPACE}/scripts/inductor/inductor_perf_summary.py ${WORKSPACE}/frameworks.ai.pytorch.private-gpu
                 rm -rf /tmp/torchinductor*
                 pushd ${WORKSPACE}/frameworks.ai.pytorch.private-gpu
+                echo -e "========================================================================="
+                echo -e "huggingface performance"
+                echo -e "========================================================================="
                 bash inductor_xpu_test.sh huggingface amp_bf16 inference performance xpu 0 & \
                 bash inductor_xpu_test.sh huggingface amp_bf16 training performance xpu 1 & \
                 bash inductor_xpu_test.sh huggingface amp_fp16 inference performance xpu 2 & \
@@ -168,6 +171,67 @@ node(env.nodes_label){
                 bash inductor_xpu_test.sh huggingface float16 training performance xpu 3 & wait
                 bash inductor_xpu_test.sh huggingface float32 inference performance xpu 0 & \
                 bash inductor_xpu_test.sh huggingface float32 training performance xpu 1 & wait
+
+                echo -e "========================================================================="
+                echo -e "timm_models performance"
+                echo -e "========================================================================="
+                rm -rf /tmp/torchinductor*
+                bash inductor_xpu_test.sh timm_models amp_bf16 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh timm_models amp_bf16 training performance xpu 1 & \
+                bash inductor_xpu_test.sh timm_models amp_fp16 inference performance xpu 2 & \
+                bash inductor_xpu_test.sh timm_models amp_fp16 training performance xpu 3 & wait
+                bash inductor_xpu_test.sh timm_models bfloat16 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh timm_models bfloat16 training performance xpu 1 & \
+                bash inductor_xpu_test.sh timm_models float16 inference performance xpu 2 & \
+                bash inductor_xpu_test.sh timm_models float16 training performance xpu 3 & wait
+                bash inductor_xpu_test.sh timm_models float32 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh timm_models float32 training performance xpu 1 & wait
+
+                echo -e "========================================================================="
+                echo -e "torchbench performance"
+                echo -e "========================================================================="
+                rm -rf /tmp/torchinductor*
+                pip install tqdm pandas pyre-extensions torchrec tensorboardX dalle2_pytorch torch_geometric scikit-image matplotlib  gym fastNLP doctr matplotlib opacus python-doctr higher opacus dominate kaldi-io librosa effdet pycocotools diffusers
+                pip uninstall -y pyarrow pandas
+                pip install pyarrow pandas
+
+                git clone https://github.com/facebookresearch/detectron2.git
+                python -m pip install -e detectron2
+
+                git clone --recursive https://github.com/facebookresearch/multimodal.git multimodal
+                pushd multimodal
+                pip install -e .
+                popd
+
+                python -m pip uninstall -y torchaudio || true
+                wget -q -e use_proxy=no ${torchaudio_whl}
+                python -m pip install --force-reinstall $(basename ${torchaudio_whl}) --no-deps
+                python -m pip uninstall -y torchvision || true
+                wget -q -e use_proxy=no ${torchvision_whl}
+                python -m pip install --force-reinstall $(basename ${torchvision_whl}) --no-deps
+
+                git clone --recursive https://github.com/pytorch/text
+                pushd text
+                python setup.py clean install
+                popd
+
+                git clone --recursive https://github.com/pytorch/benchmark.git
+                pushd benchmark
+                python install.py
+                # Note that -e is necessary
+                pip install -e .
+                popd
+                
+                bash inductor_xpu_test.sh torchbench amp_bf16 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh torchbench amp_bf16 training performance xpu 1 & \
+                bash inductor_xpu_test.sh torchbench amp_fp16 inference performance xpu 2 & \
+                bash inductor_xpu_test.sh torchbench amp_fp16 training performance xpu 3 & wait
+                bash inductor_xpu_test.sh torchbench bfloat16 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh torchbench bfloat16 training performance xpu 1 & \
+                bash inductor_xpu_test.sh torchbench float16 inference performance xpu 2 & \
+                bash inductor_xpu_test.sh torchbench float16 training performance xpu 3 & wait
+                bash inductor_xpu_test.sh torchbench float32 inference performance xpu 0 & \
+                bash inductor_xpu_test.sh torchbench float32 training performance xpu 1 & wait
                 popd
                 '''
             }//if
@@ -178,20 +242,22 @@ node(env.nodes_label){
         println('================================================================')
         if(env.skip_OBO == 'True'){
             try{
-            sh'''
-            set -e
-            set +x
-            source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
-            conda activate ${conda_env}
-            source ${HOME}/env.sh ${oneapi_ver}
+                sh'''
+                set -e
+                set +x
+                source ${HOME}/miniconda3/etc/profile.d/conda.sh 2>&1 >> /dev/null
+                conda activate ${conda_env}
+                source ${HOME}/env.sh ${oneapi_ver}
 
-            pip install styleFrame scipy pandas
-            
-            pushd ${WORKSPACE}/frameworks.ai.pytorch.private-gpu
-            python inductor_perf_summary.py -s huggingface -p amp_bf16 amp_fp16 bfloat16 float16 float32
-            popd
-            cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface ${WORKSPACE}/logs
-            '''
+                pip install styleFrame scipy pandas
+                
+                pushd ${WORKSPACE}/frameworks.ai.pytorch.private-gpu
+                python inductor_perf_summary.py -s huggingface -p amp_bf16 amp_fp16 bfloat16 float16 float32
+                python inductor_perf_summary.py -s timm_models -p amp_bf16 amp_fp16 bfloat16 float16 float32
+                python inductor_perf_summary.py -s torchbench -p amp_bf16 amp_fp16 bfloat16 float16 float32
+                popd
+                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log ${WORKSPACE}/logs
+                '''
             }catch (Exception e) {
                 println('================================================================')
                 println('Exception')
@@ -226,6 +292,9 @@ node(env.nodes_label){
                 fi
                 rm -rf /tmp/torchinductor*
                 pushd ${WORKSPACE}/frameworks.ai.pytorch.private-gpu
+                echo -e "========================================================================="
+                echo -e "huggingface accuracy"
+                echo -e "========================================================================="
                 bash inductor_xpu_test.sh huggingface amp_bf16 inference accuracy xpu 0 & \
                 bash inductor_xpu_test.sh huggingface amp_bf16 training accuracy xpu 1 & \
                 bash inductor_xpu_test.sh huggingface amp_fp16 inference accuracy xpu 2 & \
@@ -236,11 +305,38 @@ node(env.nodes_label){
                 bash inductor_xpu_test.sh huggingface float16 training accuracy xpu 3 & wait
                 bash inductor_xpu_test.sh huggingface float32 inference accuracy xpu 0 & \
                 bash inductor_xpu_test.sh huggingface float32 training accuracy xpu 1 & wait
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface/amp_bf16/*accuracy* ${WORKSPACE}/logs
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface/amp_fp16/*accuracy* ${WORKSPACE}/logs
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface/bfloat16/*accuracy* ${WORKSPACE}/logs
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface/float16/*accuracy* ${WORKSPACE}/logs
-                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface/float32/*accuracy* ${WORKSPACE}/logs
+
+                echo -e "========================================================================="
+                echo -e "timm_models accuracy"
+                echo -e "========================================================================="
+                rm -rf /tmp/torchinductor*
+                bash inductor_xpu_test.sh timm_models amp_bf16 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh timm_models amp_bf16 training accuracy xpu 1 & \
+                bash inductor_xpu_test.sh timm_models amp_fp16 inference accuracy xpu 2 & \
+                bash inductor_xpu_test.sh timm_models amp_fp16 training accuracy xpu 3 & wait
+                bash inductor_xpu_test.sh timm_models bfloat16 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh timm_models bfloat16 training accuracy xpu 1 & \
+                bash inductor_xpu_test.sh timm_models float16 inference accuracy xpu 2 & \
+                bash inductor_xpu_test.sh timm_models float16 training accuracy xpu 3 & wait
+                bash inductor_xpu_test.sh timm_models float32 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh timm_models float32 training accuracy xpu 1 & wait
+
+                echo -e "========================================================================="
+                echo -e "torchbench accuracy"
+                echo -e "========================================================================="
+                rm -rf /tmp/torchinductor*
+                bash inductor_xpu_test.sh torchbench amp_bf16 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh torchbench amp_bf16 training accuracy xpu 1 & \
+                bash inductor_xpu_test.sh torchbench amp_fp16 inference accuracy xpu 2 & \
+                bash inductor_xpu_test.sh torchbench amp_fp16 training accuracy xpu 3 & wait
+                bash inductor_xpu_test.sh torchbench bfloat16 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh torchbench bfloat16 training accuracy xpu 1 & \
+                bash inductor_xpu_test.sh torchbench float16 inference accuracy xpu 2 & \
+                bash inductor_xpu_test.sh torchbench float16 training accuracy xpu 3 & wait
+                bash inductor_xpu_test.sh torchbench float32 inference accuracy xpu 0 & \
+                bash inductor_xpu_test.sh torchbench float32 training accuracy xpu 1 & wait
+
+                cp -r ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log ${WORKSPACE}/logs
                 popd
                 '''
             }catch (Exception e) {
@@ -269,97 +365,8 @@ node(env.nodes_label){
                 conda activate ${conda_env}
                 source ${HOME}/env.sh ${oneapi_ver}
                 source ${HOME}/set_proxy.sh
-
-                cd ${WORKSPACE}/frameworks.ai.pytorch.private-gpu/inductor_log/huggingface
-                cd amp_bf16
-                echo -e "============ Acc Check for HF amp_bf16 ============" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                csv_lines_inf=$(cat inductor_huggingface_amp_bf16_inference_xpu_accuracy.csv | wc -l)
-                let num_total_amp_bf16=csv_lines_inf-1
-                num_passed_amp_bf16_inf=$(grep "pass" inductor_huggingface_amp_bf16_inference_xpu_accuracy.csv | wc -l)
-                let num_failed_amp_bf16_inf=num_total_amp_bf16-num_passed_amp_bf16_inf
-                amp_bf16_inf_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_amp_bf16_inf'/'$num_total_amp_bf16')*100}'`
-                echo "num_total_amp_bf16: $num_total_amp_bf16" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_passed_amp_bf16_inf: $num_passed_amp_bf16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_amp_bf16_inf: $num_failed_amp_bf16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "amp_bf16_inf_acc_pass_rate: $amp_bf16_inf_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                num_passed_amp_bf16_tra=$(grep "pass" inductor_huggingface_amp_bf16_training_xpu_accuracy.csv | wc -l)
-                let num_failed_amp_bf16_tra=num_total_amp_bf16-num_passed_amp_bf16_tra
-                amp_bf16_tra_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_amp_bf16_tra'/'$num_total_amp_bf16')*100}'`
-                echo "num_passed_amp_bf16_tra: $num_passed_amp_bf16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_amp_bf16_tra: $num_failed_amp_bf16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "amp_bf16_tra_acc_pass_rate: $amp_bf16_tra_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-
-                cd ../amp_fp16
-                echo -e "============ Acc Check for HF amp_fp16 ============" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                csv_lines_inf=$(cat inductor_huggingface_amp_fp16_inference_xpu_accuracy.csv | wc -l)
-                let num_total_amp_fp16=csv_lines_inf-1
-                num_passed_amp_fp16_inf=$(grep "pass" inductor_huggingface_amp_fp16_inference_xpu_accuracy.csv | wc -l)
-                let num_failed_amp_fp16_inf=num_total_amp_fp16-num_passed_amp_fp16_inf
-                amp_fp16_inf_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_amp_fp16_inf'/'$num_total_amp_fp16')*100}'`
-                echo "num_total_amp_fp16: $num_total_amp_fp16" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_passed_amp_fp16_inf: $num_passed_amp_fp16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_amp_fp16_inf: $num_failed_amp_fp16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "amp_fp16_inf_acc_pass_rate: $amp_fp16_inf_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                num_passed_amp_fp16_tra=$(grep "pass" inductor_huggingface_amp_fp16_training_xpu_accuracy.csv | wc -l)
-                let num_failed_amp_fp16_tra=num_total_amp_fp16-num_passed_amp_fp16_tra
-                amp_fp16_tra_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_amp_fp16_tra'/'$num_total_amp_fp16')*100}'`
-                echo "num_passed_amp_fp16_tra: $num_passed_amp_fp16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_amp_fp16_tra: $num_failed_amp_fp16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "amp_fp16_tra_acc_pass_rate: $amp_fp16_tra_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-
-                cd ../bfloat16
-                echo -e "============ Acc Check for HF bfloat16 ============" | tee -a ${WORKSPACE}/logs/e2e_summary.log        
-                csv_lines_inf=$(cat inductor_huggingface_bfloat16_inference_xpu_accuracy.csv | wc -l)
-                let num_total_bfloat16=csv_lines_inf-1
-                num_passed_bfloat16_inf=$(grep "pass" inductor_huggingface_bfloat16_inference_xpu_accuracy.csv | wc -l)
-                let num_failed_bfloat16_inf=num_total_bfloat16-num_passed_bfloat16_inf
-                bfloat16_inf_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_bfloat16_inf'/'$num_total_bfloat16')*100}'`
-                echo "num_total_bfloat16: $num_total_bfloat16" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_passed_bfloat16_inf: $num_passed_bfloat16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_bfloat16_inf: $num_failed_bfloat16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "bfloat16_inf_acc_pass_rate: $bfloat16_inf_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                num_passed_bfloat16_tra=$(grep "pass" inductor_huggingface_bfloat16_training_xpu_accuracy.csv | wc -l)
-                let num_failed_bfloat16_tra=num_total_bfloat16-num_passed_bfloat16_tra
-                bfloat16_tra_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_bfloat16_tra'/'$num_total_bfloat16')*100}'`
-                echo "num_passed_bfloat16_tra: $num_passed_bfloat16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_bfloat16_tra: $num_failed_bfloat16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "bfloat16_tra_acc_pass_rate: $bfloat16_tra_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-
-                cd ../float16
-                echo -e "============ Acc Check for HF float16 ============" | tee -a ${WORKSPACE}/logs/e2e_summary.log        
-                csv_lines_inf=$(cat inductor_huggingface_float16_inference_xpu_accuracy.csv | wc -l)
-                let num_total_float16=csv_lines_inf-1
-                num_passed_float16_inf=$(grep "pass" inductor_huggingface_float16_inference_xpu_accuracy.csv | wc -l)
-                let num_failed_float16_inf=num_total_float16-num_passed_float16_inf
-                float16_inf_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_float16_inf'/'$num_total_float16')*100}'`
-                echo "num_total_float16: $num_total_float16" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_passed_float16_inf: $num_passed_float16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_float16_inf: $num_failed_float16_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "float16_inf_acc_pass_rate: $float16_inf_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                num_passed_float16_tra=$(grep "pass" inductor_huggingface_float16_training_xpu_accuracy.csv | wc -l)
-                let num_failed_float16_tra=num_total_float16-num_passed_float16_tra
-                float16_tra_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_float16_tra'/'$num_total_float16')*100}'`
-                echo "num_passed_float16_tra: $num_passed_float16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_float16_tra: $num_failed_float16_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "float16_tra_acc_pass_rate: $float16_tra_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-
-                cd ../float32
-                echo -e "============ Acc Check for HF float32 ============" | tee -a ${WORKSPACE}/logs/e2e_summary.log        
-                csv_lines_inf=$(cat inductor_huggingface_float32_inference_xpu_accuracy.csv | wc -l)
-                let num_total_float32=csv_lines_inf-1
-                num_passed_float32_inf=$(grep "pass" inductor_huggingface_float32_inference_xpu_accuracy.csv | wc -l)
-                let num_failed_float32_inf=num_total_float32-num_passed_float32_inf
-                float32_inf_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_float32_inf'/'$num_total_float32')*100}'`
-                echo "num_total_float32: $num_total_float32" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_passed_float32_inf: $num_passed_float32_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_float32_inf: $num_failed_float32_inf" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "float32_inf_acc_pass_rate: $float32_inf_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                num_passed_float32_tra=$(grep "pass" inductor_huggingface_float32_training_xpu_accuracy.csv | wc -l)
-                let num_failed_float32_tra=num_total_float32-nunum_passed_float32_tra
-                float32_tra_acc_pass_rate=`awk 'BEGIN{printf "%.2f%%",('$num_passed_float32_tra'/'$num_total_float32')*100}'`
-                echo "num_passed_float32_tra: $num_passed_float32_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "num_failed_float32_tra: $num_failed_float32_tra" | tee -a ${WORKSPACE}/logs/e2e_summary.log
-                echo "float32_tra_acc_pass_rate: $float32_tra_acc_pass_rate" | tee -a ${WORKSPACE}/logs/e2e_summary.log
+                
+                bash ${WORKSPACE}/scripts/inductor/inductor_accuracy_results_check.sh
                 '''
             }catch (Exception e) {
                 println('================================================================')
