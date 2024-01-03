@@ -215,7 +215,7 @@ node(env.nodes_label){
                 python setup.py clean install
                 popd
 
-                git clone --recursive https://github.com/pytorch/benchmark.git
+                git clone --recursive https://github.com/weishi-deng/benchmark.git
                 pushd benchmark
                 python install.py
                 # Note that -e is necessary
