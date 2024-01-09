@@ -119,7 +119,7 @@ if( 'gh_token' in params && params.gh_token != '' ) {
 }
 echo "gh_token: $gh_token"
 
-Build_Image= 'true'
+Build_Image= 'false'
 if ('Build_Image' in params) {
     echo "Build_Image in params"
     if (params.Build_Image != '') {
