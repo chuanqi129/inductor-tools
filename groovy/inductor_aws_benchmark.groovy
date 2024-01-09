@@ -453,6 +453,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
