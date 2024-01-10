@@ -85,6 +85,10 @@ fi
 docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 20G -v /home/ubuntu/.cache:/root/.cache -v /home/ubuntu/docker/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} pt_inductor:$TAG
 
 # Launch regular tests
+if [ $BACKEND == "ipex" ];then
+    docker cp /home/ubuntu/docker/ipex_backend.patch $USER:/workspace/
+fi
+
 if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
