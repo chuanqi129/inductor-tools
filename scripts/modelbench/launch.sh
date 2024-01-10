@@ -28,11 +28,13 @@ TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
 SCENARIO=${23:-accuracy}
 KIND=${24:-crash} # issue kind crash/drop
 PERF_RATIO=${25:-1.1}
-EXTRA=${26}
+IPEX_REPO=${26:-https://github.com/intel/intel-extension-for-pytorch.git}
+IPEX_BRANCH=${27:-main}
+IPEX_COMMIT=${28:-main}
 
-IPEX_REPO=${27:-https://github.com/intel/intel-extension-for-pytorch.git}
-IPEX_BRANCH=${28:-main}
-IPEX_COMMIT=${29:-main}
+EXTRA=${29}
+
+
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
