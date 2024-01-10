@@ -51,7 +51,7 @@ elif [[ $BACKEND == "ipex" ]]; then
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
     cd /workspace/pytorch
-    patch -p1 < /workspace/ipex_backend.patch
+    patch -p1 < /workspace/0110.patch
 fi
 
 Shape_extra=""
