@@ -28,11 +28,13 @@ TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
 SCENARIO=${23:-accuracy}
 KIND=${24:-crash} # issue kind crash/drop
 PERF_RATIO=${25:-1.1}
-EXTRA=${26}
+IPEX_REPO=${26:-https://github.com/intel/intel-extension-for-pytorch.git}
+IPEX_BRANCH=${27:-main}
+IPEX_COMMIT=${28:-main}
 
-IPEX_REPO=${27:-https://github.com/intel/intel-extension-for-pytorch.git}
-IPEX_BRANCH=${28:-main}
-IPEX_COMMIT=${29:-main}
+EXTRA=${29}
+
+
 
 # cd target dir
 echo cur_dir :$(pwd)
@@ -44,7 +46,7 @@ if [ -f finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt ]; then
 fi
 
 # launch benchmark
-bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS} ${WRAPPER} ${HF_TOKEN} ${BACKEND} ${SUITE} ${MODEL} ${TORCH_START_COMMIT} ${TORCH_END_COMMIT} ${SCENARIO} ${KIND} ${PERF_RATIO} ${EXTRA} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT}
+bash launch.sh ${TAG} ${PRECISION} ${TEST_MODE} ${SHAPE} ${TORCH_REPO} ${TORCH_BRANCH} ${TORCH_COMMIT} ${DYNAMO_BENCH} ${AUDIO} ${TEXT} ${VISION} ${DATA} ${TORCH_BENCH} ${THREADS} ${CHANNELS} ${WRAPPER} ${HF_TOKEN} ${BACKEND} ${SUITE} ${MODEL} ${TORCH_START_COMMIT} ${TORCH_END_COMMIT} ${SCENARIO} ${KIND} ${PERF_RATIO} ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${EXTRA} 
 
 # create finished_${PRECISION}_${TEST_MODE}_${SHAPE}.txt when finished
 if [ $? -eq 0 ]; then
