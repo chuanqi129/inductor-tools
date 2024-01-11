@@ -81,6 +81,7 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/cpu_usebm.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/cpu_usebm_train.sh $USER:/workspace/pytorch
 
     # Generate SW info out of real test
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
@@ -91,8 +92,10 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
         docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND training $SUITE $EXTRA"
     elif [ $TEST_MODE == "training" ]; then
         docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
-    elif [ $TEST_MODE == "user_benchmark" ]; then
+    elif [ $TEST_MODE == "user_benchmark_infer" ]; then
         docker exec -i $USER bash -c "bash cpu_usebm.sh"
+    elif [ $TEST_MODE == "user_benchmark_train" ]; then
+        docker exec -i $USER bash -c "bash cpu_usebm_train.sh"
     fi
 # Launch issue guilty commit search
 else
