@@ -30,7 +30,7 @@ elif [ $ins_name == "spr-guilty-search" ]; then
     store_size=200
 elif [ $ins_name == "spr-ondemand-tmp" ]; then
     max_ins_num=2
-    ins_type="c7i.16xlarge"
+    ins_type="c7i.metal-24xl"
     store_size=300
 elif [ $ins_name == "spr-regular" ]; then
     max_ins_num=1
