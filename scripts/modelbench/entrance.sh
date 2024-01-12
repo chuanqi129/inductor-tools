@@ -30,7 +30,7 @@ KIND=${24:-crash} # issue kind crash/drop
 PERF_RATIO=${25:-1.1}
 IPEX_REPO=${26:-https://github.com/intel/intel-extension-for-pytorch.git}
 IPEX_BRANCH=${27:-main}
-IPEX_COMMIT=${28:-main}
+IPEX_COMMIT=${28:-${IPEX_BRANCH}}
 
 EXTRA=${29}
 
