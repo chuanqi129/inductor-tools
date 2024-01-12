@@ -461,7 +461,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/0110.patch ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/ipex_backend.patch ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash  ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${_extra_param}> entrance.log 2>&1 &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash 1.1 ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${_extra_param}> entrance.log 2>&1 &" &
             '''
         }
     }
