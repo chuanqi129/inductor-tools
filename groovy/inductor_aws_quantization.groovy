@@ -525,26 +525,26 @@ node(NODE_LABEL){
             echo err.getMessage()   
         }
     }
-    stage("generate report"){
-        if(refer_build != '0') {
-            copyArtifacts(
-                projectName: currentBuild.projectName,
-                selector: specific("${refer_build}"),
-                fingerprintArtifacts: true
-            )           
-            sh '''
-            #!/usr/bin/env bash
-            cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-            cp scripts/modelbench/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
-            '''
-        }else{
-            sh '''
-            #!/usr/bin/env bash
-            cd ${WORKSPACE} && cp scripts/modelbench/report_quant_perf.py ${WORKSPACE}
-            python report_quant_perf.py -t ${_target} --url ${BUILD_URL}
-            '''
-        }
-    }    
+    // stage("generate report"){
+    //     if(refer_build != '0') {
+    //         copyArtifacts(
+    //             projectName: currentBuild.projectName,
+    //             selector: specific("${refer_build}"),
+    //             fingerprintArtifacts: true
+    //         )           
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+    //         cp scripts/modelbench/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
+    //         '''
+    //     }else{
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         cd ${WORKSPACE} && cp scripts/modelbench/report_quant_perf.py ${WORKSPACE}
+    //         python report_quant_perf.py -t ${_target} --url ${BUILD_URL}
+    //         '''
+    //     }
+    // }    
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
@@ -552,7 +552,7 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         rm -rf ${WORKSPACE}/raw_log
         '''
-        if ("${test_mode}" == "inference")
+        if ("${test_mode}" == "all")
         {
             sh '''
             #!/usr/bin/env bash
@@ -573,29 +573,29 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
     }
 
-    stage("Sent Email"){
-        if ("${debug}" == "true"){
-            maillist="${debug_mail}"
-        }else{
-            maillist="${default_mail}"
-        }
-        if (fileExists("${WORKSPACE}/inductor_log/quantization_model_bench.html") == true){
-            emailext(
-                subject: "Quantization-Regular-Report(AWS)_${env._target}",
-                mimeType: "text/html",
-                attachmentsPattern: "**/inductor_log/*.xlsx",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
-            )
-        }else{
-            emailext(
-                subject: "Failure occurs in Quantization-Regular-Report(AWS)_${env._target}",
-                mimeType: "text/html",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: 'Job build failed, please double check in ${BUILD_URL}'
-            )
-        }
-    }//email
+    // stage("Sent Email"){
+    //     if ("${debug}" == "true"){
+    //         maillist="${debug_mail}"
+    //     }else{
+    //         maillist="${default_mail}"
+    //     }
+    //     if (fileExists("${WORKSPACE}/inductor_log/quantization_model_bench.html") == true){
+    //         emailext(
+    //             subject: "Quantization-Regular-Report(AWS)_${env._target}",
+    //             mimeType: "text/html",
+    //             attachmentsPattern: "**/inductor_log/*.xlsx",
+    //             from: "pytorch_inductor_val@intel.com",
+    //             to: maillist,
+    //             body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
+    //         )
+    //     }else{
+    //         emailext(
+    //             subject: "Failure occurs in Quantization-Regular-Report(AWS)_${env._target}",
+    //             mimeType: "text/html",
+    //             from: "pytorch_inductor_val@intel.com",
+    //             to: maillist,
+    //             body: 'Job build failed, please double check in ${BUILD_URL}'
+    //         )
+    //     }
+    // }//email
 }
