@@ -346,7 +346,7 @@ excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Quantization_Regressio
 process_perf(excel, args.target, args.refer)
 process_acc(excel, args.target, args.refer)
 update_swinfo(excel)
-excel.save()
+excel.close()
 html_generate()
 
 
