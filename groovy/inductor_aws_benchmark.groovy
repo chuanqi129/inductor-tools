@@ -576,6 +576,10 @@ node(NODE_LABEL){
             }else{
                 sh '''
                 #!/usr/bin/env bash
+                 if [ ${_backend} == "ipex"  ];then
+                    cd ${WORKSPACE} && mv ${_THREADS}/inductor_log ${_THREADS}/ipex_log
+                    sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
+                fi
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
