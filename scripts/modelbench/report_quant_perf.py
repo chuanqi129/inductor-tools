@@ -114,12 +114,12 @@ def update_swinfo(excel):
 
 def process_perf(excel, target, refer):
     ptq_perf = getfolder(target,'ptq')
-    ptq_cpp_perf = getfolder(target,'ptq_cpp')
+    ptq_cpp_perf = getfolder(target,'cpp')
     qat_perf = getfolder(target,'qat')
     inductor_perf = getfolder(target,'general')
 
     ptq_ref = getfolder(refer,'ptq')
-    ptq_cpp_ref = getfolder(refer,'ptq_cpp')
+    ptq_cpp_ref = getfolder(refer,'cpp')
     qat_ref = getfolder(refer,'qat')
     inductor_ref = getfolder(refer,'general')
 
