@@ -560,7 +560,13 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                if [ ${_backend} == "ipex"  ];then
+                    cd ${WORKSPACE} && mv ${_THREADS}/inductor_log ${_THREADS}/ipex_log
+                    sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
+                    mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
+                else
+                    cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                fi
                 if [ ${_dash_board} == "true" ]; then
                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
                 else
