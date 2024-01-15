@@ -58,6 +58,7 @@ def update_new_perfer_regression(df_summary, col):
     regression = regression.copy()
     regression.loc[0] = list(regression.shape[1]*'*')
     new_performance_regression = pd.concat([new_performance_regression,regression])
+    new_performance_regression = new_performance_regression.drop_duplicates()
 
 def update_new_acc_regression(df_summary, col):
     global new_acc_regression
@@ -65,6 +66,7 @@ def update_new_acc_regression(df_summary, col):
     regression = regression.copy()
     regression.loc[0] = list(regression.shape[1]*'*')
     new_acc_regression = pd.concat([new_acc_regression,regression])
+    new_acc_regression = new_acc_regression.drop_duplicates()
 
 def update_swinfo(excel):
     data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
@@ -259,16 +261,16 @@ def process_acc(excel, target, refer):
 
     regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
     improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp/ptq(new)'] < 0.99],styler_obj=regression_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat/ptq(new)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp/ptq(new)'] < 0.95],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat/ptq(new)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] < 0.95],styler_obj=regression_style)
 
     update_new_acc_regression(df_summary,'ptq ratio(new/old)')
     update_new_acc_regression(df_summary,'qat ratio(new/old)')
@@ -337,7 +339,7 @@ def html_generate():
     perf_regression= new_performance_regression.to_html(classes="table",index = False)
     acc_regression= new_acc_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/quantization_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/quantization_perf_regression.html',mode = "a") as perf_f:
-        f.write(html_head()+"<p>Summary_Perf</p>"+summary_perf+"<p>Summary_ACC</p>"+summary_acc+"<p>SW info</p>"+swinfo+"<p>new_perf_regression</p>"+perf_regression+"<p>new_acc_regression</p>"+acc_regression+html_tail())
+        f.write(html_head()+"<p>Summary_Perf</p>"+summary_perf+"<p>Summary_ACC</p>"+summary_acc+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html+"<p>new_perf_regression</p>"+perf_regression+"<p>new_acc_regression</p>"+acc_regression+html_tail())
         perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
     f.close()
     perf_f.close()            
