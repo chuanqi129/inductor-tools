@@ -28,6 +28,10 @@ elif [ $ins_name == "spr-guilty-search" ]; then
     max_ins_num=5
     ins_type="c7i.16xlarge"
     store_size=200
+elif [ $ins_name == "spr-metal-guilty-search" ]; then
+    max_ins_num=5
+    ins_type="c7i.metal-24xl"
+    store_size=200
 elif [ $ins_name == "spr-ondemand-tmp" ]; then
     max_ins_num=2
     ins_type="c7i.metal-24xl"
