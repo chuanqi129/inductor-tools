@@ -577,7 +577,7 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                  if [ ${_backend} == "ipex"  ];then
-                    cd ${WORKSPACE} && mv ${_THREADS}/inductor_log ${_THREADS}/ipex_log
+                    cd ${WORKSPACE} && mv ${_target}/inductor_log ${_target}/ipex_log
                     sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
                 fi
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
