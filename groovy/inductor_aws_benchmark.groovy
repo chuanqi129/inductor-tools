@@ -397,6 +397,13 @@ env._IPEX_REPO = "$IPEX_REPO"
 env._IPEX_BRANCH = "$IPEX_BRANCH"
 env._IPEX_COMMIT = "$IPEX_COMMIT"
 
+if ("$backend" == "ipex"){
+    env._log_name = "ipex_log"
+}else{
+    env._log_name = "inductor_log"
+}
+
+
 node(NODE_LABEL){
     stage("Find or create instance"){
         deleteDir()
@@ -638,7 +645,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_log_name}/ ./ && rm -rf ${_target}
             '''
         }
         if ("${test_mode}" == "training")
@@ -650,7 +657,7 @@ node(NODE_LABEL){
             cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
             '''
         } 
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/${_log_name}/**", fingerprint: true
     }
 
     stage("Sent Email"){
