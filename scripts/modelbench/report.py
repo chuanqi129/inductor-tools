@@ -615,12 +615,12 @@ def update_issue_commits(precision):
 |  Item  | Value  |
 |  ----  | ----  |
 | Manufacturer  | Amazon EC2 |
-| Product Name  | c7i.16xlarge |
+| Product Name  | c7i.metal-24xl |
 | CPU Model  | Intel(R) Xeon(R) Platinum 8488C CPU @ 2.40GHz |
-| Installed Memory  | 128GB (1x128GB DDR5 4800 MT/s [Unknown]) |
+| Installed Memory  | 192GB (8x24GB DDR5 4800 MT/s [4800 MT/s]) |
 | OS  | Ubuntu 22.04.3 LTS |
 | Kernel  | 6.2.0-1017-aws |
-| Microcode  | 0x2b0004b1 |
+| Microcode  | 0x2b0004d0 |
 | GCC  | gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 |
 | GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35 |
 | Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
