@@ -517,72 +517,34 @@ node(NODE_LABEL){
             echo err.getMessage()   
         }
     }
-    // stage("generate report"){
-    //     if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
-    //     {
-    //         if(refer_build != '0') {
-    //             copyArtifacts(
-    //                 projectName: currentBuild.projectName,
-    //                 selector: specific("${refer_build}"),
-    //                 fingerprintArtifacts: true
-    //             )           
-    //             sh '''
-    //             #!/usr/bin/env bash
-    //             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-    //             if [ ${_dash_board} == "true" ]; then
-    //                 cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-    //             else
-    //                 cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-    //             fi
-    //             '''
-    //         }else{
-    //             sh '''
-    //             #!/usr/bin/env bash
-    //             cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
-    //             if [ ${_dash_board} == "true" ]; then
-    //                 python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-    //             else
-    //                 python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-    //             fi
-    //             '''
-    //         }
-    //     }
-    //     if ("${test_mode}" == "training")
-    //     {
-    //         if(refer_build != '0') {
-    //             copyArtifacts(
-    //                 projectName: currentBuild.projectName,
-    //                 selector: specific("${refer_build}"),
-    //                 fingerprintArtifacts: true
-    //             )           
-    //             sh '''
-    //             #!/usr/bin/env bash
-    //             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-    //             cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
-    //             '''
-    //         }else{
-    //             sh '''
-    //             #!/usr/bin/env bash
-    //             cd ${WORKSPACE} && cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -t ${_target}
-    //             '''
-    //         }
-    //     }
-    // }    
-
-    // stage("regression issue create")
-    // {
-    //     try{
-    //         sh '''
-    //         #!/usr/bin/env bash
-    //         source activate dev
-    //         cd ${HOME}/workspace/pytorch
-    //         git pull origin main
-    //         gh issue create --title "[inductor][cpu]Perf regression ${_precision}_${_test_mode}_${_shape}_${_WRAPPER} (Auto_generated" --body-file ${WORKSPACE}/${_target}/inductor_perf_regression.html
-    //         '''
-    //     }catch(err){
-    //         echo err.getMessage()   
-    //     }
-    // }
+    stage("generate report"){
+        if(refer_build != '0') {
+            copyArtifacts(
+                projectName: currentBuild.projectName,
+                selector: specific("${refer_build}"),
+                fingerprintArtifacts: true
+            )           
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+            if [ ${_dash_board} == "true" ]; then
+                cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+            else
+                cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+            fi
+            '''
+        }else{
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
+            if [ ${_dash_board} == "true" ]; then
+                python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+            else
+                python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+            fi
+            '''
+        }
+    }    
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times

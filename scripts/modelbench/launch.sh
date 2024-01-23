@@ -96,6 +96,8 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
         docker exec -i $USER bash -c "bash cpu_usebm.sh"
     elif [ $TEST_MODE == "user_benchmark_train" ]; then
         docker exec -i $USER bash -c "bash cpu_usebm_train.sh"
+    elif [ $TEST_MODE == "user_benchmark" ]; then
+        docker exec -i $USER bash -c "bash cpu_usebm.sh"
     fi
 # Launch issue guilty commit search
 else
