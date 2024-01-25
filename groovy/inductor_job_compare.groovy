@@ -121,7 +121,7 @@ def getParams(String project, String buildNumber){
 
   def params=[]
 
-  Jenkins.instance.getItem(project).getBuild(buildNumber).getActions(ParametersAction)
+  Jenkins.instance.getItemByFullName(project).getBuild(buildNumber).getActions(ParametersAction)
   .each { action ->
     action.getParameters().each {
       params << it
