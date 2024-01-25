@@ -65,7 +65,8 @@ if [[ $SUITE == "all" ]]; then
 else
     SUITE="--suites=${SUITE}"
 fi
-
+export TORCH_COMPILE_DEBUG=1
+export TORCH_LOGS="+schedule,+inductor,+output_code"
 # multi-threads
 multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
