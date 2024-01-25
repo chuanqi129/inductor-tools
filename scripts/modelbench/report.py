@@ -500,7 +500,6 @@ def process(input,thread):
         global new_performance_improvement
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
-        improvement.loc[0] = list(improvement.shape[1]*'*')
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
     else:
         data_new=input[['name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
