@@ -36,7 +36,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
 
     # Check START_COMMIT performance for early stop
     rm -rf /tmp/*
-    git reset --hard HEAD && git checkout ${TORCH_BRANCH} && git checkout ${START_COMMIT} && git submodule sync && git submodule update --init --recursive
+    git reset --hard ${START_COMMIT} && git submodule sync && git submodule update --init --recursive
     python setup.py clean && python setup.py develop && cd .. && \
     rm -rf vision && git clone -b main https://github.com/pytorch/vision.git && cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
@@ -57,7 +57,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     fi
 fi
 chmod +x bisect_run_test.sh
-git reset --hard HEAD && git checkout ${TORCH_BRANCH} && git pull && git checkout ${START_COMMIT}
+git reset --hard && git pull && git checkout ${START_COMMIT}
 git bisect start ${START_COMMIT} ${END_COMMIT}
 git bisect run ./bisect_run_test.sh $SUITE $MODEL $MODE $PRECISION $SHAPE $WRAPPER $SCENARIO $KIND $THREADS $CHANNELS $FREEZE 0 $expected_perf $BACKEND $PERF_RATIO $EXTRA 2>&1 | tee ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${SCENARIO}-${THREADS}-${KIND}_guilty_commit.log
 git bisect reset
