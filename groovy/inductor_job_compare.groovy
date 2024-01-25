@@ -126,7 +126,7 @@ def getParams(String project, String buildNumber, String parameterName){
   return paramValue
 }
 
-env._precision = getParams("$target_job", "$target_job_selector")
+env._precision = getParams("$target_job", "$target_job_selector", "precision")
 echo "${_precision}"
 
 env._precision = "$precision"
