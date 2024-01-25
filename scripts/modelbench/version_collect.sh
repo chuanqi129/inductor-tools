@@ -1,18 +1,29 @@
-LOG_DIR=${1:-inductor_log}
-DYNAMO_BENCH=${2:-fea73cb}
+BENCH_COMMIT=${1:-fea73cb}
 
 # collect sw info
 curdir=$(pwd)
-mkdir -p ${curdir}/${LOG_DIR}
-touch ${curdir}/${LOG_DIR}/version.txt
+touch ${curdir}/version.csv
 cd /workspace/benchmark
-echo torchbench : $(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/version.txt
-cd /workspace/pytorch
-python -c '''import torch,torchvision,torchtext,torchaudio,torchdata; \
-        print("torch : ", torch.__version__); \
-        print("torchvision : ", torchvision.__version__); \
-        print("torchtext : ", torchtext.__version__); \
-        print("torchaudio : ", torchaudio.__version__); \
-        print("torchdata : ", torchdata.__version__)''' >>${curdir}/${LOG_DIR}/version.txt
-echo dynamo_benchmarks : $DYNAMO_BENCH >>${curdir}/${LOG_DIR}/version.txt
+echo torchbench,$(git rev-parse --abbrev-ref HEAD),$(git rev-parse --short HEAD) >>${curdir}/version.csv
 
+cd /workspace/pytorch
+torch_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "${torch_branch}" == "nightly" ]];then
+    echo torch,${torch_branch},$(git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1) >>${curdir}/version.csv
+else
+    echo torch,${torch_branch},$(git rev-parse --short HEAD) >>${curdir}/version.csv
+fi
+
+cd /workspace/vision
+echo torchvision,$(git rev-parse --abbrev-ref HEAD),$(git rev-parse --short HEAD) >>${curdir}/version.csv
+
+cd /workspace/text
+echo torchtext,$(git rev-parse --abbrev-ref HEAD),$(git rev-parse --short HEAD) >>${curdir}/version.csv
+
+cd /workspace/audio
+echo torchaudio,$(git rev-parse --abbrev-ref HEAD),$(git rev-parse --short HEAD) >>${curdir}/version.csv
+
+cd /workspace/data
+echo torchdata,$(git rev-parse --abbrev-ref HEAD),$(git rev-parse --short HEAD) >>${curdir}/version.csv
+
+echo dynamo_benchmarks,${torch_branch},$DYNAMO_BENCH >>${curdir}/version.csv

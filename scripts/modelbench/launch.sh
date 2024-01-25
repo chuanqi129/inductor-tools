@@ -79,10 +79,7 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
-
-    # Generate SW info out of real test
-    docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
+    docker cp $USER:/workspace/pytorch/version.csv $LOG_DIR
 
     if [ $TEST_MODE == "inference" ]; then
         docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND inference $SUITE $EXTRA"
