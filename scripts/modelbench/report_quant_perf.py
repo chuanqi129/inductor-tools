@@ -62,7 +62,7 @@ def update_new_perfer_regression(df_summary, col):
 
 def update_new_acc_regression(df_summary, col):
     global new_acc_regression
-    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.99)]
+    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.95)]
     regression = regression.copy()
     regression.loc[0] = list(regression.shape[1]*'*')
     new_acc_regression = pd.concat([new_acc_regression,regression])
