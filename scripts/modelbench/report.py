@@ -493,7 +493,6 @@ def process(input,thread):
         global new_performance_regression
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
-        regression.loc[0] = list(regression.shape[1]*'*')
         new_performance_regression = pd.concat([new_performance_regression,regression])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
