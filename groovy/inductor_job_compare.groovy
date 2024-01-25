@@ -115,20 +115,6 @@ if ('auto_guilty_commit_search' in params) {
 }
 echo "auto_guilty_commit_search: $auto_guilty_commit_search"
 
-String getParams(String project, int buildNumber, String parameterName){
-  def params=[]
-  def job = Jenkins.instance.getItemByFullName(project);
-  def build = job.getBuildByNumber(buildNumber);
-  paramValue = build.allActions.
-        find {it in hudson.model.ParametersAction}.
-        getParameter(parameterName).
-        value
-  return paramValue
-}
-
-env._precision = getParams("$target_job", target_job_selector, "precision")
-echo "${_precision}"
-
 env._precision = "$precision"
 env._target_job = "$target_job"
 env._target_sc = "$target_job_selector"
