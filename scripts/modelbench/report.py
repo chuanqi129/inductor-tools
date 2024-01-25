@@ -64,6 +64,7 @@ torchdata_main_commit=''
 
 new_performance_regression=pd.DataFrame()
 new_failures=pd.DataFrame()
+new_performance_improvement=pd.DataFrame()
 
 # cppwrapper gm values
 multi_threads_gm={}
@@ -487,7 +488,13 @@ def process(input,thread):
         regression.loc[0] = list(regression.shape[1]*'*')
         new_performance_regression = pd.concat([new_performance_regression,regression])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
-        data.set_row_height(rows=data.row_indexes, height=15)    
+        data.set_row_height(rows=data.row_indexes, height=15)
+
+        global new_performance_improvement
+        improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
+        improvement = improvement.copy()
+        improvement.loc[0] = list(improvement.shape[1]*'*')
+        new_performance_improvement = pd.concat([new_performance_improvement, improvement])
     else:
         data_new=input[['name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
@@ -792,13 +799,31 @@ def html_generate(html_off):
             st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
-            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f,open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f:
-                f.write(html_head()+"<p>Summary</p>"+summary+"<p>SW info</p>"+swinfo+"<p>Multi-threads Failures</p>"+mt_failures+"<p>Single-thread Failures</p>"+st_failures+"<p>new_perf_regression</p>"+perf_regression+"<p>new_failures</p>"+failures_regression+f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>"+html_tail())
-                perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html+f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
-                failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>"+failures_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info(nightly)</p>"+refer_swinfo_html+f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+            perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
+            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f, \
+                open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f, \
+                open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f, \
+                open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost:
+                f.write(html_head() + "<p>Summary</p>" + summary + \
+                        "<p>SW info</p>" + swinfo + \
+                        "<p>Multi-threads Failures</p>" + mt_failures + \
+                        "<p>Single-thread Failures</p>" + st_failures + \
+                        "<p>new_perf_regression</p>" + perf_regression + \
+                        "<p>new_failures</p>" + failures_regression + \
+                        "<p>new_perf_improvement</p>" + perf_improvement + \
+                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
+                perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        perf_regression + "<p>SW info</p>" + swinfo + "<p>Reference SW info (nightly)</p>" + \
+                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        failures_regression + "<p>SW info</p>" + swinfo + "<p>Reference SW info(nightly)</p>" + \
+                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                perf_boost.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        perf_improvement + "<p>SW info</p>" + swinfo + "<p>Reference SW info (nightly)</p>" + \
+                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
             f.close()
             perf_f.close()
-            failure_f.close()              
+            failure_f.close()
         except:
             print("html_generate_failed")
             pass
