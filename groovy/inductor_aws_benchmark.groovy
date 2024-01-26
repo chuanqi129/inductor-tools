@@ -475,7 +475,6 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/${_target}
                 fi
                 mkdir -p ${WORKSPACE}/${_target}
-                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                 break
             else
                 sleep 1h
@@ -484,7 +483,6 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
-                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                     break
                 fi
             fi
@@ -492,14 +490,14 @@ node(NODE_LABEL){
         '''
     }
     // Add raw log artifact stage in advance to avoid crash in report generate stage
-    stage("archive raw test results"){
-        sh '''
-            #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
-            cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
-        '''
-        archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
-    }
+    // stage("archive raw test results"){
+    //     sh '''
+    //         #!/usr/bin/env bash
+    //         mkdir -p $HOME/inductor_dashboard
+    //         cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
+    //     '''
+    //     archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
+    // }
     stage("stop or terminate instance")
     {
         try{
@@ -515,57 +513,57 @@ node(NODE_LABEL){
             echo err.getMessage()   
         }
     }
-    stage("generate report"){
-        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
-        {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
-                )           
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-                else
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
-                fi
-                '''
-            }else{
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
-                if [ ${_dash_board} == "true" ]; then
-                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-                else
-                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
-                fi
-                '''
-            }
-        }
-        if ("${test_mode}" == "training")
-        {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
-                )           
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
-                '''
-            }else{
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -t ${_target}
-                '''
-            }
-        }
-    }    
+    // stage("generate report"){
+    //     if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
+    //     {
+    //         if(refer_build != '0') {
+    //             copyArtifacts(
+    //                 projectName: currentBuild.projectName,
+    //                 selector: specific("${refer_build}"),
+    //                 fingerprintArtifacts: true
+    //             )           
+    //             sh '''
+    //             #!/usr/bin/env bash
+    //             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+    //             if [ ${_dash_board} == "true" ]; then
+    //                 cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+    //             else
+    //                 cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+    //             fi
+    //             '''
+    //         }else{
+    //             sh '''
+    //             #!/usr/bin/env bash
+    //             cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
+    //             if [ ${_dash_board} == "true" ]; then
+    //                 python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+    //             else
+    //                 python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws
+    //             fi
+    //             '''
+    //         }
+    //     }
+    //     if ("${test_mode}" == "training")
+    //     {
+    //         if(refer_build != '0') {
+    //             copyArtifacts(
+    //                 projectName: currentBuild.projectName,
+    //                 selector: specific("${refer_build}"),
+    //                 fingerprintArtifacts: true
+    //             )           
+    //             sh '''
+    //             #!/usr/bin/env bash
+    //             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+    //             cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
+    //             '''
+    //         }else{
+    //             sh '''
+    //             #!/usr/bin/env bash
+    //             cd ${WORKSPACE} && cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -t ${_target}
+    //             '''
+    //         }
+    //     }
+    // }    
 
     // stage("regression issue create")
     // {
@@ -582,80 +580,80 @@ node(NODE_LABEL){
     //     }
     // }
 
-    stage('archiveArtifacts') {
-        // Remove raw log fistly in case inducto_log will be artifact more than 2 times
-        sh '''
-        #!/usr/bin/env bash
-        rm -rf ${WORKSPACE}/raw_log
-        '''
-        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
-        {
-            sh '''
-            #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
-            '''
-        }
-        if ("${test_mode}" == "training")
-        {
-            sh '''
-            #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard/Train
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
-            '''
-        } 
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
-    }
+    // stage('archiveArtifacts') {
+    //     // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+    //     sh '''
+    //     #!/usr/bin/env bash
+    //     rm -rf ${WORKSPACE}/raw_log
+    //     '''
+    //     if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
+    //     {
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         mkdir -p $HOME/inductor_dashboard
+    //         cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
+    //         cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+    //         '''
+    //     }
+    //     if ("${test_mode}" == "training")
+    //     {
+    //         sh '''
+    //         #!/usr/bin/env bash
+    //         mkdir -p $HOME/inductor_dashboard/Train
+    //         cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
+    //         cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+    //         '''
+    //     } 
+    //     archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+    // }
 
-    stage("Sent Email"){
-        if ("${debug}" == "true"){
-            maillist="${debug_mail}"
-        }else{
-            maillist="${default_mail}"
-        }
-        if ("${test_mode}" == "inference")
-        {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
-                emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
-                    mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
-                )
-            }else{
-                emailext(
-                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
-                    mimeType: "text/html",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: 'Job build failed, please double check in ${BUILD_URL}'
-                )
-            }
-        }//inference
-        if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
-        {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
-                emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
-                    mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
-                )
-            }else{
-                emailext(
-                    subject: "Failure occurs in Torchinductor Training Benchmark (AWS)_${env._target}",
-                    mimeType: "text/html",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: 'Job build failed, please double check in ${BUILD_URL}'
-                )
-            }           
-        }//training training_full
-    }//email
+    // stage("Sent Email"){
+    //     if ("${debug}" == "true"){
+    //         maillist="${debug_mail}"
+    //     }else{
+    //         maillist="${default_mail}"
+    //     }
+    //     if ("${test_mode}" == "inference")
+    //     {
+    //         if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
+    //             emailext(
+    //                 subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+    //                 mimeType: "text/html",
+    //                 attachmentsPattern: "**/inductor_log/*.xlsx",
+    //                 from: "pytorch_inductor_val@intel.com",
+    //                 to: maillist,
+    //                 body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+    //             )
+    //         }else{
+    //             emailext(
+    //                 subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
+    //                 mimeType: "text/html",
+    //                 from: "pytorch_inductor_val@intel.com",
+    //                 to: maillist,
+    //                 body: 'Job build failed, please double check in ${BUILD_URL}'
+    //             )
+    //         }
+    //     }//inference
+    //     if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
+    //     {
+    //         if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
+    //             emailext(
+    //                 subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+    //                 mimeType: "text/html",
+    //                 attachmentsPattern: "**/inductor_log/*.xlsx",
+    //                 from: "pytorch_inductor_val@intel.com",
+    //                 to: maillist,
+    //                 body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+    //             )
+    //         }else{
+    //             emailext(
+    //                 subject: "Failure occurs in Torchinductor Training Benchmark (AWS)_${env._target}",
+    //                 mimeType: "text/html",
+    //                 from: "pytorch_inductor_val@intel.com",
+    //                 to: maillist,
+    //                 body: 'Job build failed, please double check in ${BUILD_URL}'
+    //             )
+    //         }           
+    //     }//training training_full
+    // }//email
 }
