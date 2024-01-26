@@ -47,21 +47,6 @@ known_failures ={
     "torchrec_dlrm":"AttributeError: '_OpNamespace' 'fbgemm' object has no attribute 'jagged_2d_to_dense'",
 }
 
-# SW info
-torch_commit=''
-torchbench_commit=''
-torchaudio_commit=''
-torchtext_commit=''
-torchvision_commit=''
-torchdata_commit=''
-dynamo_benchmarks_commit=''
-
-torch_main_commit=''
-torchaudio_main_commit=''
-torchtext_main_commit=''
-torchvision_main_commit=''
-torchdata_main_commit=''
-
 new_performance_regression=pd.DataFrame()
 new_performance_regression_model_list=pd.DataFrame()
 new_failures=pd.DataFrame()
@@ -186,57 +171,25 @@ def update_summary(excel,reference,target):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
-def get_main_commit(item,nightly_commit):
-    input_url="https://github.com/pytorch/"+item+"/commit/"+nightly_commit
-    page=requests.get(input_url)
-    soup = BeautifulSoup(page.text,features="html.parser")
-    item = str(soup.find('title'))
-    output=(item.split('(')[1].split(')')[0])[:7]
-    return output
-
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
-    swinfo=pd.DataFrame(data)
     try:
-        version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        global torch_commit,torchbench_commit,torchaudio_commit,torchtext_commit,torchvision_commit,torchdata_commit,dynamo_benchmarks_commit
-        global torch_main_commit,torchaudio_main_commit,torchtext_main_commit,torchvision_main_commit,torchdata_main_commit
-
-        torch_commit=version.loc[ 1, "commit"][-7:]
-        torchbench_commit=version.loc[ 0, "commit"][-8:]
-        torchaudio_commit=version.loc[ 4, "commit"][-7:]
-        torchtext_commit=version.loc[ 3, "commit"][-7:]
-        torchvision_commit=version.loc[ 2, "commit"][-7:]
-        torchdata_commit=version.loc[ 5, "commit"][-7:]
-        dynamo_benchmarks_commit=version.loc[ 6, "commit"][-7:]
-
-        swinfo.loc[0,"Nightly commit"]=torch_commit
-        swinfo.loc[1,"Main commit"]=torchbench_commit
-        swinfo.loc[2,"Nightly commit"]=torchaudio_commit
-        swinfo.loc[3,"Nightly commit"]=torchtext_commit
-        swinfo.loc[4,"Nightly commit"]=torchvision_commit
-        swinfo.loc[5,"Nightly commit"]=torchdata_commit
-        swinfo.loc[6,"Nightly commit"]=dynamo_benchmarks_commit
-
-        torch_main_commit=get_main_commit("pytorch",torch_commit)
-        torchaudio_main_commit=get_main_commit("audio",torchaudio_commit)
-        torchtext_main_commit=get_main_commit("text",torchtext_commit)
-        torchvision_main_commit=get_main_commit("vision",torchvision_commit)
-        torchdata_main_commit=get_main_commit("data",torchdata_commit) 
-
-        swinfo.loc[0,"Main commit"]=torch_main_commit
-        swinfo.loc[2,"Main commit"]=torchaudio_main_commit
-        swinfo.loc[3,"Main commit"]=torchtext_main_commit
-        swinfo.loc[4,"Main commit"]=torchvision_main_commit
-        swinfo.loc[5,"Main commit"]=torchdata_main_commit
+        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+        swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        if args.reference is not None:
+            refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
+            refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
+            swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
     except :
-        print("version.txt not found")
+        print("version.csv not found")
         pass
 
-    sf = StyleFrame(swinfo)
+    sf = StyleFrame(swinfo_df)
     sf.set_column_width(1, 25)
     sf.set_column_width(2, 20)
     sf.set_column_width(3, 25)
+    if args.reference is not None:
+        sf.set_column_width(4, 20)
+        sf.set_column_width(5, 25)
 
     sf.to_excel(sheet_name='SW',excel_writer=excel)   
 
@@ -685,24 +638,43 @@ def update_issue_commits(precision):
     else:
         hw_info = spr_hw_info
     print(hw_info)
-    mt_addtional=f'''
+    
+    # Software information
+    swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+    swinfo_df.set_index('name', inplace=True)
+    torch_branch = swinfo_df.at['torch', 'branch']
+    torch_commit = swinfo_df.at['torch', 'commit']
+    torchbench_branch = swinfo_df.at['torchbench', 'branch']
+    torchbench_commit = swinfo_df.at['torchbench', 'commit']
+    torchvision_branch = swinfo_df.at['torchvision', 'branch']
+    torchvision_commit = swinfo_df.at['torchvision', 'commit']
+    torchtext_branch = swinfo_df.at['torchtext', 'branch']
+    torchtext_commit = swinfo_df.at['torchtext', 'commit']
+    torchaudio_branch = swinfo_df.at['torchaudio', 'branch']
+    torchaudio_commit = swinfo_df.at['torchaudio', 'commit']
+    torchdata_branch = swinfo_df.at['torchdata', 'branch']
+    torchdata_commit = swinfo_df.at['torchdata', 'commit']
+    dynamo_benchmarks_branch = swinfo_df.at['dynamo_benchmarks', 'branch']
+    dynamo_benchmarks_commit = swinfo_df.at['dynamo_benchmarks', 'commit']
+    sw_info = f'''
 SW information:
 
-SW	| Nightly commit	| Main commit
+SW	| Branch | Commit
 -- | -- | --
-Pytorch|[{torch_commit}](https://github.com/pytorch/pytorch/commit/{torch_commit})|[{torch_main_commit}](https://github.com/pytorch/pytorch/commit/{torch_main_commit})
-Torchbench|/|[{torchbench_commit}](https://github.com/pytorch/benchmark/commit/{torchbench_commit})
-torchaudio|[{torchaudio_commit}](https://github.com/pytorch/audio/commit/{torchaudio_commit})|[{torchaudio_main_commit}](https://github.com/pytorch/audio/commit/{torchaudio_main_commit})
-torchtext|[{torchtext_commit}](https://github.com/pytorch/text/commit/{torchtext_commit})| [{torchtext_main_commit}](https://github.com/pytorch/text/commit/{torchtext_main_commit})
-torchvision|[{torchvision_commit}](https://github.com/pytorch/vision/commit/{torchvision_commit})|[{torchvision_main_commit}](https://github.com/pytorch/vision/commit/{torchvision_main_commit})
-torchdata|[{torchdata_commit}](https://github.com/pytorch/data/commit/{torchdata_commit})|[{torchdata_main_commit}](https://github.com/pytorch/data/commit/{torchdata_main_commit})
-dynamo_benchmarks|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorch/commit/{dynamo_benchmarks_commit})|/
+Pytorch|[{torch_branch}](https://github.com/pytorch/pytorch/tree/{torch_branch})|[{torch_commit}](https://github.com/pytorch/pytorch/commit/{torch_commit})
+Torchbench|[{torchbench_branch}](https://github.com/pytorch/benchmark/tree/{torchbench_branch})|[{torchbench_commit}](https://github.com/pytorch/benchmark/commit/{torchbench_commit})
+torchaudio|[{torchaudio_branch}](https://github.com/pytorch/audio/tree/{torchaudio_branch})|[{torchaudio_commit}](https://github.com/pytorch/audio/commit/{torchaudio_commit})
+torchtext|[{torchtext_branch}](https://github.com/pytorch/text/tree/{torchtext_branch})| [{torchtext_commit}](https://github.com/pytorch/text/commit/{torchtext_commit})
+torchvision|[{torchvision_branch}](https://github.com/pytorch/vision/tree/{torchvision_branch})|[{torchvision_commit}](https://github.com/pytorch/vision/commit/{torchvision_commit})
+torchdata|[{torchdata_branch}](https://github.com/pytorch/data/tree/{torchdata_branch})|[{torchdata_commit}](https://github.com/pytorch/data/commit/{torchdata_commit})
+dynamo_benchmarks|[{dynamo_benchmarks_branch}](https://github.com/pytorch/pytorch/tree/{dynamo_benchmarks_branch})|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorch/commit/{dynamo_benchmarks_commit})
 
 
 HW information
 
 {hw_info}
-'''+'''
+'''
+    mt_addtional= sw_info +'''
 Test command
 
 ```bash
@@ -715,23 +687,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
 
 ```
 '''
-    st_addtional=f'''
-SW information:
-
-SW	| Nightly commit	| Main commit
--- | -- | --
-Pytorch|[{torch_commit}](https://github.com/pytorch/pytorch/commit/{torch_commit})|[{torch_main_commit}](https://github.com/pytorch/pytorch/commit/{torch_main_commit})
-Torchbench|/|[{torchbench_commit}](https://github.com/pytorch/benchmark/commit/{torchbench_commit})
-torchaudio|[{torchaudio_commit}](https://github.com/pytorch/audio/commit/{torchaudio_commit})|[{torchaudio_main_commit}](https://github.com/pytorch/audio/commit/{torchaudio_main_commit})
-torchtext|[{torchtext_commit}](https://github.com/pytorch/text/commit/{torchtext_commit})| [{torchtext_main_commit}](https://github.com/pytorch/text/commit/{torchtext_main_commit})
-torchvision|[{torchvision_commit}](https://github.com/pytorch/vision/commit/{torchvision_commit})|[{torchvision_main_commit}](https://github.com/pytorch/vision/commit/{torchvision_main_commit})
-torchdata|[{torchdata_commit}](https://github.com/pytorch/data/commit/{torchdata_commit})|[{torchdata_main_commit}](https://github.com/pytorch/data/commit/{torchdata_main_commit})
-dynamo_benchmarks|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorch/commit/{dynamo_benchmarks_commit})|/
-
-HW information
-
-{hw_info}
-'''+'''
+    st_addtional = sw_info + '''
 Test command
 
 ```bash
@@ -836,10 +792,6 @@ def html_generate(html_off):
             content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
-            refer_swinfo_html = ''
-            if args.reference is not None:
-                refer_swinfo = pd.read_table(args.reference+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-                refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
             mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
             st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
@@ -863,17 +815,13 @@ def html_generate(html_off):
                         "<p>new_fixed_failures</p>" + fixed_failures + \
                         f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
                 perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_regression + "<p>SW info</p>" + swinfo + "<p>Reference SW info (nightly)</p>" + \
-                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        failures_regression + "<p>SW info</p>" + swinfo + "<p>Reference SW info(nightly)</p>" + \
-                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 perf_boost_f.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_improvement + "<p>SW info</p>" + swinfo + "<p>Reference SW info (nightly)</p>" + \
-                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 fixed_failure_f.write(f"<p>new_fixed_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        fixed_failures + "<p>SW info</p>" + swinfo + "<p>Reference SW info(nightly)</p>" + \
-                        refer_swinfo_html + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
             f.close()
             perf_f.close()
             failure_f.close()
