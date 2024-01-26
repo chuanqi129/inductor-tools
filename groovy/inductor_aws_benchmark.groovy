@@ -245,7 +245,8 @@ if ('TORCH_DATA_BRANCH' in params) {
 }
 echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
 
-DATA= 'default'
+// DATA= 'default'
+DATA= '07903385443da2cab8ed90c46bd4e02412945100'
 if ('DATA' in params) {
     echo "DATA in params"
     if (params.DATA != '') {
