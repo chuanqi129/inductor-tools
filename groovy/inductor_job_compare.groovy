@@ -175,7 +175,7 @@ node(NODE_LABEL){
     }
 
     stage("trigger Auto Guilty Commit Search job"){
-        // TODO: refer_build
+        // TODO: && refer_build is 0 in aws groovy
         if ("${auto_guilty_commit_search}" == "true") {
             if (!("${JOB_NAME}" =~ "inductor_job_result_compare")) {
                 env.target_job = "${JOB_NAME}"
@@ -184,26 +184,52 @@ node(NODE_LABEL){
             env.WRAPPER = "${target_job}" =~ "cppwrapper" ? "cpp" : "default";
             env.instance_name = "${_precision}" =~ "float32" ? "icx-guilty-search" : "spr-guilty-search";
             // TODO: THREADS, suite, model, scenario, kind, TORCH_START_COMMIT, TORCH_END_COMMIT
+            def file = new File('guilty_commit_search_model_list.csv')
+            RFC4180.withHeader()
+                    .parse(file.newReader())
+                    .iterator().each { record ->
+                        def cols = record.mapping.keySet()
+                        for(item in cols) {
+                            print item
+                            print '\t'
+                        }
+                        println()
+                    }
+            //for (line in file) {
+            //    println(${debug_mail})
+            //    println(${_precision})
+            //    println(${shape})
+            //    println(${TORCH_BRANCH})
+            //    println(${THREADS})
+            //    println(${WRAPPER})
+            //    println(${instance_name})
+            //    println(${suite})
+            //    println(${model})
+            //    println(${scenario})
+            //    println(${kind})
+            //    println(${TORCH_START_COMMIT})
+            //    println(${TORCH_END_COMMIT})
+            //}
             // if ("${target_job}" =~ "ds") {
             //     env.shape = "dynamic"
             // } else {
             //     env.shape = "static"
             // }
-            def guilty_commit_search_job = build job: 'inductor_aws_guilty_commit_search', propagate: false, parameters: [
-                [$class: 'StringParameterValue', name: 'default_mail', value: "${debug_mail}"],
-                [$class: 'StringParameterValue', name: 'precision', value: "${_precision}"],                
-                [$class: 'StringParameterValue', name: 'shape', value: "${shape}"],
-                [$class: 'StringParameterValue', name: 'TORCH_BRANCH', value: "${TORCH_BRANCH}"],
-                [$class: 'StringParameterValue', name: 'THREADS', value: "${THREADS}"],
-                [$class: 'StringParameterValue', name: 'WRAPPER', value: "${WRAPPER}"],
-                [$class: 'StringParameterValue', name: 'instance_name', value: "${instance_name}"],
-                [$class: 'StringParameterValue', name: 'suite', value: "${suite}"],
-                [$class: 'StringParameterValue', name: 'model', value: "${model}"],
-                [$class: 'StringParameterValue', name: 'scenario', value: "${scenario}"],
-                [$class: 'StringParameterValue', name: 'kind', value: "${kind}"],
-                [$class: 'StringParameterValue', name: 'TORCH_START_COMMIT', value: "${TORCH_START_COMMIT}"],
-                [$class: 'StringParameterValue', name: 'TORCH_END_COMMIT', value: "${TORCH_END_COMMIT}"],
-            ]
+            //def guilty_commit_search_job = build job: 'inductor_aws_guilty_commit_search', propagate: false, parameters: [
+            //    [$class: 'StringParameterValue', name: 'default_mail', value: "${debug_mail}"],
+            //    [$class: 'StringParameterValue', name: 'precision', value: "${_precision}"],                
+            //    [$class: 'StringParameterValue', name: 'shape', value: "${shape}"],
+            //    [$class: 'StringParameterValue', name: 'TORCH_BRANCH', value: "${TORCH_BRANCH}"],
+            //    [$class: 'StringParameterValue', name: 'THREADS', value: "${THREADS}"],
+            //    [$class: 'StringParameterValue', name: 'WRAPPER', value: "${WRAPPER}"],
+            //    [$class: 'StringParameterValue', name: 'instance_name', value: "${instance_name}"],
+            //    [$class: 'StringParameterValue', name: 'suite', value: "${suite}"],
+            //    [$class: 'StringParameterValue', name: 'model', value: "${model}"],
+            //    [$class: 'StringParameterValue', name: 'scenario', value: "${scenario}"],
+            //    [$class: 'StringParameterValue', name: 'kind', value: "${kind}"],
+            //    [$class: 'StringParameterValue', name: 'TORCH_START_COMMIT', value: "${TORCH_START_COMMIT}"],
+            //    [$class: 'StringParameterValue', name: 'TORCH_END_COMMIT', value: "${TORCH_END_COMMIT}"],
+            //]
         }
     }
 
