@@ -371,8 +371,8 @@ def get_fail_model_list(failures, thread, kind):
 
 def get_perf_model_list(regression, thread, kind):
     model_list = regression[['suite','name']]
-    model_list['thread'] = thread
     model_list['scenario'] = 'performance'
+    model_list['thread'] = thread
     model_list['kind'] = kind
     return model_list
 
