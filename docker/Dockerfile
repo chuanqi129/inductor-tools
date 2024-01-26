@@ -111,10 +111,8 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
-COPY version_collect.sh /workspace/pytorch/version_collect.sh
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    python -c "import torch, torchvision, torchtext" && \
-    bash version_collect.sh ${BENCH_COMMIT}
+    python -c "import torch, torchvision, torchtext"
 
 # Clean for final image
 FROM dev-base AS image
