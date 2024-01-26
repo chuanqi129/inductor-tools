@@ -1,3 +1,5 @@
+import java.io.File
+
 NODE_LABEL = 'mlp-spr-04.sh.intel.com'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
