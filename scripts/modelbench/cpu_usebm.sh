@@ -13,12 +13,12 @@ cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --launcher
 
 # FP32 eager
 ${cmd_prefix}
-mv .userbenchmark/cpu eager_throughtput_fp32
+mv .userbenchmark/cpu eager_throughtput_fp32_infer
 mv eager_throughtput_fp32 userbenchmark_aws/
 
 # BF16 eager
 ${cmd_prefix} --precision amp_bf16
-mv .userbenchmark/cpu eager_throughtput_bf16
+mv .userbenchmark/cpu eager_throughtput_bf16_infer
 mv eager_throughtput_bf16 userbenchmark_aws/
 
 # fx_int8 eager
