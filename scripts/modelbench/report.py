@@ -49,21 +49,6 @@ known_failures ={
     "torchrec_dlrm":"AttributeError: '_OpNamespace' 'fbgemm' object has no attribute 'jagged_2d_to_dense'",
 }
 
-# SW info
-torch_commit=''
-torchbench_commit=''
-torchaudio_commit=''
-torchtext_commit=''
-torchvision_commit=''
-torchdata_commit=''
-dynamo_benchmarks_commit=''
-
-torch_main_commit=''
-torchaudio_main_commit=''
-torchtext_main_commit=''
-torchvision_main_commit=''
-torchdata_main_commit=''
-
 new_performance_regression=pd.DataFrame()
 new_failures=pd.DataFrame()
 new_performance_improvement=pd.DataFrame()
@@ -205,57 +190,25 @@ def update_summary(excel, reference, target):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
-def get_main_commit(item,nightly_commit):
-    input_url="https://github.com/pytorch/"+item+"/commit/"+nightly_commit
-    page=requests.get(input_url)
-    soup = BeautifulSoup(page.text,features="html.parser")
-    item = str(soup.find('title'))
-    output=(item.split('(')[1].split(')')[0])[:7]
-    return output
-
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
-    swinfo=pd.DataFrame(data)
     try:
-        version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        global torch_commit,torchbench_commit,torchaudio_commit,torchtext_commit,torchvision_commit,torchdata_commit,dynamo_benchmarks_commit
-        global torch_main_commit,torchaudio_main_commit,torchtext_main_commit,torchvision_main_commit,torchdata_main_commit
-
-        torch_commit=version.loc[ 1, "commit"][-7:]
-        torchbench_commit=version.loc[ 0, "commit"][-8:]
-        torchaudio_commit=version.loc[ 4, "commit"][-7:]
-        torchtext_commit=version.loc[ 3, "commit"][-7:]
-        torchvision_commit=version.loc[ 2, "commit"][-7:]
-        torchdata_commit=version.loc[ 5, "commit"][-7:]
-        dynamo_benchmarks_commit=version.loc[ 6, "commit"][-7:]
-
-        swinfo.loc[0,"Nightly commit"]=torch_commit
-        swinfo.loc[1,"Main commit"]=torchbench_commit
-        swinfo.loc[2,"Nightly commit"]=torchaudio_commit
-        swinfo.loc[3,"Nightly commit"]=torchtext_commit
-        swinfo.loc[4,"Nightly commit"]=torchvision_commit
-        swinfo.loc[5,"Nightly commit"]=torchdata_commit
-        swinfo.loc[6,"Nightly commit"]=dynamo_benchmarks_commit
-
-        torch_main_commit=get_main_commit("pytorch",torch_commit)
-        torchaudio_main_commit=get_main_commit("audio",torchaudio_commit)
-        torchtext_main_commit=get_main_commit("text",torchtext_commit)
-        torchvision_main_commit=get_main_commit("vision",torchvision_commit)
-        torchdata_main_commit=get_main_commit("data",torchdata_commit) 
-
-        swinfo.loc[0,"Main commit"]=torch_main_commit
-        swinfo.loc[2,"Main commit"]=torchaudio_main_commit
-        swinfo.loc[3,"Main commit"]=torchtext_main_commit
-        swinfo.loc[4,"Main commit"]=torchvision_main_commit
-        swinfo.loc[5,"Main commit"]=torchdata_main_commit
+        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+        swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        if args.reference is not None:
+            refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
+            refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
+            swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
     except :
-        print("version.txt not found")
+        print("version.csv not found")
         pass
 
-    sf = StyleFrame(swinfo)
+    sf = StyleFrame(swinfo_df)
     sf.set_column_width(1, 25)
     sf.set_column_width(2, 20)
     sf.set_column_width(3, 25)
+    if args.reference is not None:
+        sf.set_column_width(4, 20)
+        sf.set_column_width(5, 25)
 
     sf.to_excel(sheet_name='SW',excel_writer=excel)
 
@@ -572,6 +525,271 @@ def update_details(writer):
         st=process_thread('single_thread_cf_logs')
         st_data=process(st,"single")
         st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
+
+def update_cppwrapper_gm(excel,reference,target):
+    # cppwrapper vs pythonwrapper geomean speedup table
+    cppwrapper_gm = {
+        'Test Secnario':['Single Socket Multi-Threads', 'Test Secnario','Single Core Single-Thread'], 
+        'Comp Item':['Geomean Speedup','Comp Item','Geomean Speedup'],
+        'Date':[' ', ' Date', ' '],
+        'Compiler':['inductor', 'Compiler', 'inductor'],
+        f'small(t<={args.mt_interval_start}s)':[' ', f'small(t<={args.st_interval_start}s)', ' '],
+        f'medium({args.mt_interval_start}s<t<={args.mt_interval_end}s)':[' ', f'medium({args.st_interval_start}s<t<={args.st_interval_end}s)', ' '],
+        f'large(t>{args.mt_interval_end}s)':[' ', f'large(t>{args.st_interval_end}s)', ' ']
+    }
+    if reference is not None:
+        cppwrapper_summary=pd.DataFrame(cppwrapper_gm)
+        if args.mode == "multiple" or args.mode == 'all':
+            cppwrapper_summary.iloc[0:1,4:5]=multi_threads_gm['small']
+            cppwrapper_summary.iloc[0:1,5:6]=multi_threads_gm['medium']
+            cppwrapper_summary.iloc[0:1,6:7]=multi_threads_gm['large']
+            cppwrapper_summary.iloc[0:1,2]=target
+            cppwrapper_summary.iloc[0:1,2]=target          
+        if args.mode == "single" or args.mode == 'all':
+            cppwrapper_summary.iloc[2:3,4:5]=single_thread_gm['small']
+            cppwrapper_summary.iloc[2:3,5:6]=single_thread_gm['medium']
+            cppwrapper_summary.iloc[2:3,6:7]=single_thread_gm['large']
+            cppwrapper_summary.iloc[2:3,2]=target
+            cppwrapper_summary.iloc[2:3,2]=target                    
+        cppwrapper_sf = StyleFrame(cppwrapper_summary)
+
+    for i in range(1,8):
+        cppwrapper_sf.set_column_width(i, 30) if i==6 else cppwrapper_sf.set_column_width(i, 18)
+    cppwrapper_sf.to_excel(sheet_name='Cppwrapper_GM',excel_writer=excel)
+
+def update_issue_commits(precision):
+    from github import Github
+    # generate md files
+    icx_hw_info=f'''
+|  Item  | Value  |
+|  ----  | ----  |
+| Manufacturer  | Amazon EC2 |
+| Product Name  | c6i.16xlarge |
+| CPU Model  | Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz |
+| Installed Memory  | 128GB (1x128GB DDR4 3200 MT/s [Unknown]) |
+| OS  | Ubuntu 22.04.2 LTS |
+| Kernel  | 5.19.0-1022-aws |
+| Microcode  | 0xd000389 |
+| GCC  | gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0 |
+| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.1) 2.35 |
+| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
+| Python  | Python 3.10.6 |
+| OpenSSL  | OpenSSL 3.0.2 15 Mar 2022 (Library: OpenSSL 3.0.2 15 Mar 2022) |
+'''
+    spr_hw_info=f'''
+|  Item  | Value  |
+|  ----  | ----  |
+| Manufacturer  | Amazon EC2 |
+| Product Name  | c7i.metal-24xl |
+| CPU Model  | Intel(R) Xeon(R) Platinum 8488C CPU @ 2.40GHz |
+| Installed Memory  | 192GB (8x24GB DDR5 4800 MT/s [4800 MT/s]) |
+| OS  | Ubuntu 22.04.3 LTS |
+| Kernel  | 6.2.0-1017-aws |
+| Microcode  | 0x2b0004d0 |
+| GCC  | gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 |
+| GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35 |
+| Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
+| Python  | Python 3.8.18 |
+| OpenSSL  | OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023) |
+'''
+    hw_info = ""
+    if precision == "float32":
+        hw_info = icx_hw_info
+    else:
+        hw_info = spr_hw_info
+    print(hw_info)
+    
+    # Software information
+    swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+    swinfo_df.set_index('name', inplace=True)
+    torch_branch = swinfo_df.at['torch', 'branch']
+    torch_commit = swinfo_df.at['torch', 'commit']
+    torchbench_branch = swinfo_df.at['torchbench', 'branch']
+    torchbench_commit = swinfo_df.at['torchbench', 'commit']
+    torchvision_branch = swinfo_df.at['torchvision', 'branch']
+    torchvision_commit = swinfo_df.at['torchvision', 'commit']
+    torchtext_branch = swinfo_df.at['torchtext', 'branch']
+    torchtext_commit = swinfo_df.at['torchtext', 'commit']
+    torchaudio_branch = swinfo_df.at['torchaudio', 'branch']
+    torchaudio_commit = swinfo_df.at['torchaudio', 'commit']
+    torchdata_branch = swinfo_df.at['torchdata', 'branch']
+    torchdata_commit = swinfo_df.at['torchdata', 'commit']
+    dynamo_benchmarks_branch = swinfo_df.at['dynamo_benchmarks', 'branch']
+    dynamo_benchmarks_commit = swinfo_df.at['dynamo_benchmarks', 'commit']
+    sw_info = f'''
+SW information:
+
+SW	| Branch | Commit
+-- | -- | --
+Pytorch|[{torch_branch}](https://github.com/pytorch/pytorch/tree/{torch_branch})|[{torch_commit}](https://github.com/pytorch/pytorch/commit/{torch_commit})
+Torchbench|[{torchbench_branch}](https://github.com/pytorch/benchmark/tree/{torchbench_branch})|[{torchbench_commit}](https://github.com/pytorch/benchmark/commit/{torchbench_commit})
+torchaudio|[{torchaudio_branch}](https://github.com/pytorch/audio/tree/{torchaudio_branch})|[{torchaudio_commit}](https://github.com/pytorch/audio/commit/{torchaudio_commit})
+torchtext|[{torchtext_branch}](https://github.com/pytorch/text/tree/{torchtext_branch})| [{torchtext_commit}](https://github.com/pytorch/text/commit/{torchtext_commit})
+torchvision|[{torchvision_branch}](https://github.com/pytorch/vision/tree/{torchvision_branch})|[{torchvision_commit}](https://github.com/pytorch/vision/commit/{torchvision_commit})
+torchdata|[{torchdata_branch}](https://github.com/pytorch/data/tree/{torchdata_branch})|[{torchdata_commit}](https://github.com/pytorch/data/commit/{torchdata_commit})
+dynamo_benchmarks|[{dynamo_benchmarks_branch}](https://github.com/pytorch/pytorch/tree/{dynamo_benchmarks_branch})|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorch/commit/{dynamo_benchmarks_commit})
+
+
+HW information
+
+{hw_info}
+'''
+    mt_addtional= sw_info +'''
+Test command
+
+```bash
+export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
+export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
+export TORCHINDUCTOR_FREEZING=1
+CORES=$(lscpu | grep Core | awk '{print $4}')
+export OMP_NUM_THREADS=$CORES
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --devices=cpu --dtypes=float32 --inference --compilers=inductor --extra-args="--timeout 9000" 
+
+```
+'''
+    st_addtional = sw_info + '''
+Test command
+
+```bash
+export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
+export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
+export TORCHINDUCTOR_FREEZING=1
+export OMP_NUM_THREADS=1
+
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --compilers=inductor --batch_size=1 --threads 1 --extra-args="--timeout 9000"
+
+```
+'''
+    if not args.md_off:
+        # mt
+        mt_result=open(args.target+'/inductor_log/mt_'+args.target+'.md','a+')
+        mt_folder = getfolder(args.target,'multi_threads_cf_logs')
+        mt_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        mt_result.writelines(mt_title)
+
+        mt_summary=mt_folder+'/gh_executive_summary.txt'
+        with open(mt_summary,'r') as summary_file:
+            lines=list(summary_file.readlines())
+            lines.insert(11, mt_addtional)
+            s=' '.join(lines)
+            mt_result.writelines(s)
+
+        mt_inference=mt_folder+'/gh_inference.txt'
+        with open(mt_inference,'r') as inference_file:
+            mt_result.writelines(inference_file.readlines())
+        # st
+        st_result=open(args.target+'/inductor_log/st_'+args.target+'.md','a+')
+        st_folder = getfolder(args.target,'single_thread_cf_logs')
+        st_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
+        st_result.writelines(st_title)
+
+        st_summary=st_folder+'/gh_executive_summary.txt'
+        with open(st_summary,'r') as summary_file:
+            lines=list(summary_file.readlines())
+            lines.insert(11, st_addtional)
+            s=' '.join(lines)
+            st_result.writelines(s)
+
+        st_inference=st_folder+'/gh_inference.txt'
+        with open(st_inference,'r') as inference_file:
+            st_result.writelines(inference_file.readlines())
+        # create comment in github issue
+        ESI_SYD_TK = args.gh_token
+        g = Github(ESI_SYD_TK)
+        g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
+        repo = g.get_repo("pytorch/pytorch")
+        issue = repo.get_issue(number=93531)
+        print(issue)
+        try:
+            mt_result.seek(0)
+            st_result.seek(0)
+            issue.create_comment(mt_result.read())
+            issue.create_comment(st_result.read())
+        except:
+            print("issue commit create failed")
+            pass
+
+def html_head():
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+<title> Inductor Regular Model Bench Report </title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="css/animate.css">
+<link rel="stylesheet" type="text/css" href="css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
+<link rel="stylesheet" type="text/css" href="css/util.css">
+<link rel="stylesheet" type="text/css" href="css/main.css">
+<meta name="robots" content="noindex, follow">
+</head>
+<body>
+  <div class="limiter">
+  <div class="container-table100">
+  <div class="wrap-table100">
+  <div class="table100">
+  <p><h3>Inductor Regular Model Bench Report </p></h3> '''
+
+def html_tail():
+    return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
+    <p>find perf regression or improvement from attachment report, Thanks</p>
+  </div>
+  </div>
+  </div>
+  </div>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/popper.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/select2/select2.min.js"></script>
+<script src="js/main.js"></script>
+</body>'''
+
+def html_generate(html_off):
+    if not html_off:
+        try:
+            content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
+            summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
+            swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
+            mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+            st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+            perf_regression= new_performance_regression.to_html(classes="table",index = False)
+            failures_regression= new_failures.to_html(classes="table",index = False)
+            perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
+            fixed_failures = new_fixed_failures.to_html(classes="table",index = False)
+            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f, \
+                open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f, \
+                open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f, \
+                open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost_f, \
+                open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
+                f.write(html_head() + "<p>Summary</p>" + summary + \
+                        "<p>SW info</p>" + swinfo + \
+                        "<p>Multi-threads Failures</p>" + mt_failures + \
+                        "<p>Single-thread Failures</p>" + st_failures + \
+                        "<h3><font color='#ff0000'>Regression</font></h3>" + \
+                        "<p>new_perf_regression</p>" + perf_regression + \
+                        "<p>new_failures</p>" + failures_regression + \
+                        "<h3><font color='#00dd00'>Improvement</font></h3>" + \
+                        "<p>new_perf_improvement</p>" + perf_improvement + \
+                        "<p>new_fixed_failures</p>" + fixed_failures + \
+                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
+                perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                perf_boost_f.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                fixed_failure_f.write(f"<p>new_fixed_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
+                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+            f.close()
+            perf_f.close()
+            failure_f.close()
+            perf_boost_f.close()
+            fixed_failure_f.close()
+        except:
+            print("html_generate_failed")
+            pass
 
 def generate_report(excel, reference, target):
     update_summary(excel, reference, target)
