@@ -494,24 +494,27 @@ def process(input,thread):
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
         new_performance_improvement_model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
     else:
-        data_new=input[['name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
+        data_new=input[['name','suite','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
-        data = StyleFrame({'name': list(data_new['name']),
-                    'batch_size': list(data_new['batch_size']),
-                    'speedup': list(data_new['speedup']),
-                    'inductor': list(data_new['inductor']),
-                    'eager': list(data_new['eager']),
-                    'compilation_latency': list(data_new['compilation_latency']),})
+        data = StyleFrame({
+            'name': list(data_new['name']),
+            'suite': list(data_new['suite']),
+            'batch_size': list(data_new['batch_size']),
+            'speedup': list(data_new['speedup']),
+            'inductor': list(data_new['inductor']),
+            'eager': list(data_new['eager']),
+            'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
-        data.set_column_width(2, 18) 
+        data.set_column_width(2, 10)
         data.set_column_width(3, 18) 
-        data.set_column_width(4, 18)
-        data.set_column_width(5, 15)
-        data.set_column_width(6, 20)
+        data.set_column_width(4, 18) 
+        data.set_column_width(5, 18)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
-        data.set_row_height(rows=data.row_indexes, height=15)        
+        data.set_row_height(rows=data.row_indexes, height=15)
     return data
 
 def update_details(writer):
