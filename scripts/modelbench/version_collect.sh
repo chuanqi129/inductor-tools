@@ -1,4 +1,5 @@
-BENCH_COMMIT=${1:-fea73cb}
+LOG_DIR=${1:-inductor_log}
+DYNAMO_BENCH=${2:-fea73cb}
 
 # collect sw info
 curdir=$(pwd)

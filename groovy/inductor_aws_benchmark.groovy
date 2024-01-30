@@ -16,7 +16,7 @@ if ('debug' in params) {
 }
 echo "debug: $debug"
 
-debug_mail = 'chuanqi.wang@intel.com'
+debug_mail = 'yudong.si@intel.com'
 if ('debug_mail' in params) {
     echo "debug_mail in params"
     if (params.debug_mail != '') {
@@ -25,7 +25,7 @@ if ('debug_mail' in params) {
 }
 echo "debug_mail: $debug_mail"
 
-default_mail = 'chuanqi.wang@intel.com'
+default_mail = 'yudong.si@intel.com'
 if ('default_mail' in params) {
     echo "default_mail in params"
     if (params.default_mail != '') {
