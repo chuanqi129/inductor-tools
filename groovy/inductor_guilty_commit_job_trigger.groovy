@@ -1,7 +1,7 @@
 node("weizhuoz-mlt-ace"){
     checkout scm
     stage('Trigger Guilty Commit Job'){
-        def lines = readJSON file: 'test.json'
+        def lines = readJSON file: 'guilty_commit_search_model_list.json'
         int size = lines.size();
         println(size)
         def job_list = [:]
