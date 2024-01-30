@@ -49,7 +49,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
 
     if [ "$KIND" == "drop" ]; then
         ratio=$(echo "$current_perf $expected_perf" | awk '{ printf "%.2f\n", $1/$2 }')    
-    elif [ "$KIND" == "improve" ]
+    elif [ "$KIND" == "improve" ]; then
         ratio=$(echo "$expected_perf $current_perf" | awk '{ printf "%.2f\n", $1/$2 }')    
     fi
     echo "=====ratio: $ratio======="
