@@ -26,7 +26,7 @@ MODEL=${20:-resnet50}
 TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
 TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
 SCENARIO=${23:-accuracy}
-KIND=${24:-crash} # issue kind crash/drop
+KIND=${24:-crash} # issue kind crash/drop/fixed/improve
 PERF_RATIO=${25:-1.1}
 EXTRA=${26}
 # cd target dir
