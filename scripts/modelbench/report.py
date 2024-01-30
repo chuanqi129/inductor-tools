@@ -321,10 +321,6 @@ def get_fail_model_list(failures, thread, kind):
     model_list['thread'] = thread
     model_list['kind'] = kind
     model_list['precision'] = args.precision
-    if args.precision == "float32":
-        model_list['instance_name'] = 'icx-guilty-search'
-    else:
-        model_list['instance_name'] = 'spr-guilty-search'
     return model_list
 
 def get_perf_model_list(regression, thread, kind):
@@ -333,10 +329,6 @@ def get_perf_model_list(regression, thread, kind):
     model_list['thread'] = thread
     model_list['kind'] = kind
     model_list['precision'] = args.precision
-    if args.precision == "float32":
-        model_list['instance_name'] = 'icx-guilty-search'
-    else:
-        model_list['instance_name'] = 'spr-guilty-search'
     return model_list
 
 def update_failures(excel, target_thread, refer_thread, thread):

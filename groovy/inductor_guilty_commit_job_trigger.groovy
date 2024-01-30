@@ -8,6 +8,11 @@ node("weizhuoz-mlt-ace"){
         for (i = 0; i < size; i += 1) {
             def elem = lines[i]
             if (test_kinds.contains(elem['kind'])) {
+                if (elem['precision'] == 'amp') {
+                    instance_name = 'icx-guilty-search'
+                } else if (elem['precision'] == 'float32') {
+                    instance_name = 'spr-guilty-search'
+                }
                 job_list["Job_${i}"] = {
                     guilty_commit_search_job = build job: 'inductor_aws_guilty_commit_search_zwz', propagate: false, parameters: [
                         [$class: 'StringParameterValue', name: 'default_mail', value: default_mail],
@@ -16,7 +21,7 @@ node("weizhuoz-mlt-ace"){
                         [$class: 'StringParameterValue', name: 'WRAPPER', value: "default"],
                         [$class: 'StringParameterValue', name: 'TORCH_BRANCH', value: TORCH_BRANCH],
                         [$class: 'StringParameterValue', name: 'THREADS', value: elem['thread']],
-                        [$class: 'StringParameterValue', name: 'instance_name', value: elem['instance_name']],
+                        [$class: 'StringParameterValue', name: 'instance_name', value: instance_name],
                         [$class: 'StringParameterValue', name: 'suite', value: elem['suite']],
                         [$class: 'StringParameterValue', name: 'model', value: elem['name']],
                         [$class: 'StringParameterValue', name: 'scenario', value: elem['scenario']],
