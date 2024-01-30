@@ -749,11 +749,25 @@ def html_tail():
 def html_generate(html_off):
     if not html_off:
         try:
-            content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2,3])
+            if args.mode == 'all':
+                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2,3])
+            else:
+                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
-            mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-            st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+
+            if args.mode == 'all':
+                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                failures_html = \
+                    "<p>Multi-threads Failures</p>" + mt_failures + \
+                    "<p>Single-thread Failures</p>" + st_failures
+            elif args.mode == 'multiple':
+                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+            elif args.mode == 'single':
+                st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                failures_html = "<p>Single-thread Failures</p>" + st_failures
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
@@ -765,8 +779,7 @@ def html_generate(html_off):
                 open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
                 f.write(html_head() + "<p>Summary</p>" + summary + \
                         "<p>SW info</p>" + swinfo + \
-                        "<p>Multi-threads Failures</p>" + mt_failures + \
-                        "<p>Single-thread Failures</p>" + st_failures + \
+                        failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
                         "<p>new_perf_regression</p>" + perf_regression + \
                         "<p>new_failures</p>" + failures_regression + \
