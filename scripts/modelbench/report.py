@@ -35,6 +35,8 @@ parser.add_argument('--mt_interval_end', type=float,default=1.5,help='cppwrapper
 parser.add_argument('--st_interval_start', type=float,default=0.04,help='cppwrapper sm mt interval start')
 parser.add_argument('--st_interval_end', type=float,default=5,help='cppwrapper gm st interval end')
 parser.add_argument('--image_tag', type=str,help='image tag which used in tests')
+parser.add_argument('--suite',type=str,default='all',help='Test suite: torchbench, huggingface, timm_models')
+parser.add_argument('--infer_or_train',type=str,default='inference',help='inference or training')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -80,6 +82,11 @@ improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
 
+if args.suite == "all":
+    suite_list = ['torchbench','huggingface','timm_models']
+else:
+    suite_list = [args.suite]
+
 def filter_df_by_threshold(df, interval_start,interval_end):
     df = df[df['inductor_new'] > 0]
     filtered_data_small = df[df['inductor_old'] <= interval_start]
@@ -96,25 +103,41 @@ def caculate_geomean(df,column_name):
         return "0.0x"
     return f"{gmean(cleaned_df):.2f}x"
 
-def update_summary(excel,reference,target):
-    data = {
-        'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
-        'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
-        'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
-        'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
-        'torchbench':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
-        'huggingface':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
-        'timm_models ':[' ', ' ', ' ', ' ',' ',' ',' ',' ']
-    }
-    data_target = {
-        'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-        'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
-        'Date':[' ', ' ', ' ', ' '],
-        'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
-        'torchbench':[' ', ' ', ' ', ' '],
-        'huggingface':[' ', ' ', ' ', ' '],
-        'timm_models ':[' ', ' ', ' ', ' ']
-    }
+def update_summary(excel, reference, target):
+    if args.suite == 'all':
+        data = {
+            'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
+            'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
+            'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
+            'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
+            'torchbench':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
+            'huggingface':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
+            'timm_models ':[' ', ' ', ' ', ' ',' ',' ',' ',' ']
+        }
+        data_target = {
+            'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
+            'Date':[' ', ' ', ' ', ' '],
+            'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
+            'torchbench':[' ', ' ', ' ', ' '],
+            'huggingface':[' ', ' ', ' ', ' '],
+            'timm_models ':[' ', ' ', ' ', ' ']
+        }
+    else:
+        data = {
+            'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
+            'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
+            'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
+            'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
+            args.suite:[' ', ' ', ' ', ' ',' ',' ',' ',' ']
+        }
+        data_target = {
+            'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
+            'Date':[' ', ' ', ' ', ' '],
+            'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
+            args.suite:[' ', ' ', ' ', ' ']
+        }
 
     if reference is not None:
         summary=pd.DataFrame(data)
@@ -143,7 +166,7 @@ def update_summary(excel,reference,target):
             summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
-            summary.iloc[7:8,2]=target      
+            summary.iloc[7:8,2]=target
         sf = StyleFrame(summary)
         sf.apply_style_by_indexes(sf.index[[1,3,5,7]], styler_obj=target_style) 
     else:
@@ -163,7 +186,7 @@ def update_summary(excel,reference,target):
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
-    for i in range(1,8):
+    for i in range(1, len(data)+1):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
@@ -187,7 +210,7 @@ def update_swinfo(excel):
         sf.set_column_width(4, 20)
         sf.set_column_width(5, 25)
 
-    sf.to_excel(sheet_name='SW',excel_writer=excel)   
+    sf.to_excel(sheet_name='SW',excel_writer=excel)
 
 # only accuracy failures
 def parse_acc_failure(file,failed_model):
@@ -259,21 +282,21 @@ def failures_reason_parse(model,acc_tag,mode):
 
 def get_failures(target_path):
     tmp=[]
-    for suite in 'torchbench','huggingface','timm_models':
-        perf_path=target_path+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
-        acc_path=target_path+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_accuracy.csv'
+    for suite_name in suite_list:
+        perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
 
         perf_data=pd.read_csv(perf_path)
         acc_data=pd.read_csv(acc_path)
-        
+
         acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='infra_error') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
-        acc_data.insert(loc=2, column='acc_suite', value=suite)
+        acc_data.insert(loc=2, column='acc_suite', value=suite_name)
         tmp.append(acc_data)
 
         perf_data=perf_data.loc[(perf_data['batch_size'] ==0) | (perf_data['speedup'] ==0) | (perf_data['speedup'] =='infra_error'),:]
-        perf_data.insert(loc=3, column='pef_suite', value=suite)
+        perf_data.insert(loc=3, column='pef_suite', value=suite_name)
         tmp.append(perf_data)
-    
+
     failures=pd.concat(tmp)
     failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
     failures['pef_suite'].fillna(0,inplace=True)
@@ -355,33 +378,35 @@ def update_failures(excel,target_thread,refer_thread):
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite,thread):
-    target_file_path=getfolder(args.target,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
+    target_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.target, thread), suite, args.precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
     target_data=target_data.copy()
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path=getfolder(args.reference,thread)+'/inductor_'+suite+'_'+args.precision+'_inference_cpu_performance.csv'
+        reference_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.reference, thread), suite, args.precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
         reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)    
         data=pd.merge(target_data,reference_data,on=['name'],how= 'outer')
+        data['suite'] = suite
         return data
     else:
+        target_data['suite'] = suite
         return target_data
 
 def process_thread(thread):
     tmp=[]
-    for suite in 'torchbench','huggingface','timm_models':
+    for suite in suite_list:
         data=process_suite(suite, thread)
         tmp.append(data)
     return pd.concat(tmp)
  
 def process(input,thread):
     if args.reference is not None:
-        data_new=input[['name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
+        data_new=input[['name','suite','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
@@ -398,6 +423,7 @@ def process(input,thread):
         
         combined_data = pd.DataFrame({
             'name': list(data_new['name']),
+            'suite': list(data_new['suite']),
             'batch_size_new': list(data_new['batch_size_new']),
             'speed_up_new': list(data_new['speed_up_new']),
             'inductor_new': list(data_new['inductor_new']),
@@ -427,20 +453,21 @@ def process(input,thread):
                 single_thread_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')      
         data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
-        data.set_column_width(2, 18) 
-        data.set_column_width(3, 18) 
+        data.set_column_width(2, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
-        data.set_column_width(5, 15)
-        data.set_column_width(6, 20)
-        data.set_column_width(7, 18)
-        data.set_column_width(8, 18) 
-        data.set_column_width(9, 18) 
-        data.set_column_width(10, 15)
-        data.set_column_width(11, 20)
-        data.set_column_width(12, 28)
-        data.set_column_width(13, 28) 
+        data.set_column_width(5, 18)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
+        data.set_column_width(8, 18)
+        data.set_column_width(9, 18)
+        data.set_column_width(10, 18)
+        data.set_column_width(11, 15)
+        data.set_column_width(12, 20)
+        data.set_column_width(13, 28)
         data.set_column_width(14, 28)
-        data.set_column_width(15, 32)
+        data.set_column_width(15, 28)
+        data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         global new_performance_regression
@@ -455,30 +482,33 @@ def process(input,thread):
         improvement = improvement.copy()
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
     else:
-        data_new=input[['name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
+        data_new=input[['name','suite','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
-        data = StyleFrame({'name': list(data_new['name']),
-                    'batch_size': list(data_new['batch_size']),
-                    'speedup': list(data_new['speedup']),
-                    'inductor': list(data_new['inductor']),
-                    'eager': list(data_new['eager']),
-                    'compilation_latency': list(data_new['compilation_latency']),})
+        data = StyleFrame({
+            'name': list(data_new['name']),
+            'suite': list(data_new['suite']),
+            'batch_size': list(data_new['batch_size']),
+            'speedup': list(data_new['speedup']),
+            'inductor': list(data_new['inductor']),
+            'eager': list(data_new['eager']),
+            'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
-        data.set_column_width(2, 18) 
-        data.set_column_width(3, 18) 
+        data.set_column_width(2, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
-        data.set_column_width(5, 15)
-        data.set_column_width(6, 20)
+        data.set_column_width(5, 18)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
-        data.set_row_height(rows=data.row_indexes, height=15)        
+        data.set_row_height(rows=data.row_indexes, height=15)
     return data
 
 def update_details(writer):
-    h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
+    h = {"A": 'Model', "B": 'Suite', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
     if args.reference is None:
-        h = {"A": 'Model suite',"B": '', "C": args.target, "D": '', "E": '',"F": '',"G":''}
+        h = {"A": 'Model',"B": 'Suite', "C": args.target, "D": '', "E": '',"F": '',"G":''}
     head = StyleFrame(pd.DataFrame(h, index=[0]))
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
@@ -488,44 +518,13 @@ def update_details(writer):
         head.to_excel(excel_writer=writer, sheet_name='Single-Socket Multi-threads', index=False,startrow=0,header=False)
         mt=process_thread('multi_threads_cf_logs')
         mt_data=process(mt,"multiple")
-
-        global torchbench_index
-        torchbench_index=mt_data.loc[mt_data['name']=='alexnet'].index[0]
-        global hf_index
-        hf_index=mt_data.loc[mt_data['name']=='AlbertForMaskedLM'].index[0]
-        global timm_index
-        timm_index=mt_data.loc[mt_data['name']=='adv_inception_v3'].index[0]
-        global end_index
-        end_index=len(list(mt_data['name']))-1
-
-        suite_list=[''] * len(list(mt_data['name']))
-
-        suite_list.insert(int(torchbench_index), 'Torchbench')
-        suite_list.insert(int(hf_index), 'HF')
-        suite_list.insert(int(timm_index), 'Timm')
-
-        s= pd.Series(suite_list)
-        s.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=0)
-        mt_data.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=1)    
+        mt_data.to_excel(sheet_name='Single-Socket Multi-threads',excel_writer=writer,index=False,startrow=1,startcol=0)    
     if args.mode == "single" or args.mode == 'all':
         # st
         head.to_excel(excel_writer=writer, sheet_name='Single-Core Single-thread', index=False,startrow=0,header=False) 
         st=process_thread('single_thread_cf_logs')
         st_data=process(st,"single")
-
-        torchbench_index=st_data.loc[st_data['name']=='alexnet'].index[0]
-        hf_index=st_data.loc[st_data['name']=='AlbertForMaskedLM'].index[0]
-        timm_index=st_data.loc[st_data['name']=='adv_inception_v3'].index[0]
-        end_index=len(list(st_data['name']))-1
-        suite_list=[''] * len(list(st_data['name']))
-
-        suite_list.insert(int(torchbench_index), 'Torchbench')
-        suite_list.insert(int(hf_index), 'HF')
-        suite_list.insert(int(timm_index), 'Timm')
-
-        s= pd.Series(suite_list)
-        s.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
-        st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=1)   
+        st_data.to_excel(sheet_name='Single-Core Single-thread',excel_writer=writer,index=False,startrow=1,startcol=0)
 
 def update_cppwrapper_gm(excel,reference,target):
     # cppwrapper vs pythonwrapper geomean speedup table
@@ -750,11 +749,25 @@ def html_tail():
 def html_generate(html_off):
     if not html_off:
         try:
-            content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
+            if args.mode == 'all':
+                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2,3])
+            else:
+                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
-            mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-            st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+
+            if args.mode == 'all':
+                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                st_failures= pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                failures_html = \
+                    "<p>Multi-threads Failures</p>" + mt_failures + \
+                    "<p>Single-thread Failures</p>" + st_failures
+            elif args.mode == 'multiple':
+                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+            elif args.mode == 'single':
+                st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                failures_html = "<p>Single-thread Failures</p>" + st_failures
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
@@ -766,8 +779,7 @@ def html_generate(html_off):
                 open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
                 f.write(html_head() + "<p>Summary</p>" + summary + \
                         "<p>SW info</p>" + swinfo + \
-                        "<p>Multi-threads Failures</p>" + mt_failures + \
-                        "<p>Single-thread Failures</p>" + st_failures + \
+                        failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
                         "<p>new_perf_regression</p>" + perf_regression + \
                         "<p>new_failures</p>" + failures_regression + \
@@ -792,8 +804,8 @@ def html_generate(html_off):
             print("html_generate_failed")
             pass
 
-def generate_report(excel,reference,target):
-    update_summary(excel,reference,target)
+def generate_report(excel, reference, target):
+    update_summary(excel, reference, target)
     update_swinfo(excel)
     if args.mode == 'multiple' or args.mode == 'all':
         update_failures(excel,target_mt,reference_mt)
@@ -821,9 +833,7 @@ def excel_postprocess(file):
         # Single-Socket Multi-threads
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=torchbench_index+3,end_row=hf_index+2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=hf_index+3,end_row=timm_index+2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=timm_index+3,end_row=end_index+3,start_column=1,end_column=1)
+        wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
         wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
         wmt.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
         wmt.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
@@ -831,17 +841,15 @@ def excel_postprocess(file):
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
-        wst.merge_cells(start_row=torchbench_index+3,end_row=hf_index+2,start_column=1,end_column=1)
-        wst.merge_cells(start_row=hf_index+3,end_row=timm_index+2,start_column=1,end_column=1)
-        wst.merge_cells(start_row=timm_index+3,end_row=end_index+3,start_column=1,end_column=1)    
+        wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)  
         wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
         wst.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
         wst.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx')
-    generate_report(excel,args.reference, args.target)
+    excel = StyleFrame.ExcelWriter('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite))
+    generate_report(excel, args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)     
     update_issue_commits(args.precision)
