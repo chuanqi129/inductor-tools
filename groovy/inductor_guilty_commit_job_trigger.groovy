@@ -9,9 +9,10 @@ node("weizhuoz-mlt-ace"){
             def elem = lines[i]
             if (test_kinds.contains(elem['kind'])) {
                 def instance_name = 'icx-guilty-search'
-                if (elem['precision'] == 'amp') {
-                    def instance_name = 'spr-guilty-search'
+                if (elem['precision'] == "amp") {
+                    instance_name = 'spr-guilty-search'
                 }
+                print(elem['precision'])
                 println(instance_name)
                 //job_list["Job_${i}"] = {
                 //    guilty_commit_search_job = build job: 'inductor_aws_guilty_commit_search_zwz', propagate: false, parameters: [
