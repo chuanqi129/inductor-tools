@@ -74,10 +74,10 @@ run_acc_improve_test() {
     acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ "X$acc_res" != "Xpass" ]; then
-	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
         exit 0
     else
-	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
+	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
         exit 1
     fi
 }
@@ -121,23 +121,23 @@ run_fixed_test() {
         echo $perf_status
         if [ "$SCENARIO" == "accuracy" ]; then
             if [ $acc_status -eq 0 ]; then
-                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
                 exit 0
             else
-                echo "`git rev-parse HEAD` is a BAD COMMIT!"
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
                 exit 1
             fi
         elif [ "$SCENARIO" == "performance" ]; then
             if [[ ! -z $perf_status ]] && [ $perf_status -gt 0 ]; then
-                echo "`git rev-parse HEAD` is a BAD COMMIT!"
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
                 exit 1
             else
-                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
                 exit 0
             fi
         fi
     else
-        echo "`git rev-parse HEAD` is a BAD COMMIT!"
+        echo "`git rev-parse HEAD` is a GOOD COMMIT!"
         exit 1
     fi
 }
