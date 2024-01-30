@@ -749,7 +749,7 @@ def html_tail():
 def html_generate(html_off):
     if not html_off:
         try:
-            content = pd.read_excel(args.target+'/inductor_log/Inductor Dashboard Regression Check '+args.target+'.xlsx',sheet_name=[0,1,2,3])
+            content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2,3])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
             mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
