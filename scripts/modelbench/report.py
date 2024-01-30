@@ -320,6 +320,11 @@ def get_fail_model_list(failures, thread, kind):
     model_list = pd.concat([accuracy_model_list, perf_model_list])
     model_list['thread'] = thread
     model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    if args.precision == "float32":
+        model_list['instance_name'] = 'icx-guilty-search'
+    else:
+        model_list['instance_name'] = 'spr-guilty-search'
     return model_list
 
 def get_perf_model_list(regression, thread, kind):
@@ -327,6 +332,11 @@ def get_perf_model_list(regression, thread, kind):
     model_list['scenario'] = 'performance'
     model_list['thread'] = thread
     model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    if args.precision == "float32":
+        model_list['instance_name'] = 'icx-guilty-search'
+    else:
+        model_list['instance_name'] = 'spr-guilty-search'
     return model_list
 
 def update_failures(excel, target_thread, refer_thread, thread):
@@ -841,6 +851,8 @@ def generate_model_list():
         new_performance_improvement_model_list,
         new_fixed_failures_model_list])
     model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
+    clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
+    clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
 
 def generate_report(excel,reference,target):
     update_summary(excel,reference,target)
