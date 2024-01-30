@@ -27,7 +27,7 @@ echo "===============Start searching guilty commit for ${SUITE} ${MODEL} ${MODE}
 cd /workspace/pytorch
 expected_perf=0
 # For perfroamcen drop issue, get the expected performance based on end/good commit
-if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
+if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "improve" ]); then
     # Initial image build with END_COMMIT, no need rebuild
     git checkout ${END_COMMIT}
     detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
@@ -47,12 +47,16 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf s" >> ${LOG_DIR}/perf_drop.log
 
-    ratio=$(echo "$current_perf $expected_perf" | awk '{ printf "%.2f\n", $1/$2 }')
+    if [ "$KIND" == "drop" ]; then
+        ratio=$(echo "$current_perf $expected_perf" | awk '{ printf "%.2f\n", $1/$2 }')    
+    elif [ "$KIND" == "improve" ]
+        ratio=$(echo "$expected_perf $current_perf" | awk '{ printf "%.2f\n", $1/$2 }')    
+    fi
     echo "=====ratio: $ratio======="
     if (( $(echo "$ratio > $PERF_RATIO" | bc -l) )); then
-        echo "Real performance drop issue, will search guilty commit." >> ${LOG_DIR}/perf_drop.log
+        echo "Real performance ${KIND}, will search guilty commit." >> ${LOG_DIR}/perf_drop.log
     else
-        echo "Fake performance drop issue, please double check it." >> ${LOG_DIR}/perf_drop.log
+        echo "Fake performance ${KIND}, please double check it." >> ${LOG_DIR}/perf_drop.log
         exit 0
     fi
 fi
