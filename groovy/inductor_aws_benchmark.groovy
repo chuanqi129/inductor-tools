@@ -361,8 +361,7 @@ node("master"){
                 current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
                 # setup instance for jenkins
                 sed -i "s,ubuntu@.*.amazonaws.com,ubuntu@${current_ip}," ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
-                ssh ubuntu@${current_ip} "sudo apt-get update && sudo apt-get install -y openjdk-17-jre-headless"
-                wget -O agent.jar --no-proxy https://inteltf-jenk.sh.intel.com/jnlpJars/agent.jar
+                wget -O agent.jar --no-proxy --no-check-certificate https://inteltf-jenk.sh.intel.com/jnlpJars/agent.jar
                 scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar
 
                 ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
