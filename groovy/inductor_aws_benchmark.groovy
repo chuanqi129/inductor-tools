@@ -392,7 +392,7 @@ node("master"){
             sh '''#!/bin/bash
                 set -xe
                 cd ${HOME}
-                bash pkill.sh
+                # bash pkill.sh
                 bash entrance.sh \
                     TAG=${_target} \
                     PRECISION=${_precision} \
