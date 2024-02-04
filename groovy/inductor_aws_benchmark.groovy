@@ -1,4 +1,4 @@
-NODE_LABEL = 'yudongsi-mlt-ace'
+NODE_LABEL = 'aws-inductor-mengfeil'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
@@ -318,7 +318,7 @@ env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
 env._infer_or_train = "$infer_or_train"
 
-node(NODE_LABEL){
+node("master"){
     stage("Find or create instance"){
         deleteDir()
         checkout scm
@@ -367,6 +367,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             ins_id=`cat ${WORKSPACE}/instance_id.txt`
             current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
+            sed -i "s,ubuntu@.*.amazonaws.com,ubuntu@${current_ip}," ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
             ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
             scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
@@ -378,34 +379,40 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh \
-                TAG=${_target} \
-                PRECISION=${_precision} \
-                TEST_MODE=${_test_mode} \
-                SHAPE=${_shape} \
-                TORCH_REPO=${_TORCH_REPO} \
-                TORCH_COMMIT=${_TORCH_COMMIT} \
-                DYNAMO_BENCH=${_DYNAMO_BENCH} \
-                AUDIO=${_AUDIO} \
-                TEXT=${_TEXT} \
-                VISION=${_VISION} \
-                DATA=${_DATA} \
-                TORCH_BENCH=${_TORCH_BENCH} \
-                THREADS=${_THREADS} \
-                CHANNELS=${_CHANNELS} \
-                WRAPPER=${_WRAPPER} \
-                HF_TOKEN=${_HF_TOKEN} \
-                BACKEND=${_backend} \
-                SUITE=${_suite} \
-                MODEL=resnet50 \
-                TORCH_START_COMMIT=${_TORCH_COMMIT} \
-                TORCH_END_COMMIT=${_TORCH_COMMIT} \
-                SCENARIO=accuracy \
-                KIND=crash \
-                PERF_RATIO="-1.1" \
-                EXTRA=${_extra_param} \
-                &>/dev/null &" &
+            '''
+        }
+        node(NODE_LABEL) {
+            deleteDir()
+            sh '''#!/bin/bash
+                set -xe
+                cd ${HOME}
+                bash pkill.sh
+                bash entrance.sh \
+                    TAG=${_target} \
+                    PRECISION=${_precision} \
+                    TEST_MODE=${_test_mode} \
+                    SHAPE=${_shape} \
+                    TORCH_REPO=${_TORCH_REPO} \
+                    TORCH_COMMIT=${_TORCH_COMMIT} \
+                    DYNAMO_BENCH=${_DYNAMO_BENCH} \
+                    AUDIO=${_AUDIO} \
+                    TEXT=${_TEXT} \
+                    VISION=${_VISION} \
+                    DATA=${_DATA} \
+                    TORCH_BENCH=${_TORCH_BENCH} \
+                    THREADS=${_THREADS} \
+                    CHANNELS=${_CHANNELS} \
+                    WRAPPER=${_WRAPPER} \
+                    HF_TOKEN=${_HF_TOKEN} \
+                    BACKEND=${_backend} \
+                    SUITE=${_suite} \
+                    MODEL=resnet50 \
+                    TORCH_START_COMMIT=${_TORCH_COMMIT} \
+                    TORCH_END_COMMIT=${_TORCH_COMMIT} \
+                    SCENARIO=accuracy \
+                    KIND=crash \
+                    PERF_RATIO="-1.1" \
+                    EXTRA=${_extra_param}
             '''
         }
     }
