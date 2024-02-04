@@ -5,7 +5,7 @@ set -xe
 sudo apt update -y
 sudo apt install -y openjdk-17-jre-headless # java for jenkins
 sudo apt install docker.io docker-buildx -y && sudo usermod -aG docker ${USER}
-if [[ ! $(groups "${USER}" | grep -q docker) ]]; then
+if [ ! $(groups "${USER}" | grep -w docker |wc -l) -ne 0 ]; then
   sudo groupadd docker
   sudo gpasswd -a ${USER} docker
   sudo su
