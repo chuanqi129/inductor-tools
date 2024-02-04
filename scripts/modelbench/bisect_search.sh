@@ -1,25 +1,40 @@
 #!/bin/bash
-set +x
-TORCH_BRANCH=${1:-main}
-START_COMMIT=${2:-main}
-END_COMMIT=${3:-main}
-SUITE=${4:-torchbench}
-MODEL=${5:-resnet50}
-MODE=${6:-inference}
-SCENARIO=${7:-accuracy}
-PRECISION=${8:-float32}
-SHAPE=${9:-static}
-WRAPPER=${10:-default}
-KIND=${11:-crash}
-THREADS=${12:-multiple}
-CHANNELS=${13:-first}
-FREEZE=${14:-on}
-BS=${15:0}
-LOG_DIR=${16:-inductor_log}
-HF_TOKEN=${17:-hf_xxx}
-BACKEND=${18:-inductor}
-PERF_RATIO=${19:-1.1}
-EXTRA=${20}
+set -xe
+
+START_COMMIT="main"
+END_COMMIT="main"
+SUITE="torchbench"
+MODEL="resnet50"
+MODE="inference"
+SCENARIO="accuracy"
+PRECISION="float32"
+SHAPE="static"
+WRAPPER="default"
+KIND="crash"
+THREADS="multiple"
+CHANNELS="first"
+FREEZE="on"
+BS="0"
+LOG_DIR="inductor_log"
+HF_TOKEN=""
+BACKEND="inductor"
+PERF_RATIO="-1.1"
+EXTRA=
+# get value from param
+if [[ "$@" != "" ]];then
+    echo "" tmp.env
+    for var in "$@"
+    do
+        if [[ "${var}" == "EXTRA="* ]];then
+            EXTRA="${@/*EXTRA=}"
+            break
+        else
+            echo "$var" >> tmp.env
+        fi
+        shift
+    done
+    source tmp.env && rm -rf tmp.env
+fi
 
 export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
 
