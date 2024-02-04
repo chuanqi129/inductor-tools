@@ -13,3 +13,6 @@ TEST
 else
   echo "docker group already exists and contains ${USER}"
 fi
+
+# install java for jenkins launch
+sudo apt install -y openjdk-17-jre-headless
