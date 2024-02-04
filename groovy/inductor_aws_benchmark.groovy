@@ -310,6 +310,7 @@ env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
+env.aws = "aws"
 
 node("master"){
     stage("Find or create instance"){
