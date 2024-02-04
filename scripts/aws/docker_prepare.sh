@@ -1,11 +1,9 @@
 #!/bin/bash
 set -xe
 
-# install java for jenkins launch
-sudo apt install -y openjdk-17-jre-headless
-
 # docker setup
 sudo apt update -y
+sudo apt install -y openjdk-17-jre-headless # java for jenkins
 sudo apt install docker.io docker-buildx -y && sudo usermod -aG docker ${USER}
 if [[ ! $(groups "${USER}" | grep -q docker) ]]; then
   sudo groupadd docker
