@@ -1,4 +1,8 @@
-set +e
+#!/bin/bash
+set -xe
+
+# install java for jenkins launch
+sudo apt install -y openjdk-17-jre-headless
 
 # docker setup
 sudo apt update -y
@@ -13,6 +17,3 @@ TEST
 else
   echo "docker group already exists and contains ${USER}"
 fi
-
-# install java for jenkins launch
-sudo apt install -y openjdk-17-jre-headless
