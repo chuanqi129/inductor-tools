@@ -45,7 +45,7 @@ fi
 
 Flag_extra=""
 if [[ ${FREEZE} == "on" ]]; then
-    #export TORCHINDUCTOR_FREEZING=1
+    export TORCHINDUCTOR_FREEZING=1
     echo "Testing with freezing on."
     # Flag_extra="--freezing " 
 fi 
