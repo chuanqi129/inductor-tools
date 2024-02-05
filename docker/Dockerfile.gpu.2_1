@@ -69,12 +69,11 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
 
 FROM dev-base AS build
 ARG PT_REPO=https://github.com/pytorch/pytorch
-ARG PT_BRANCH=v2.1.0
-ARG PT_COMMIT=${PT_BRANCH}
+ARG PT_COMMIT="v2.1.0"
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN pip install pandas psutil scipy
-RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
+RUN git clone ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive 
 RUN cd pytorch && TORCH_CUDA_ARCH_LIST="5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" python setup.py develop
 ARG TORCH_VISION_BRANCH=main
