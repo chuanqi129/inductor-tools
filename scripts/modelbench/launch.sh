@@ -53,7 +53,6 @@ if [ -d ${LOG_DIR} ]; then
     sudo rm -rf ${LOG_DIR}
 fi
 mkdir -p ${LOG_DIR}
-ln -f /home/ubuntu/docker/${LOG_DIR} ${WORKSPACE}/${LOG_DIR}
 
 DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
 # Early exit for docker image build issue
