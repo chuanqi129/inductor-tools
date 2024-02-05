@@ -348,9 +348,11 @@ node("master"){
                 sh '''#!/bin/bash
                     set -xe
                     # setup instance for jenkins
-                    sed -i "s,ubuntu@.*.amazonaws.com,ubuntu@${current_ip}," ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
-                    wget -O agent.jar --no-proxy --no-check-certificate https://inteltf-jenk.sh.intel.com/jnlpJars/agent.jar
-                    scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar
+                    echo "ssh -i ${JENKINS_HOME}/aws/.pytorch/icx-key.pem ubuntu@${current_ip} java -jar /home/ubuntu/agent.jar" \
+                        > ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
+                    chmod +x ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
+                    wget -O agent.jar --no-proxy --no-check-certificate ${JENKINS_URL}jnlpJars/agent.jar
+                    scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar && rm -f agent.jar
 
                     ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
                     scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
