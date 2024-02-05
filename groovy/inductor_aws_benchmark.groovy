@@ -311,165 +311,159 @@ env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
 env.aws = "aws"
+env.ins_id = "waiting_instance"
 
 node("master"){
-    stage("Find or create instance"){
+    stage("Find Instance") {
         deleteDir()
         checkout scm
-        if  ("${report_only}" == "false")
-        {
-            sh'''
-            #!/usr/bin/env bash
-            cd ${WORKSPACE}/scripts/aws/
-            while true;
-            do
-                bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt
-                ins_id=`cat ${WORKSPACE}/instance_id.txt`
-                if [ $ins_id != "waiting_instance" ]; then
-                    echo "ins_id : $ins_id"
-                    break
-                else
-                    echo "Waiting for avaliable instance, will check after 10 min..."
-                    sleep 10m
-                fi
-            done
-            '''
-        } else {
+        // Create a instance if not exist
+        if("${report_only}" == "false") {
+            dir("${WORKSPACE}/scripts/aws/") {
+                while(ins_id == "waiting_instance") {
+                    sh "bash find_instance.sh ${_instance_name} ${_instance_id} 2>&1 | tee ${WORKSPACE}/instance_id.txt"
+                    env.ins_id = sh (script:"cat ${WORKSPACE}/instance_id.txt", returnStdout: true).trim()
+                    if(ins_id == "waiting_instance") {
+                        echo "Waiting for avaliable instance, will check after 10 min..."
+                        sleep(time: 10, unit: 'MINUTES')
+                    }
+                }
+            }
+        }else {
             echo "report_only mode, will directly use the instance_id"
-            sh'''
-            #!/usr/bin/env bash
-            echo ${_instance_id} > ${WORKSPACE}/instance_id.txt
-            echo "ins_id : ${_instance_id}"
-            '''
+            sh "echo ${_instance_id} > ${WORKSPACE}/instance_id.txt"
+            env.ins_id = env._instance_id
         }
+        echo "Instance ID: ${ins_id}"
+        archiveArtifacts artifacts: "instance_id.txt", excludes: null
+        // Start a instance
+        sh "cd $HOME && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch"
+        sleep(time: 2, unit: 'MINUTES')
+        env.current_ip = sh (script:"$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text", returnStdout: true).trim()
+        echo "Instance IP: ${current_ip}"
     }
-    stage("start instance")
-    {
-        sh '''
-        #!/usr/bin/env bash
-        ins_id=`cat ${WORKSPACE}/instance_id.txt`
-        cd $HOME && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
-        init_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-        echo init_ip is $init_ip
-        ssh -o StrictHostKeyChecking=no ubuntu@${init_ip} "pwd"
-        '''
-    }
-    stage("prepare scripts & benchmark") {
-        if  ("${report_only}" == "false")
-        {
+    stage("Launch Benchmark") {
+        if("${report_only}" == "false"){
             withEnv(["NODE_LABEL=${NODE_LABEL}"]) {
-            sh '''#!/bin/bash
-                set -xe
-                ins_id=`cat ${WORKSPACE}/instance_id.txt`
-                current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-                # setup instance for jenkins
-                sed -i "s,ubuntu@.*.amazonaws.com,ubuntu@${current_ip}," ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
-                wget -O agent.jar --no-proxy --no-check-certificate https://inteltf-jenk.sh.intel.com/jnlpJars/agent.jar
-                scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar
+                sh '''#!/bin/bash
+                    set -xe
+                    # setup instance for jenkins
+                    sed -i "s,ubuntu@.*.amazonaws.com,ubuntu@${current_ip}," ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
+                    wget -O agent.jar --no-proxy --no-check-certificate https://inteltf-jenk.sh.intel.com/jnlpJars/agent.jar
+                    scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar
 
-                ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-                scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-                ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-                scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-                scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-                scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            '''
+                    ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
+                    scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+                    scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+                    ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+                    scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
+                    scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+                    scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+                    scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                    scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                    scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                    scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                '''
             }
         }
         node(NODE_LABEL) {
             deleteDir()
-            sh '''#!/bin/bash
-                set -xe
-                cd ${HOME}
-                # bash pkill.sh
-                bash entrance.sh \
-                    TAG=${_target} \
-                    PRECISION=${_precision} \
-                    TEST_MODE=${_test_mode} \
-                    SHAPE=${_shape} \
-                    TORCH_REPO=${_TORCH_REPO} \
-                    TORCH_COMMIT=${_TORCH_COMMIT} \
-                    DYNAMO_BENCH=${_DYNAMO_BENCH} \
-                    AUDIO=${_AUDIO} \
-                    TEXT=${_TEXT} \
-                    VISION=${_VISION} \
-                    DATA=${_DATA} \
-                    TORCH_BENCH=${_TORCH_BENCH} \
-                    THREADS=${_THREADS} \
-                    CHANNELS=${_CHANNELS} \
-                    WRAPPER=${_WRAPPER} \
-                    HF_TOKEN=${_HF_TOKEN} \
-                    BACKEND=${_backend} \
-                    SUITE=${_suite} \
-                    MODEL=resnet50 \
-                    TORCH_START_COMMIT=${_TORCH_COMMIT} \
-                    TORCH_END_COMMIT=${_TORCH_COMMIT} \
-                    SCENARIO=accuracy \
-                    KIND=crash \
-                    PERF_RATIO="-1.1" \
-                    EXTRA=${_extra_param}
-            '''
+            try{
+                sh '''#!/bin/bash
+                    set -xe
+                    cd ${HOME}
+                    # bash pkill.sh
+                    bash entrance.sh \
+                        TAG=${_target} \
+                        PRECISION=${_precision} \
+                        TEST_MODE=${_test_mode} \
+                        SHAPE=${_shape} \
+                        TORCH_REPO=${_TORCH_REPO} \
+                        TORCH_COMMIT=${_TORCH_COMMIT} \
+                        DYNAMO_BENCH=${_DYNAMO_BENCH} \
+                        AUDIO=${_AUDIO} \
+                        TEXT=${_TEXT} \
+                        VISION=${_VISION} \
+                        DATA=${_DATA} \
+                        TORCH_BENCH=${_TORCH_BENCH} \
+                        THREADS=${_THREADS} \
+                        CHANNELS=${_CHANNELS} \
+                        WRAPPER=${_WRAPPER} \
+                        HF_TOKEN=${_HF_TOKEN} \
+                        BACKEND=${_backend} \
+                        SUITE=${_suite} \
+                        MODEL=resnet50 \
+                        TORCH_START_COMMIT=${_TORCH_COMMIT} \
+                        TORCH_END_COMMIT=${_TORCH_COMMIT} \
+                        SCENARIO=accuracy \
+                        KIND=crash \
+                        PERF_RATIO="-1.1" \
+                        EXTRA=${_extra_param}
+                '''
+            } catch(err) {
+                currentBuild.result = 'FAILURE'
+                throw err
+            } finally {
+                archiveArtifacts artifacts: "inductor_log/**", excludes: null
+            }
+
         }
     }
 
-
-    stage("trigger inductor images job"){
-            if ("${Build_Image}" == "true") {
-                def image_build_job = build job: 'inductor_images_mengfeil', propagate: false, parameters: [
-                    [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
-                    [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
-                    [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
-                    [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${VISION}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TEXT}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${DATA}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${AUDIO}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
-                    [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
-                    [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_aws"],
-                    [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
-                ]
-            }
+    stage("Build Image"){
+        if ("${Build_Image}" == "true") {
+            def image_build_job = build job: 'inductor_images_mengfeil', propagate: false, parameters: [
+                [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
+                [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
+                [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
+                [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${VISION}"],
+                [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TEXT}"],
+                [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${DATA}"],
+                [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${AUDIO}"],
+                [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
+                [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
+                [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_aws"],
+                [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
+            ]
+        }
     }
-    stage("log query") {
-        sh '''
-        #!/usr/bin/env bash
-        set +e
-        if [ "${_WRAPPER}" == "cpp" ]; then
-            reboot_time=48
-            echo "cppwrapper"
-        else
-            reboot_time=33
-        fi
-        ins_id=`cat ${WORKSPACE}/instance_id.txt`        
-        for t in {1..100}
-        do
-            current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
-            if [ $? -eq 0 ]; then
-                if [ -d ${WORKSPACE}/${_target} ]; then
-                    rm -rf ${WORKSPACE}/${_target}
-                fi
-                mkdir -p ${WORKSPACE}/${_target}
-                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
-                break
+    stage("Log Query") {
+        sh '''#!/bin/bash
+            set -xe
+            rm -rf ${WORKSPACE}/${_target} && mkdir -p ${WORKSPACE}/${_target}
+            scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+            exit 0
+            if [ "${_WRAPPER}" == "cpp" ]; then
+                reboot_time=48
+                echo "cppwrapper"
             else
-                sleep 1h
-                echo $t
-                if [ $t -eq $reboot_time ]; then
-                    echo restart instance now...
-                    $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
-                    ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
+                reboot_time=33
+            fi
+                    
+            for t in {1..100}
+            do
+                timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+                if [ $? -eq 0 ]; then
+                    if [ -d ${WORKSPACE}/${_target} ]; then
+                        rm -rf ${WORKSPACE}/${_target}
+                    fi
+                    mkdir -p ${WORKSPACE}/${_target}
                     scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                     break
+                else
+                    sleep 1h
+                    echo $t
+                    if [ $t -eq $reboot_time ]; then
+                        echo restart instance now...
+                        # $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
+                        # $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
+                        ssh ubuntu@${current_ip} "pwd"
+                        scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                        break
+                    fi
                 fi
-            fi
-        done
+            done
         '''
     }
     // Add raw log artifact stage in advance to avoid crash in report generate stage
@@ -486,7 +480,6 @@ node("master"){
         try{
             sh '''
             #!/usr/bin/env bash
-            ins_id=`cat ${WORKSPACE}/instance_id.txt`
             $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
             if [ "$_terminate_ins" == "True" ]; then
                 $aws ec2 terminate-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m
