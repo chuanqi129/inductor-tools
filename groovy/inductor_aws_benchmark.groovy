@@ -343,30 +343,33 @@ node("master"){
         echo "Instance IP: ${current_ip}"
     }
     stage("Launch Benchmark") {
-        if("${report_only}" == "false"){
+        node("mengfeil-ubuntu.sh.intel.com") {
             withEnv(["NODE_LABEL=${NODE_LABEL}"]) {
                 sh '''#!/bin/bash
                     set -xe
                     # setup instance for jenkins
-                    echo "ssh -i ${JENKINS_HOME}/aws/.pytorch/icx-key.pem ubuntu@${current_ip} java -jar /home/ubuntu/agent.jar" \
-                        > ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
-                    chmod +x ${JENKINS_HOME}/aws/.pytorch/${NODE_LABEL}.sh
+                    echo "ssh -F ${HOME}/.ssh/.aws/pytorch/config ubuntu@${current_ip} java -jar /home/ubuntu/agent.jar" \
+                        > ${HOME}/.ssh/.aws/pytorch/${NODE_LABEL}.sh
                     wget -O agent.jar --no-proxy --no-check-certificate ${JENKINS_URL}jnlpJars/agent.jar
                     scp agent.jar ubuntu@${current_ip}:/home/ubuntu/agent.jar && rm -f agent.jar
-
-                    ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
-                    scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
-                    scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
-                    ssh ubuntu@${current_ip} "bash docker_prepare.sh"
-                    scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-                    scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-                    scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-                    scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                    scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                    scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-                    scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
                 '''
             }
+        }
+        if("${report_only}" == "false"){
+            sh '''#!/bin/bash
+                set -xe
+                ssh ubuntu@${current_ip} "if [ ! -d /home/ubuntu/docker ]; then mkdir -p /home/ubuntu/docker; fi"
+                scp ${WORKSPACE}/scripts/aws/inductor_weights.sh ubuntu@${current_ip}:/home/ubuntu
+                scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
+                ssh ubuntu@${current_ip} "bash docker_prepare.sh"
+                scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
+                scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
+                scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+                scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+                scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            '''
         }
         node(NODE_LABEL) {
             deleteDir()
