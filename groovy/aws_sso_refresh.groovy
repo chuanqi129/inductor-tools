@@ -39,7 +39,7 @@ if ('debug_mail' in params) {
 }
 
 aws = '/home2/yudongsi/.local/bin/aws'
-if ('aws' in aws) {
+if ('aws' in params) {
     echo "aws in params"
     if (params.aws != '') {
         aws = params.aws
