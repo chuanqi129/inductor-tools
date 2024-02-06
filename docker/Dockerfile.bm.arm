@@ -63,7 +63,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
 FROM dev-base AS image
 COPY --from=conda /opt/conda /opt/conda
 RUN pip install torch==2.0.1 torchvision torchaudio torchdata torchtext --no-deps --index-url https://download.pytorch.org/whl/cpu
-ARG TORCH_BENCH_COMMIT="main"
+ARG TORCH_BENCH_COMMIT=main
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 WORKDIR /workspace

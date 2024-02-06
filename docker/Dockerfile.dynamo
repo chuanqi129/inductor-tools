@@ -68,7 +68,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
 
 FROM dev-base AS build
 ARG PT_REPO=https://github.com/blzheng/pytorch
-ARG PT_COMMIT="beilei/baseline"
+ARG PT_COMMIT=beilei/baseline
 COPY --from=conda /opt/conda /opt/conda
 # ENV LD_PRELOAD /opt/conda/lib/libiomp5.so:/opt/conda/lib/libjemalloc.so
 # ENV MALLOC_CONF oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1
@@ -77,14 +77,14 @@ RUN git clone ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     pip install z3-solver && python setup.py develop && cd ..
 # Build Torchdynamo
-ARG DYNAMO_COMMIT="beilei/baseline"
+ARG DYNAMO_COMMIT=beilei/baseline
 RUN git clone https://github.com/blzheng/torchdynamo && \
     cd torchdynamo && git checkout ${DYNAMO_COMMIT} && \
     python setup.py develop && cd .. 
-ARG TORCH_VISION_COMMIT="nightly"
-ARG TORCH_DATA_COMMIT="nightly"
-ARG TORCH_TEXT_COMMIT="nightly"
-ARG TORCH_AUDIO_COMMIT="nightly"
+ARG TORCH_VISION_COMMIT=nightly
+ARG TORCH_DATA_COMMIT=nightly
+ARG TORCH_TEXT_COMMIT=nightly
+ARG TORCH_AUDIO_COMMIT=nightly
 RUN git clone https://github.com/pytorch/vision.git && \
     cd vision && git checkout ${TORCH_VISION_COMMIT} && \
     python setup.py bdist_wheel && \
@@ -103,7 +103,7 @@ RUN git clone https://github.com/pytorch/vision.git && \
     sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
-ARG TORCH_BENCH_COMMIT="main"
+ARG TORCH_BENCH_COMMIT=main
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone https://github.com/pytorch/benchmark.git && \
