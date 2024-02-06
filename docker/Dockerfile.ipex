@@ -66,7 +66,7 @@ RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Mini
 
 FROM dev-base AS build
 ARG PT_REPO=https://github.com/blzheng/pytorch
-ARG PT_COMMIT="xiaobing/Nov_11"
+ARG PT_COMMIT=xiaobing/Nov_11
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone ${PT_REPO} && \
@@ -103,7 +103,7 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
     python install.py --continue_on_fail && cd .. && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
-ARG IPEX_COMMIT="dynamo_ipex113"
+ARG IPEX_COMMIT=dynamo_ipex113
 RUN git clone https://github.com/intel/intel-extension-for-pytorch.git ipex && \
     cd ipex && git checkout ${IPEX_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py install
