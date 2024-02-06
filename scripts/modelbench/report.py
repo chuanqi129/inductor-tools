@@ -331,8 +331,7 @@ def get_failures(target_path, thread_mode):
     for model in failures_dict.keys():
         reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
     failures['reason(reference only)'] = reason_content
-    failures['thread'] = thread_mode
-    col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
+    col_order = ['suite', 'name', 'accuracy', 'perf', 'reason(reference only)']
     failures = failures[col_order]
     return failures
 
@@ -388,7 +387,6 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     target_thread_failures['thread'] = thread_mode
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
                  'name': list(target_thread_failures['name']),
-                 'thread': list(target_thread_failures['thread']),
                  'accuracy': list(target_thread_failures['accuracy']),
                  'perf': list(target_thread_failures['perf']),
                  'reason(reference only)':(list(target_thread_failures['reason(reference only)']))})
@@ -412,15 +410,14 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     sf.set_column_width(2, 30)
     sf.set_column_width(3, 15)
     sf.set_column_width(4, 15)
-    sf.set_column_width(5, 15)
-    sf.set_column_width(6, 100)
+    sf.set_column_width(5, 100)
     if args.reference is not None:    
         new_failures_list = new_failures['name'].values.tolist()
         for failed_model in new_failures_list:
             sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style)
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
-def process_suite(suite,thread):
+def process_suite(suite, thread):
     target_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.target, thread), suite, args.precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
@@ -450,7 +447,6 @@ def process_thread(thread):
 def process(input, thread):
     if args.reference is not None:
         data_new=input[['suite','name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
-        data_new['thread'] = thread
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
@@ -468,7 +464,6 @@ def process(input, thread):
         combined_data = pd.DataFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size_new': list(data_new['batch_size_new']),
             'speed_up_new': list(data_new['speed_up_new']),
             'inductor_new': list(data_new['inductor_new']),
@@ -499,21 +494,20 @@ def process(input, thread):
         data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
+        data.set_column_width(8, 18)
         data.set_column_width(9, 18)
         data.set_column_width(10, 18)
-        data.set_column_width(11, 18)
-        data.set_column_width(12, 15)
-        data.set_column_width(13, 20)
+        data.set_column_width(11, 15)
+        data.set_column_width(12, 20)
+        data.set_column_width(13, 28)
         data.set_column_width(14, 28)
         data.set_column_width(15, 28)
-        data.set_column_width(16, 28)
-        data.set_column_width(17, 32)
+        data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         global new_performance_regression
@@ -533,14 +527,12 @@ def process(input, thread):
         new_performance_improvement_model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
-        data_new['thread'] = thread
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
         data = StyleFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size': list(data_new['batch_size']),
             'speedup': list(data_new['speedup']),
             'inductor': list(data_new['inductor']),
@@ -548,20 +540,19 @@ def process(input, thread):
             'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
         data.set_row_height(rows=data.row_indexes, height=15)
     return data
 
 def update_details(writer):
-    h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": '',"I": args.reference, "J": '', "K": '',"L": '',"M":'',"N": 'Result Comp',"O": '',"P": '',"Q":''}
+    h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
     if args.reference is None:
-        h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": ''}
+        h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": ''}
     head = StyleFrame(pd.DataFrame(h, index=[0]))
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
@@ -898,19 +889,17 @@ def excel_postprocess(file):
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
         wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     if args.mode == "single" or args.mode == 'all':
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wst.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wst.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wst.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wst.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
+        wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wst.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wst.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     wb.save(file)
 
 if __name__ == '__main__':
