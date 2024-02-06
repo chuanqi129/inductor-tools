@@ -614,6 +614,9 @@ node(NODE_LABEL){
             '''
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
+            archiveArtifacts  "guilty_commit_search_model_list.*"
+        }
     }
 
     stage("Sent Email"){

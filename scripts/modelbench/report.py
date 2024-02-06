@@ -50,9 +50,13 @@ known_failures ={
 }
 
 new_performance_regression=pd.DataFrame()
+new_performance_regression_model_list=pd.DataFrame()
 new_failures=pd.DataFrame()
+new_failures_model_list=pd.DataFrame()
 new_performance_improvement=pd.DataFrame()
+new_performance_improvement_model_list=pd.DataFrame()
 new_fixed_failures=pd.DataFrame()
+new_fixed_failures_model_list=pd.DataFrame()
 
 # cppwrapper gm values
 multi_threads_gm={}
@@ -326,15 +330,41 @@ def get_failures(target_path, thread_mode):
     reason_content=[]
     for model in failures_dict.keys():
         reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
-    failures['reason(reference only)']=reason_content        
-    failures['thread'] = thread_mode
-    col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
+    failures['reason(reference only)'] = reason_content
+    col_order = ['suite', 'name', 'accuracy', 'perf', 'reason(reference only)']
     failures = failures[col_order]
     return failures
+
+def get_fail_model_list(failures, thread, kind):
+    accuracy_model_list = failures.loc[(failures['accuracy'] == "X")]
+    accuracy_model_list['accuracy'].replace(["X"], ['accuracy'], inplace=True)
+    accuracy_model_list = accuracy_model_list.rename(columns={'suite':'suite','name':'name','accuracy':'scenario'})
+    accuracy_model_list = accuracy_model_list[['suite','name','scenario']]
+
+    perf_model_list = failures.loc[(failures['perf'] == "X")]
+    perf_model_list['perf'].replace(["X"], ['performance'], inplace=True)
+    perf_model_list = perf_model_list.rename(columns={'suite':'suite','name':'name','perf':'scenario'})
+    perf_model_list = perf_model_list[['suite','name','scenario']]
+
+    model_list = pd.concat([accuracy_model_list, perf_model_list])
+    model_list['thread'] = thread
+    model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    return model_list
+
+def get_perf_model_list(regression, thread, kind):
+    model_list = regression[['suite','name']]
+    model_list['scenario'] = 'performance'
+    model_list['thread'] = thread
+    model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    return model_list
 
 def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_failures
     global new_fixed_failures
+    global new_failures_model_list
+    global new_fixed_failures_model_list
     target_thread_failures = get_failures(target_thread, thread_mode)
     # new failures compare with reference logs
     if args.reference is not None:
@@ -343,11 +373,17 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
+        model_list = get_fail_model_list(failure_regression, thread_mode, 'crash')
+        if not model_list.empty:
+            new_failures_model_list = pd.concat([new_failures_model_list, model_list])
 
         # Fixed Failures
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
+        model_list = get_fail_model_list(fixed_failures, thread_mode, 'fixed')
+        if not model_list.empty:
+            new_fixed_failures_model_list = pd.concat([new_fixed_failures_model_list, model_list])
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
@@ -355,7 +391,6 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     target_thread_failures['thread'] = thread_mode
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
                  'name': list(target_thread_failures['name']),
-                 'thread': list(target_thread_failures['thread']),
                  'accuracy': list(target_thread_failures['accuracy']),
                  'perf': list(target_thread_failures['perf']),
                  'reason(reference only)':(list(target_thread_failures['reason(reference only)']))})
@@ -379,15 +414,14 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     sf.set_column_width(2, 30)
     sf.set_column_width(3, 15)
     sf.set_column_width(4, 15)
-    sf.set_column_width(5, 15)
-    sf.set_column_width(6, 100)
+    sf.set_column_width(5, 100)
     if args.reference is not None:    
         new_failures_list = new_failures['name'].values.tolist()
         for failed_model in new_failures_list:
             sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style)
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
-def process_suite(suite,thread):
+def process_suite(suite, thread):
     target_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.target, thread), suite, args.precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
@@ -399,7 +433,7 @@ def process_suite(suite,thread):
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
-        reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)    
+        reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
         data=pd.merge(target_data,reference_data,on=['name'],how= 'outer')
         data['suite'] = suite
         return data
@@ -417,7 +451,6 @@ def process_thread(thread):
 def process(input, thread):
     if args.reference is not None:
         data_new=input[['suite','name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
-        data_new['thread'] = thread
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
@@ -435,7 +468,6 @@ def process(input, thread):
         combined_data = pd.DataFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size_new': list(data_new['batch_size_new']),
             'speed_up_new': list(data_new['speed_up_new']),
             'inductor_new': list(data_new['inductor_new']),
@@ -466,44 +498,49 @@ def process(input, thread):
         data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
+        data.set_column_width(8, 18)
         data.set_column_width(9, 18)
         data.set_column_width(10, 18)
-        data.set_column_width(11, 18)
-        data.set_column_width(12, 15)
-        data.set_column_width(13, 20)
+        data.set_column_width(11, 15)
+        data.set_column_width(12, 20)
+        data.set_column_width(13, 28)
         data.set_column_width(14, 28)
         data.set_column_width(15, 28)
-        data.set_column_width(16, 28)
-        data.set_column_width(17, 32)
+        data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         global new_performance_regression
+        global new_performance_regression_model_list
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
         new_performance_regression = pd.concat([new_performance_regression,regression])
+        model_list = get_perf_model_list(regression, thread, 'drop')
+        if not model_list.empty:
+            new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
         global new_performance_improvement
+        global new_performance_improvement_model_list
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
+        model_list = get_perf_model_list(improvement, thread, 'improve')
+        if not model_list.empty:
+            new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
-        data_new['thread'] = thread
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
         data = StyleFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size': list(data_new['batch_size']),
             'speedup': list(data_new['speedup']),
             'inductor': list(data_new['inductor']),
@@ -511,20 +548,19 @@ def process(input, thread):
             'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
         data.set_row_height(rows=data.row_indexes, height=15)
     return data
 
 def update_details(writer):
-    h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": '',"I": args.reference, "J": '', "K": '',"L": '',"M":'',"N": 'Result Comp',"O": '',"P": '',"Q":''}
+    h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
     if args.reference is None:
-        h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": ''}
+        h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": ''}
     head = StyleFrame(pd.DataFrame(h, index=[0]))
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
@@ -820,6 +856,16 @@ def html_generate(html_off):
             print("html_generate_failed")
             pass
 
+def generate_model_list():
+    model_list = pd.concat([
+        new_performance_regression_model_list,
+        new_failures_model_list,
+        new_performance_improvement_model_list,
+        new_fixed_failures_model_list])
+    model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
+    clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
+    clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+
 def generate_report(excel, reference, target):
     update_summary(excel, reference, target)
     update_swinfo(excel)
@@ -828,6 +874,7 @@ def generate_report(excel, reference, target):
     if args.mode =='single' or args.mode == 'all':
         update_failures(excel, target_st, reference_st, 'single')
     update_details(excel)
+    generate_model_list()
     if args.cppwrapper_gm:
         update_cppwrapper_gm(excel,reference,target)
 
@@ -850,19 +897,17 @@ def excel_postprocess(file):
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
         wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     if args.mode == "single" or args.mode == 'all':
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wst.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wst.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wst.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wst.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
+        wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wst.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wst.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     wb.save(file)
 
 if __name__ == '__main__':

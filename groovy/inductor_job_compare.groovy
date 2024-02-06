@@ -199,6 +199,9 @@ node(NODE_LABEL){
         mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./ && rm -rf ${_refer_job}_${_refer_sc} && rm -rf ${_target_job}_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html"
+        if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
+            archiveArtifacts  "guilty_commit_search_model_list.*"
+        }
     }
 
     stage("Email"){
