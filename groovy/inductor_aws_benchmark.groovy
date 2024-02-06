@@ -411,7 +411,7 @@ node(NODE_LABEL){
     }
     stage("trigger inductor images job"){
             if ("${Build_Image}" == "true") {
-                def image_build_job = build job: 'inductor_images', propagate: false, parameters: [
+                def image_build_job = build job: 'inductor_images_mengfeil', propagate: false, parameters: [
                     [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
                     [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
                     [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
