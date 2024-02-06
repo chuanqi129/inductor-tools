@@ -374,13 +374,13 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
-        new_failures_model_list = get_fail_model_list(new_failures, thread, 'crash')
+        new_failures_model_list = get_fail_model_list(new_failures, thread_mode, 'crash')
 
         # Fixed Failures
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
-        new_fixed_failures_model_list = get_fail_model_list(new_fixed_failures, thread, 'fixed')
+        new_fixed_failures_model_list = get_fail_model_list(new_fixed_failures, thread_mode, 'fixed')
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
