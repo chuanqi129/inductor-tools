@@ -373,13 +373,17 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
-        new_failures_model_list = get_fail_model_list(new_failures, thread_mode, 'crash')
+        model_list = get_fail_model_list(new_failures, thread_mode, 'crash')
+        if not model_list.empty:
+            new_failures_model_list = pd.concat([new_failures_model_list, model_list])
 
         # Fixed Failures
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
-        new_fixed_failures_model_list = get_fail_model_list(new_fixed_failures, thread_mode, 'fixed')
+        model_list = get_fail_model_list(new_fixed_failures, thread_mode, 'fixed')
+        if not model_list.empty:
+            new_fixed_failures_model_list = pd.concat([new_fixed_failures_model_list, model_list])
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
@@ -515,7 +519,9 @@ def process(input, thread):
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
         new_performance_regression = pd.concat([new_performance_regression,regression])
-        new_performance_regression_model_list = get_perf_model_list(new_performance_regression, thread, 'drop')
+        model_list = get_perf_model_list(new_performance_regression, thread, 'drop')
+        if not model_list.empty:
+            new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
@@ -524,7 +530,9 @@ def process(input, thread):
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
-        new_performance_improvement_model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
+        model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
+        if not model_list.empty:
+            new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
