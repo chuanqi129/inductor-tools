@@ -196,8 +196,7 @@ node(NODE_LABEL){
         else
             python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train}
         fi
-        mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./
-        mv ${_target_job}_${_target_sc}/inductor_log/guilty_commit_search_model_list.* ./ && rm -rf ${_refer_job}_${_refer_sc} && rm -rf ${_target_job}_${_target_sc}        
+        mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./ && rm -rf ${_refer_job}_${_refer_sc} && rm -rf ${_target_job}_${_target_sc}
         '''
         archiveArtifacts  "*.xlsx, *.html, guilty_commit_search_model_list.*"
     }
