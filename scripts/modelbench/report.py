@@ -50,9 +50,13 @@ known_failures ={
 }
 
 new_performance_regression=pd.DataFrame()
+new_performance_regression_model_list=pd.DataFrame()
 new_failures=pd.DataFrame()
+new_failures_model_list=pd.DataFrame()
 new_performance_improvement=pd.DataFrame()
+new_performance_improvement_model_list=pd.DataFrame()
 new_fixed_failures=pd.DataFrame()
+new_fixed_failures_model_list=pd.DataFrame()
 
 # cppwrapper gm values
 multi_threads_gm={}
@@ -326,15 +330,42 @@ def get_failures(target_path, thread_mode):
     reason_content=[]
     for model in failures_dict.keys():
         reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
-    failures['reason(reference only)']=reason_content        
+    failures['reason(reference only)'] = reason_content
     failures['thread'] = thread_mode
     col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
     failures = failures[col_order]
     return failures
 
+def get_fail_model_list(failures, thread, kind):
+    accuracy_model_list = failures.loc[(failures['accuracy'] == "X")]
+    accuracy_model_list['accuracy'].replace(["X"], ['accuracy'], inplace=True)
+    accuracy_model_list = accuracy_model_list.rename(columns={'suite':'suite','name':'name','accuracy':'scenario'})
+    accuracy_model_list = accuracy_model_list[['suite','name','scenario']]
+
+    perf_model_list = failures.loc[(failures['perf'] == "X")]
+    perf_model_list['perf'].replace(["X"], ['performance'], inplace=True)
+    perf_model_list = perf_model_list.rename(columns={'suite':'suite','name':'name','perf':'scenario'})
+    perf_model_list = perf_model_list[['suite','name','scenario']]
+
+    model_list = pd.concat([accuracy_model_list, perf_model_list])
+    model_list['thread'] = thread
+    model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    return model_list
+
+def get_perf_model_list(regression, thread, kind):
+    model_list = regression[['suite','name']]
+    model_list['scenario'] = 'performance'
+    model_list['thread'] = thread
+    model_list['kind'] = kind
+    model_list['precision'] = args.precision
+    return model_list
+
 def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_failures
     global new_fixed_failures
+    global new_failures_model_list
+    global new_fixed_failures_model_list
     target_thread_failures = get_failures(target_thread, thread_mode)
     # new failures compare with reference logs
     if args.reference is not None:
@@ -343,11 +374,13 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
+        new_failures_model_list = get_fail_model_list(new_failures, thread, 'crash')
 
         # Fixed Failures
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
+        new_fixed_failures_model_list = get_fail_model_list(new_fixed_failures, thread, 'fixed')
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
@@ -399,7 +432,7 @@ def process_suite(suite,thread):
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
-        reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)    
+        reference_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
         data=pd.merge(target_data,reference_data,on=['name'],how= 'outer')
         data['suite'] = suite
         return data
@@ -484,16 +517,20 @@ def process(input, thread):
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         global new_performance_regression
+        global new_performance_regression_model_list
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
         new_performance_regression = pd.concat([new_performance_regression,regression])
+        new_performance_regression_model_list = get_perf_model_list(new_performance_regression, thread, 'drop')
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
         global new_performance_improvement
+        global new_performance_improvement_model_list
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
+        new_performance_improvement_model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['thread'] = thread
@@ -820,6 +857,16 @@ def html_generate(html_off):
             print("html_generate_failed")
             pass
 
+def generate_model_list():
+    model_list = pd.concat([
+        new_performance_regression_model_list,
+        new_failures_model_list,
+        new_performance_improvement_model_list,
+        new_fixed_failures_model_list])
+    model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
+    clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
+    clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+
 def generate_report(excel, reference, target):
     update_summary(excel, reference, target)
     update_swinfo(excel)
@@ -828,6 +875,7 @@ def generate_report(excel, reference, target):
     if args.mode =='single' or args.mode == 'all':
         update_failures(excel, target_st, reference_st, 'single')
     update_details(excel)
+    generate_model_list()
     if args.cppwrapper_gm:
         update_cppwrapper_gm(excel,reference,target)
 
