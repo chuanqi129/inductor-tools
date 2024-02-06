@@ -22,7 +22,7 @@ PERF_RATIO="-1.1"
 EXTRA=
 # get value from param
 if [[ "$@" != "" ]];then
-    echo "" tmp.env
+    echo "" > tmp.env
     for var in "$@"
     do
         if [[ "${var}" == "EXTRA="* ]];then
