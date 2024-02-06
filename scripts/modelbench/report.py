@@ -373,7 +373,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
-        model_list = get_fail_model_list(new_failures, thread_mode, 'crash')
+        model_list = get_fail_model_list(failure_regression, thread_mode, 'crash')
         if not model_list.empty:
             new_failures_model_list = pd.concat([new_failures_model_list, model_list])
 
@@ -381,7 +381,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
-        model_list = get_fail_model_list(new_fixed_failures, thread_mode, 'fixed')
+        model_list = get_fail_model_list(fixed_failures, thread_mode, 'fixed')
         if not model_list.empty:
             new_fixed_failures_model_list = pd.concat([new_fixed_failures_model_list, model_list])
 
@@ -519,7 +519,7 @@ def process(input, thread):
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
         new_performance_regression = pd.concat([new_performance_regression,regression])
-        model_list = get_perf_model_list(new_performance_regression, thread, 'drop')
+        model_list = get_perf_model_list(regression, thread, 'drop')
         if not model_list.empty:
             new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
@@ -530,7 +530,7 @@ def process(input, thread):
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
-        model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
+        model_list = get_perf_model_list(improvement, thread, 'improve')
         if not model_list.empty:
             new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
     else:
