@@ -86,7 +86,7 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_DATA_BRANCH} https://github.com/pytorch/data.git && \
-    cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
+    cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout 07903385443da2cab8ed90c46bd4e02412945100; else git checkout ${TORCH_DATA_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone -b ${TORCH_TEXT_BRANCH} https://github.com/pytorch/text.git && \
