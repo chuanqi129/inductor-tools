@@ -863,8 +863,11 @@ def generate_model_list():
         new_performance_improvement_model_list,
         new_fixed_failures_model_list])
     model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
-    clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
-    clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+    try:
+        clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
+        clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+    except pd.errors.EmptyDataError:
+        print('No new issue or improvement compared with reference')
 
 def generate_report(excel, reference, target):
     update_summary(excel, reference, target)
