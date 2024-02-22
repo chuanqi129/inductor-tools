@@ -334,7 +334,8 @@ def get_failures(target_path, thread_mode):
     for model in failures_dict.keys():
         reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
     failures['reason(reference only)'] = reason_content
-    col_order = ['suite', 'name', 'accuracy', 'perf', 'reason(reference only)']
+    failures['thread'] = thread_mode
+    col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
     failures = failures[col_order]
     return failures
 
@@ -521,6 +522,7 @@ def process(input, thread):
         global new_performance_regression_model_list
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
+        regression.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
         model_list = get_perf_model_list(regression, thread, 'drop')
         if not model_list.empty:
@@ -532,6 +534,7 @@ def process(input, thread):
         global new_performance_improvement_model_list
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
+        improvement.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
         model_list = get_perf_model_list(improvement, thread, 'improve')
         if not model_list.empty:
