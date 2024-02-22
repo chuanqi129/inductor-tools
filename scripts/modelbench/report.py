@@ -334,7 +334,8 @@ def get_failures(target_path, thread_mode):
     for model in failures_dict.keys():
         reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
     failures['reason(reference only)'] = reason_content
-    col_order = ['suite', 'name', 'accuracy', 'perf', 'reason(reference only)']
+    failures['thread'] = thread_mode
+    col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
     failures = failures[col_order]
     return failures
 
@@ -376,7 +377,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
-        new_failures['thread'] = thread_mode
+        # new_failures['thread'] = thread_mode
         model_list = get_fail_model_list(failure_regression, thread_mode, 'crash')
         if not model_list.empty:
             new_failures_model_list = pd.concat([new_failures_model_list, model_list])
