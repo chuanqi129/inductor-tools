@@ -139,14 +139,14 @@ def update_passrate(reference):
             reference_st_pr_data = pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             update_passrate_csv(reference_st_pr_data, reference_st)
             target_st_pr_data = pd.read_csv(target_st+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_st_pr_data, target_mt)
+            update_passrate_csv(target_st_pr_data, target_st)
     else:
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             update_passrate_csv(target_mt_pr_data, target_mt)
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_st_pr_data, target_mt)
+            update_passrate_csv(target_st_pr_data, target_st)
 
 def update_summary(excel, reference, target):
     if args.suite == 'all':
