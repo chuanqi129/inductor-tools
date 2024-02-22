@@ -189,26 +189,26 @@ def update_summary(excel, reference, target):
         if args.mode == "multiple" or args.mode == 'all':
             reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[2:3,4:7]=reference_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=reference
             summary.iloc[2:3,2]=reference 
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0) 
-            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target
         if args.mode == "single" or args.mode == 'all':
             reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
-            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:1,1:7]
             summary.iloc[6:7,4:7]=reference_st_gm_data.iloc[0:2,1:7]
             summary.iloc[4:5,2]=reference
             summary.iloc[6:7,2]=reference
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
             summary.iloc[7:8,2]=target
@@ -219,14 +219,14 @@ def update_summary(excel, reference, target):
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
