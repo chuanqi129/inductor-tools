@@ -522,8 +522,8 @@ def process(input, thread):
         global new_performance_regression_model_list
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
+        regression.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
-        new_performance_regression.insert(2, 'thread', thread)
         model_list = get_perf_model_list(regression, thread, 'drop')
         if not model_list.empty:
             new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
@@ -534,8 +534,8 @@ def process(input, thread):
         global new_performance_improvement_model_list
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
+        improvement.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
-        new_performance_improvement.insert(2, 'thread', thread)
         model_list = get_perf_model_list(improvement, thread, 'improve')
         if not model_list.empty:
             new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
