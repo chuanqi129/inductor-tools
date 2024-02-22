@@ -106,7 +106,7 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    python -c "import torch, torchvision, torchtext"
+    python -c "import torch, torchvision, torchaudio"
 
 # Clean for final image
 FROM dev-base AS image
