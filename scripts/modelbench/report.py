@@ -289,14 +289,19 @@ def failures_reason_parse(model,acc_tag,mode):
 
 def get_failures(target_path, thread_mode):
     tmp=[]
+    failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
+    perf_model_map = {}
+    acc_model_map = {}
     for suite_name in suite_list:
         perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
         acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
 
         perf_data=pd.read_csv(perf_path)
         acc_data=pd.read_csv(acc_path)
-
-        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='infra_error') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
+        perf_model_map[suite_name] = set(perf_data['name'])
+        acc_model_map[suite_name] = set(acc_data['name'])
+    
+        acc_data = acc_data.loc[(acc_data['accuracy'].isin(failure_msg_list)) | (acc_data['batch_size'] ==0), :]
         acc_data.insert(loc=2, column='acc_suite', value=suite_name)
         tmp.append(acc_data)
 
@@ -312,21 +317,22 @@ def get_failures(target_path, thread_mode):
     if (len(failures['acc_suite']) == 0) and (len(failures['pef_suite']) == 0):
         return failures
     failures['suite'] = failures.apply(lambda x: x['pef_suite'] if x['acc_suite']==0 else x['acc_suite'], axis=1)
-    failures=failures.rename(columns={
-        'suite':'suite',
-        'name':'name',
-        'accuracy':'accuracy',
-        'speedup':'perf'}) 
+    failures = failures.rename(columns={'speedup': 'perf'})
+    failures = failures[['name', 'accuracy', 'perf', 'suite']]
 
     # 1 -> failed
-    failures['accuracy'].replace(['infra_error','timeout','fail_to_run','fail_accuracy','0.0000','model_fail_to_load','eager_fail_to_run'],[1,1,1,1,1,1,1],inplace=True)
-    failures['perf'].replace([0],['fail'],inplace=True)
-    failures['perf'].replace(['fail','infra_error','timeout'],[1,1,1],inplace=True)
-    failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
-    failures=failures.groupby(by=['name']).sum(numeric_only=True).reset_index()
-    failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
-    failures['perf'].replace([0,1],["√","X"],inplace=True)
-    failures['accuracy'].replace([0,1],["√","X"],inplace=True)  
+    failures['accuracy'].replace(failure_msg_list, [1]*len(failure_msg_list), inplace=True)
+    failures['perf'].replace([0],['fail_to_run'], inplace=True)
+    failures['perf'].replace(failure_msg_list, [1]*len(failure_msg_list), inplace=True)
+    failures = failures.groupby(by=['name', 'suite']).sum(numeric_only=True).reset_index()
+    for index, row in failures.iterrows():
+        if row['name'] not in perf_model_map[row['suite']]:
+            failures.loc[index, 'perf'] = 2
+        if row['name'] not in acc_model_map[row['suite']]:
+            failures.loc[index, 'accuracy'] = 2
+    
+    failures['perf'].replace([0, 1, 2],["√", "X", "N/A"],inplace=True)
+    failures['accuracy'].replace([0, 1, 2],["√", "X", "N/A"],inplace=True)
     # fill failure reasons
     failures['name']=failures['name'].drop_duplicates()
     failures_dict =  {key:values for key, values in zip(failures['name'], failures['accuracy'])}
