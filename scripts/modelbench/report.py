@@ -195,6 +195,7 @@ def update_summary(excel, reference, target):
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
 def update_swinfo(excel):
+    refer_read_flag = True
     try:
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
@@ -206,12 +207,13 @@ def update_swinfo(excel):
         print("referece version.csv not found")
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        refer_read_flag = False
 
     sf = StyleFrame(swinfo_df)
     sf.set_column_width(1, 25)
     sf.set_column_width(2, 20)
     sf.set_column_width(3, 25)
-    if args.reference is not None:
+    if refer_read_flag and (args.reference is not None):
         sf.set_column_width(4, 20)
         sf.set_column_width(5, 25)
 
