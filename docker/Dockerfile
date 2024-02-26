@@ -72,6 +72,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
+    pip install mpmath==1.3.0 & \
     python setup.py develop && cd ..
 ARG TORCH_VISION_BRANCH=main
 ARG TORCH_VISION_COMMIT=default
