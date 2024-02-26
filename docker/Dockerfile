@@ -103,12 +103,12 @@ ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=default
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
-RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
-    cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
-    python install.py --continue_on_fail && \
-    # Need update numpy version to avoid some models crash
-    pip install --upgrade numpy
+# RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
+#     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
+#     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
+#     python install.py --continue_on_fail && \
+#     # Need update numpy version to avoid some models crash
+#     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
@@ -119,5 +119,5 @@ FROM dev-base AS image
 ARG BENCH_COMMIT=${PT_COMMIT}
 COPY --from=build /opt/conda /opt/conda
 COPY --from=build /workspace/pytorch /workspace/pytorch
-COPY --from=build /workspace/benchmark /workspace/benchmark
+# COPY --from=build /workspace/benchmark /workspace/benchmark
 WORKDIR /workspace/pytorch
