@@ -81,7 +81,7 @@ ARG TORCH_TEXT_BRANCH=main
 ARG TORCH_TEXT_COMMIT=default
 ARG TORCH_AUDIO_BRANCH=main
 ARG TORCH_AUDIO_COMMIT=default
-RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
+RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && pip install mpmath==1.3.0 &&\
     cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
