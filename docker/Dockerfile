@@ -72,7 +72,6 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    pip install mpmath==1.3.0 & \
     python setup.py develop && cd ..
 ARG TORCH_VISION_BRANCH=main
 ARG TORCH_VISION_COMMIT=default
@@ -106,7 +105,7 @@ ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
     python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
