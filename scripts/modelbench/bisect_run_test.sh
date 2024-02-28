@@ -56,7 +56,8 @@ run_acc_drop_test() {
 }
 
 run_crash_test() {
-    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./crash.log
+    # bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./crash.log
+    python inductor_quant_acc.py 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
         acc_status=`tail -n 1 ./crash.log | grep pass | wc -l`
         perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
