@@ -111,8 +111,7 @@ ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 #     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
-# RUN git checkout ${BENCH_COMMIT} benchmarks && \
-#     python -c "import torch, torchvision, torchtext"
+RUN git checkout ${BENCH_COMMIT} benchmarks 
 
 # Clean for final image
 FROM dev-base AS image
