@@ -72,7 +72,7 @@ COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
-    pip install z3-solver && python setup.py develop && cd ..
+    pip install z3-solver pandas psutil scipy && python setup.py develop && cd ..
 ARG TORCH_VISION_BRANCH=main
 ARG TORCH_VISION_COMMIT=default
 ARG TORCH_DATA_BRANCH=main
