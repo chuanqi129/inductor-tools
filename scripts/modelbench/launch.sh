@@ -119,10 +119,15 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     fi
 # Launch issue guilty commit search
 else
+    wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
+    mkdir -p /home/ubuntu/imagenet/val && mv ILSVRC2012_img_val.tar /home/ubuntu/imagenet/val && cd /home/ubuntu/imagenet/val && tar -xvf ILSVRC2012_img_val.tar && rm -f ILSVRC2012_img_val.tar
+    wget https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh
+    bash valprep.sh
     docker cp /home/ubuntu/docker/bisect_search.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/pytorch
+    docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
     # TODO: Hard code freeze on and default bs, add them as params future
     docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_BRANCH $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $PERF_RATIO $EXTRA"
 fi
