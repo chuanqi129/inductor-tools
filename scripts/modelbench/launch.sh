@@ -97,5 +97,5 @@ else
     docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
     # TODO: Hard code freeze on and default bs, add them as params future
-    docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_BRANCH $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $PERF_RATIO $EXTRA"
+    docker exec -i $USER bash -c "bash bisect_search.sh $TORCH_BRANCH $TORCH_START_COMMIT $TORCH_END_COMMIT $SUITE $MODEL $TEST_MODE $SCENARIO $PRECISION $TEST_SHAPE $WRAPPER $KIND $THREADS $CHANNELS on 0 $LOG_DIR $HF_TOKEN $BACKEND $PERF_RATIO $EXTRA" > /home/ubuntu/docker/${LOG_DIR}/docker_exec_detailed.log
 fi
