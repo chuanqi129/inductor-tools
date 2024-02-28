@@ -15,7 +15,7 @@ WRAPPER=${9:-default} # default / cpp
 BS=${10:-0}
 FREEZE=${11:-on}
 
-Mode_extra="--inference "
+# Mode_extra="--inference "
 if [[ $MODE == "training" ]]; then
     echo "Testing with training mode."
     Mode_extra="--training "
