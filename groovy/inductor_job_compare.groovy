@@ -198,11 +198,11 @@ node(NODE_LABEL){
         '''        
     }
     stage("report"){
-        def params = getUpstreamParameters(target_job, target_job_selector)
-        def shape = params.get('shape')
-        def wrapper = params.get('WRAPPER')
-        def torch_repo = params.get('TORCH_REPO')
-        def torch_branch = params.get('TORCH_BRANCH')
+        env.params = getUpstreamParameters(target_job, target_job_selector)
+        env.shape = params.get('shape')
+        env.wrapper = params.get('WRAPPER')
+        env.torch_repo = params.get('TORCH_REPO')
+        env.torch_branch = params.get('TORCH_BRANCH')
         sh '''
         #!/usr/bin/env bash
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
