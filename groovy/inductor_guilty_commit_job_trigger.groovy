@@ -42,8 +42,7 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_parameters}
-                job_variables = job_list["job_${i}"].getBuildVariables()
-                println(job_variables['model'])
+                println(elem['name'])
             }
         }
         parallel job_list
