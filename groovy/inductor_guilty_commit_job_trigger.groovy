@@ -44,7 +44,7 @@ node(NODE_LABEL){
                 job_list["job_${i}"] = {
                     build job: guilty_commit_search_job_name,
                     propagate: false,
-                    parameters: job_parameters,
+                    parameters: job_parameters
                 }
             }
         }
