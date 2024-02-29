@@ -203,6 +203,9 @@ def update_summary(excel, reference, target):
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
 def update_swinfo(excel):
+    if not (os.path.exists(args.target+'/inductor_log/version.csv')):
+        print("target version.csv not found")
+        return
     refer_read_flag = True
     global start_commit
     global end_commit
