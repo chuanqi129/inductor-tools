@@ -1,4 +1,5 @@
 def job_list = [:]
+def job_parameters_list = [:]
 
 node(NODE_LABEL){
     checkout scm
@@ -42,7 +43,7 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_parameters}
-                println(elem['name'])
+                job_parameters_list["job_${i}"] = job_parameters
             }
         }
         parallel job_list
