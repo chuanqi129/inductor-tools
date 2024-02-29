@@ -471,7 +471,7 @@ node(NODE_LABEL){
             maillist="${default_mail}"
         }
 
-        if (fileExists("${WORKSPACE}/${_target}/inductor_log/guitly_commit.log") == true){
+        if (fileExists("${WORKSPACE}/${_target}/inductor_log/guilty_commit.log") == true){
             emailext(
                 subject: "Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WAPPER}-${env._scenario}-${env._threads}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
                 mimeType: "text/html",
