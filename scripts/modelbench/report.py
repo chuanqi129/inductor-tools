@@ -887,7 +887,7 @@ def dump_common_info_json(json_file):
     common_info_dict['start_commit'] = start_commit
     common_info_dict['end_commit'] = end_commit
     with open(json_file, 'w') as file:
-        json.dump(common_info_dict, file)
+        json.dump(common_info_dict, file, indent=4)
 
 def generate_model_list():
     model_list = pd.concat([
