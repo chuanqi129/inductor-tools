@@ -42,7 +42,7 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_parameters}
-                sleep(5000)
+                sleep(5)
             }
         }
         parallel job_list
