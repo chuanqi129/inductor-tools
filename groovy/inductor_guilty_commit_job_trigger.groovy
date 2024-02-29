@@ -42,9 +42,8 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {
-                    guilty_commit_search_job = 
-                        build job: guilty_commit_search_job_name,
-                        propagate: false,
+                    guilty_commit_search_job = build propagate: false, wait: true,
+                        job: guilty_commit_search_job_name,
                         quietPeriod: 2,
                         parameters: job_params_list["job_${i}"]
                 }
