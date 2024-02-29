@@ -220,7 +220,7 @@ node(NODE_LABEL){
         '''
         archiveArtifacts  "*.xlsx, *.html"
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
-            archiveArtifacts  "guilty_commit_search_model_list.*"
+            archiveArtifacts  "guilty_commit_search*"
         }
     }
 
