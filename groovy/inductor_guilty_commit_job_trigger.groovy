@@ -42,7 +42,8 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_parameters}
-                sleep(5)
+                job_variables = job_list["job_${i}"].getBuildVariables()
+                println(job_variables['model'])
             }
         }
         parallel job_list
@@ -56,7 +57,7 @@ node(NODE_LABEL){
         for (key in job_list) {
             job_variables = job_list[key].getBuildVariables()
             suite = job_variables['suite']
-            name = job_variables['name']
+            model = job_variables['model']
             scenario = job_variables['scenario']
             thread = job_variables['THREADS']
             kind = job_variables['kind']
