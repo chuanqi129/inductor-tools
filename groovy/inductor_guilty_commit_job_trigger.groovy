@@ -41,7 +41,22 @@ node(NODE_LABEL){
                     string(name: 'TORCH_END_COMMIT', value: common_info_dict['end_commit']),
                 ]
 
-                job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_params_list["job_${i}"]}
+                job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: [
+                    string(name: 'default_mail', value: default_mail),
+                    string(name: 'precision', value: elem['precision']),
+                    string(name: 'shape', value: common_info_dict['shape']),
+                    string(name: 'WRAPPER', value: common_info_dict['wrapper']),
+                    string(name: 'TORCH_REPO', value: common_info_dict['torch_repo']),
+                    string(name: 'TORCH_BRANCH', value: common_info_dict['torch_branch']),
+                    string(name: 'THREADS', value: elem['thread']),
+                    string(name: 'instance_name', value: instance_name),
+                    string(name: 'suite', value: elem['suite']),
+                    string(name: 'model', value: elem['name']),
+                    string(name: 'scenario', value: elem['scenario']),
+                    string(name: 'kind', value: elem['kind']),
+                    string(name: 'TORCH_START_COMMIT', value: common_info_dict['start_commit']),
+                    string(name: 'TORCH_END_COMMIT', value: common_info_dict['end_commit']),
+                ]}
             }
         }
         parallel job_list
