@@ -42,8 +42,6 @@ parser.add_argument('--shape',type=str,default='static',help='Shape: static or d
 parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
-parser.add_argument('--start_commit',type=str,default='none',help='pytorch search start_commit')
-parser.add_argument('--end_commit',type=str,default='none',help='pytorch search end_commit')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -92,6 +90,9 @@ improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
+
+start_commit = "None"
+end_commit = "None"
 
 if args.suite == "all":
     suite_list = ['torchbench','huggingface','timm_models']
@@ -203,20 +204,22 @@ def update_summary(excel, reference, target):
 
 def update_swinfo(excel):
     refer_read_flag = True
+    global start_commit
+    global end_commit
     try:
-        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv', index_col='name')
+        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
-        args.start_commit = swinfo_df.loc['torch', 'target_commit']
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         if args.reference is not None:
             refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
             refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
             swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
-            args.end_commit = swinfo_df.loc['torch', 'refer_commit']
+            end_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'refer_commit'].values[0]
     except :
         print("referece version.csv not found")
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
-        args.start_commit = swinfo_df.loc['torch', 'target_commit']
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         refer_read_flag = False
 
     sf = StyleFrame(swinfo_df)
@@ -878,8 +881,8 @@ def dump_common_info_json(json_file):
     common_info_dict['wrapper'] = args.wrapper
     common_info_dict['torch_repo'] = args.torch_repo
     common_info_dict['torch_branch'] = args.torch_branch
-    common_info_dict['start_commit'] = args.start_commit
-    common_info_dict['end_commit'] = args.end_commit
+    common_info_dict['start_commit'] = start_commit
+    common_info_dict['end_commit'] = end_commit
     with open(json_file, 'w') as file:
         json.dump(common_info_dict, file)
 
