@@ -45,6 +45,7 @@ node(NODE_LABEL){
                     guilty_commit_search_job = 
                         build job: guilty_commit_search_job_name,
                         propagate: false,
+                        quietPeriod: 2,
                         parameters: job_params_list["job_${i}"]
                 }
             }
