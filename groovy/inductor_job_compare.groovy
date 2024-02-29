@@ -156,6 +156,21 @@ env._infer_or_train = "$infer_or_train"
 
 env._NODE = "$NODE_LABEL"
 
+def getUpstreamParameters(String job_name, String job_id) {
+    def params = [:]
+    try {
+        def upstream_job = Jenkins.getInstance().getItemByFullName(job_name).getBuildByNumber(job_id.toInteger())
+        def param_list = upstream_job.actions.find{ a -> a instanceof ParametersAction }?.parameters
+
+        param_list.each { p ->
+              params[p.name] = p.value
+        }
+    } catch(NullPointerException ex) {
+        echo "WARNING: this script is expected to be triggered by upstream_job."
+    }
+    return params
+}
+
 node(NODE_LABEL){
     stage("prepare"){
         echo 'prepare......'
@@ -191,10 +206,15 @@ node(NODE_LABEL){
         # Install dependencies
         pip install scipy datacompy PyGithub styleframe pandas bs4 requests
         cp scripts/modelbench/report.py ${WORKSPACE}
+        def params = getUpstreamParameters(target_job, target_job_selector)
+        def shape = params.get('shape')
+        def wrapper = params.get('WRAPPER')
+        def torch_repo = params.get('TORCH_REPO')
+        def torch_branch = params.get('TORCH_BRANCH')
         if [ ${_cppwp_gm} == 'True' ];then
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train}
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}
         else
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train}
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}
         fi
         mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./
         '''
