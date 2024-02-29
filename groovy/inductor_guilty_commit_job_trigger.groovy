@@ -41,8 +41,8 @@ node(NODE_LABEL){
                     string(name: 'TORCH_END_COMMIT', value: common_info_dict['end_commit']),
                 ]
 
-                job_list["job_${i}"] = build propagate: false, 
-                    job: guilty_commit_search_job_name, parameters: job_parameters
+                job_list["job_${i}"] = {build propagate: false, 
+                    job: guilty_commit_search_job_name, parameters: job_parameters}
             }
         }
         parallel job_list
