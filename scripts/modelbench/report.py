@@ -18,6 +18,7 @@ import pandas as pd
 import os
 import requests
 from bs4 import BeautifulSoup
+import json
 
 parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
@@ -37,6 +38,10 @@ parser.add_argument('--st_interval_end', type=float,default=5,help='cppwrapper g
 parser.add_argument('--image_tag', type=str,help='image tag which used in tests')
 parser.add_argument('--suite',type=str,default='all',help='Test suite: torchbench, huggingface, timm_models')
 parser.add_argument('--infer_or_train',type=str,default='inference',help='inference or training')
+parser.add_argument('--shape',type=str,default='static',help='Shape: static or dynamic')
+parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
+parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
+parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -85,6 +90,9 @@ improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
+
+start_commit = "None"
+end_commit = "None"
 
 if args.suite == "all":
     suite_list = ['torchbench','huggingface','timm_models']
@@ -195,22 +203,33 @@ def update_summary(excel, reference, target):
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
 def update_swinfo(excel):
+    if not (os.path.exists(args.target+'/inductor_log/version.csv')):
+        print("target version.csv not found")
+        return
+    refer_read_flag = True
+    global start_commit
+    global end_commit
     try:
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         if args.reference is not None:
             refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
             refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
             swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
+            end_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'refer_commit'].values[0]
     except :
-        print("version.csv not found")
-        pass
+        print("referece version.csv not found")
+        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+        swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
+        refer_read_flag = False
 
     sf = StyleFrame(swinfo_df)
     sf.set_column_width(1, 25)
     sf.set_column_width(2, 20)
     sf.set_column_width(3, 25)
-    if args.reference is not None:
+    if refer_read_flag and (args.reference is not None):
         sf.set_column_width(4, 20)
         sf.set_column_width(5, 25)
 
@@ -374,13 +393,17 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
         new_failures = pd.concat([new_failures,failure_regression])
-        new_failures_model_list = get_fail_model_list(new_failures, thread, 'crash')
+        model_list = get_fail_model_list(failure_regression, thread_mode, 'crash')
+        if not model_list.empty:
+            new_failures_model_list = pd.concat([new_failures_model_list, model_list])
 
         # Fixed Failures
         fixed_failures_compare = datacompy.Compare(refer_thread_failures, target_thread_failures, join_columns='name')
         fixed_failures = fixed_failures_compare.df1_unq_rows.copy()
         new_fixed_failures = pd.concat([new_fixed_failures,fixed_failures])
-        new_fixed_failures_model_list = get_fail_model_list(new_fixed_failures, thread, 'fixed')
+        model_list = get_fail_model_list(fixed_failures, thread_mode, 'fixed')
+        if not model_list.empty:
+            new_fixed_failures_model_list = pd.concat([new_fixed_failures_model_list, model_list])
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
@@ -388,7 +411,6 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     target_thread_failures['thread'] = thread_mode
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
                  'name': list(target_thread_failures['name']),
-                 'thread': list(target_thread_failures['thread']),
                  'accuracy': list(target_thread_failures['accuracy']),
                  'perf': list(target_thread_failures['perf']),
                  'reason(reference only)':(list(target_thread_failures['reason(reference only)']))})
@@ -412,15 +434,14 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     sf.set_column_width(2, 30)
     sf.set_column_width(3, 15)
     sf.set_column_width(4, 15)
-    sf.set_column_width(5, 15)
-    sf.set_column_width(6, 100)
+    sf.set_column_width(5, 100)
     if args.reference is not None:    
         new_failures_list = new_failures['name'].values.tolist()
         for failed_model in new_failures_list:
             sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style)
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
-def process_suite(suite,thread):
+def process_suite(suite, thread):
     target_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.target, thread), suite, args.precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
@@ -450,7 +471,6 @@ def process_thread(thread):
 def process(input, thread):
     if args.reference is not None:
         data_new=input[['suite','name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
-        data_new['thread'] = thread
         data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
@@ -468,7 +488,6 @@ def process(input, thread):
         combined_data = pd.DataFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size_new': list(data_new['batch_size_new']),
             'speed_up_new': list(data_new['speed_up_new']),
             'inductor_new': list(data_new['inductor_new']),
@@ -499,29 +518,31 @@ def process(input, thread):
         data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
+        data.set_column_width(8, 18)
         data.set_column_width(9, 18)
         data.set_column_width(10, 18)
-        data.set_column_width(11, 18)
-        data.set_column_width(12, 15)
-        data.set_column_width(13, 20)
+        data.set_column_width(11, 15)
+        data.set_column_width(12, 20)
+        data.set_column_width(13, 28)
         data.set_column_width(14, 28)
         data.set_column_width(15, 28)
-        data.set_column_width(16, 28)
-        data.set_column_width(17, 32)
+        data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
         global new_performance_regression
         global new_performance_regression_model_list
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
         regression = regression.copy()
+        regression.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
-        new_performance_regression_model_list = get_perf_model_list(new_performance_regression, thread, 'drop')
+        model_list = get_perf_model_list(regression, thread, 'drop')
+        if not model_list.empty:
+            new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
@@ -529,18 +550,19 @@ def process(input, thread):
         global new_performance_improvement_model_list
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
         improvement = improvement.copy()
+        improvement.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
-        new_performance_improvement_model_list = get_perf_model_list(new_performance_improvement, thread, 'improve')
+        model_list = get_perf_model_list(improvement, thread, 'improve')
+        if not model_list.empty:
+            new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
-        data_new['thread'] = thread
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_new['eager'] = data_new['speedup'] * data_new['inductor']        
         data = StyleFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
-            'thread': list(data_new['thread']),
             'batch_size': list(data_new['batch_size']),
             'speedup': list(data_new['speedup']),
             'inductor': list(data_new['inductor']),
@@ -548,20 +570,19 @@ def process(input, thread):
             'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
-        data.set_column_width(3, 10)
+        data.set_column_width(3, 18)
         data.set_column_width(4, 18)
         data.set_column_width(5, 18)
-        data.set_column_width(6, 18)
-        data.set_column_width(7, 15)
-        data.set_column_width(8, 20)
+        data.set_column_width(6, 15)
+        data.set_column_width(7, 20)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size'] == 0], styler_obj=red_style)
         data.set_row_height(rows=data.row_indexes, height=15)
     return data
 
 def update_details(writer):
-    h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": '',"I": args.reference, "J": '', "K": '',"L": '',"M":'',"N": 'Result Comp',"O": '',"P": '',"Q":''}
+    h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": '',"H": args.reference, "I": '', "J": '',"K": '',"L":'',"M": 'Result Comp',"N": '',"O": '',"P":''}
     if args.reference is None:
-        h = {"A": 'Suite', "B": 'Model', "C":  'Thread', "D": args.target, "E": '', "F": '',"G": '', "H": ''}
+        h = {"A": 'Suite', "B": 'Model', "C": args.target, "D": '', "E": '',"F": '', "G": ''}
     head = StyleFrame(pd.DataFrame(h, index=[0]))
     head.set_column_width(1, 15)
     head.set_row_height(rows=[1], height=15)
@@ -857,6 +878,17 @@ def html_generate(html_off):
             print("html_generate_failed")
             pass
 
+def dump_common_info_json(json_file):
+    common_info_dict = {}
+    common_info_dict['shape'] = args.shape
+    common_info_dict['wrapper'] = args.wrapper
+    common_info_dict['torch_repo'] = args.torch_repo
+    common_info_dict['torch_branch'] = args.torch_branch
+    common_info_dict['start_commit'] = start_commit
+    common_info_dict['end_commit'] = end_commit
+    with open(json_file, 'w') as file:
+        json.dump(common_info_dict, file, indent=4)
+
 def generate_model_list():
     model_list = pd.concat([
         new_performance_regression_model_list,
@@ -864,8 +896,12 @@ def generate_model_list():
         new_performance_improvement_model_list,
         new_fixed_failures_model_list])
     model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
-    clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
-    clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+    dump_common_info_json("guilty_commit_search_common_info.json")
+    try:
+        clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
+        clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
+    except pd.errors.EmptyDataError:
+        print('No new issue or improvement compared with reference')
 
 def generate_report(excel, reference, target):
     update_summary(excel, reference, target)
@@ -898,19 +934,17 @@ def excel_postprocess(file):
         wmt=wb['Single-Socket Multi-threads']
         wmt.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
         wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wmt.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wmt.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     if args.mode == "single" or args.mode == 'all':
         # Single-Core Single-thread
         wst=wb['Single-Core Single-thread']
         wst.merge_cells(start_row=1,end_row=2,start_column=1,end_column=1)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
-        wmt.merge_cells(start_row=1,end_row=2,start_column=3,end_column=3)
-        wst.merge_cells(start_row=1,end_row=1,start_column=4,end_column=8)
-        wst.merge_cells(start_row=1,end_row=1,start_column=9,end_column=13)
-        wst.merge_cells(start_row=1,end_row=1,start_column=14,end_column=17)
+        wst.merge_cells(start_row=1,end_row=2,start_column=2,end_column=2)
+        wst.merge_cells(start_row=1,end_row=1,start_column=3,end_column=7)
+        wst.merge_cells(start_row=1,end_row=1,start_column=8,end_column=12)
+        wst.merge_cells(start_row=1,end_row=1,start_column=13,end_column=16)
     wb.save(file)
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ ins=`$aws ec2 run-instances \
     --count 1 \
     --instance-type ${ins_type} \
     --key-name icx-key \
-    --security-group-ids sg-023cd53724d695a49 \
+    --security-group-ids sg-08bde89f3858b8350 \
     --block-device-mappings "[{\"DeviceName\":\"/dev/sda1\",\"Ebs\":{\"VolumeSize\":${store_size},\"DeleteOnTermination\":true}}]" \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=auto-create-instance}]" \
     --profile ${profile_name}`
