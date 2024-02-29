@@ -1,5 +1,4 @@
 def job_list = [:]
-def job_params_list = [:]
 
 node(NODE_LABEL){
     checkout scm
@@ -43,7 +42,6 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {guilty_commit_search_job = build propagate: false, job: guilty_commit_search_job_name, parameters: job_parameters}
-                job_params_list["job_${i}"] = job_parameters
             }
         }
         parallel job_list
@@ -54,18 +52,18 @@ node(NODE_LABEL){
             touch ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
             echo "suite,name,scenario,thread,kind,precision,guilty_commit,job_link" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
         '''
-        int size = job_list.size()
-        for (i = 0; i < size; i += 1) {
-            suite = job_params_list["job_${i}"]['suite']
-            name = job_params_list["job_${i}"]['name']
-            scenario = job_params_list["job_${i}"]['scenario']
-            thread = job_params_list["job_${i}"]['THREADS']
-            kind = job_params_list["job_${i}"]['kind']
-            precision = job_params_list["job_${i}"]['precision']
+        for (key in job_list) {
+            job_variables = job_list[key].getBuildVariables()
+            suite = job_variables['suite']
+            name = job_variables['name']
+            scenario = job_variables['scenario']
+            thread = job_variables['THREADS']
+            kind = job_variables['kind']
+            precision = job_variables['precision']
 
-            cur_job_number = job_list["job_${i}"].getNumber()
-            cur_job_url = job_list["job_${i}"].getAbsoluteUrl()
-            cur_job_duration = job_list["job_${i}"].getDurationString()
+            cur_job_number = job_list[key].getNumber()
+            cur_job_url = job_list[key].getAbsoluteUrl()
+            cur_job_duration = job_list[key].getDurationString()
 
             copyArtifacts(
                 projectName: guilty_commit_search_job_name,
