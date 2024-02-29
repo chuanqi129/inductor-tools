@@ -198,7 +198,7 @@ node(NODE_LABEL){
         '''        
     }
     stage("report"){
-        env.params = getUpstreamParameters(target_job, target_job_selector)
+        env.params = getUpstreamParameters(_target_job, _target_sc)
         env.shape = params.get('shape')
         env.wrapper = params.get('WRAPPER')
         env.torch_repo = params.get('TORCH_REPO')
