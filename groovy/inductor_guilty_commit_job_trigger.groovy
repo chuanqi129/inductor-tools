@@ -42,7 +42,9 @@ node(NODE_LABEL){
                 ]
 
                 job_list["job_${i}"] = {
-                    build job: guilty_commit_search_job_name, parameters: job_parameters
+                    build job: guilty_commit_search_job_name,
+                    propagate: false,
+                    parameters: job_parameters,
                 }
             }
         }
