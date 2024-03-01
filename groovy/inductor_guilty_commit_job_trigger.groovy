@@ -79,7 +79,7 @@ node(NODE_LABEL){
                         "wrapper=${wrapper}",
                         "cur_job_url=${cur_job_url}",
                     ]) {
-                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log")){
+                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log") == true){
                             sh'''
                                 cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log
                             '''
