@@ -1,5 +1,3 @@
-def job_list = [:]
-
 node(NODE_LABEL){
     checkout scm
     deleteDir()
@@ -16,6 +14,7 @@ node(NODE_LABEL){
         def model_list_lines = readJSON file: 'guilty_commit_search_model_list.json'
 
         int size = model_list_lines.size();
+        def job_list = [:]
         for (i = 0; i < size; i += 1) {
             def elem = model_list_lines[i]
             if (test_kinds.contains(elem['kind'])) {
@@ -41,8 +40,11 @@ node(NODE_LABEL){
                     string(name: 'TORCH_END_COMMIT', value: common_info_dict['end_commit']),
                 ]
 
-                guilty_commit_job = build job: guilty_commit_search_job_name, propagate: false, parameters: job_parameters
-                job_list["job_${i}"] = guilty_commit_job
+                job_list["job_${i}"] = {
+                    build job: guilty_commit_search_job_name,
+                    propagate: false,
+                    parameters: job_parameters
+                }
             }
         }
         parallel job_list
