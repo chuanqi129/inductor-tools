@@ -71,6 +71,7 @@ node(NODE_LABEL){
                     def cur_job_number = guilty_commit_job.getNumber()
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
                     def cur_job_duration = guilty_commit_job.getDurationString()
+                    def path = 'inductor_guilty_commit_search/${cur_job_number}/**/inductor_log/guilty_commit.log'
 
                     copyArtifacts(
                         projectName: guilty_commit_search_job_name,
@@ -89,15 +90,12 @@ node(NODE_LABEL){
                         "shape=${shape}",
                         "wrapper=${wrapper}",
                         "cur_job_url=${cur_job_url}",
+                        "file_path=${path}",
                     ]) {
-                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log") == true){
+                        def files = findFiles glob: path
+                        if (files.length > 0){
                             sh'''
-                                cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log
-                            '''
-                        }
-                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log") == true){
-                            sh'''
-                                guilty_commit=`cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log | head -1`
+                                guilty_commit=`cat ${file_path} | head -1`
                                 echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         } else {
