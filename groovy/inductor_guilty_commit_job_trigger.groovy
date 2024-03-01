@@ -67,15 +67,33 @@ node(NODE_LABEL){
                         target: "inductor_guilty_commit_search/${cur_job_number}"
                     )
 
-                    if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log") == true){
-                        sh'''
-                            guilty_commit=`cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log | head -1`
-                            echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
-                        '''
-                    } else {
-                        sh'''
-                            echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
-                        '''
+                    withEnv([
+                        "cur_job_number=${cur_job_number}",
+                        "suite=${suite}",
+                        "name=${name}",
+                        "scenario=${scenario}",
+                        "thread=${thread}",
+                        "kind=${kind}",
+                        "precision=${precision}",
+                        "shape=${shape}",
+                        "wrapper=${wrapper}",
+                        "cur_job_url=${cur_job_url}",
+                    ]) {
+                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log")){
+                            sh'''
+                                cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/perf_drop.log
+                            '''
+                        }
+                        if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log") == true){
+                            sh'''
+                                guilty_commit=`cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log | head -1`
+                                echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                            '''
+                        } else {
+                            sh'''
+                                echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                            '''
+                        }
                     }
                 }
             }
