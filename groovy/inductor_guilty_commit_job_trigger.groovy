@@ -21,7 +21,7 @@ node(NODE_LABEL){
         def job_list = [:]
         for (i = 0; i < size; i += 1) {
             def elem = model_list_lines[i]
-            if (test_kinds.contains(elem['kind'])) {
+            if (test_kinds.contains(elem['kind']) && (test_thread.contains(elem['thread']))) {
                 def instance_name = 'icx-guilty-search'
                 if (elem['precision'] == "amp") {
                     instance_name = 'spr-guilty-search'
