@@ -18,6 +18,7 @@ import pandas as pd
 import os
 import requests
 from bs4 import BeautifulSoup
+import json
 
 parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
@@ -37,6 +38,10 @@ parser.add_argument('--st_interval_end', type=float,default=5,help='cppwrapper g
 parser.add_argument('--image_tag', type=str,help='image tag which used in tests')
 parser.add_argument('--suite',type=str,default='all',help='Test suite: torchbench, huggingface, timm_models')
 parser.add_argument('--infer_or_train',type=str,default='inference',help='inference or training')
+parser.add_argument('--shape',type=str,default='static',help='Shape: static or dynamic')
+parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
+parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
+parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -85,6 +90,9 @@ improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
 
 passed_style = Styler(bg_color='#D8E4BC', font_color=utils.colors.black)
 failed_style = Styler(bg_color='#FFC7CE', font_color=utils.colors.black)
+
+start_commit = "None"
+end_commit = "None"
 
 if args.suite == "all":
     suite_list = ['torchbench','huggingface','timm_models']
@@ -195,18 +203,26 @@ def update_summary(excel, reference, target):
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
 def update_swinfo(excel):
+    if not (os.path.exists(args.target+'/inductor_log/version.csv')):
+        print("target version.csv not found")
+        return
     refer_read_flag = True
+    global start_commit
+    global end_commit
     try:
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         if args.reference is not None:
             refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
             refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
             swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
+            end_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'refer_commit'].values[0]
     except :
         print("referece version.csv not found")
         swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
+        start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         refer_read_flag = False
 
     sf = StyleFrame(swinfo_df)
@@ -862,6 +878,17 @@ def html_generate(html_off):
             print("html_generate_failed")
             pass
 
+def dump_common_info_json(json_file):
+    common_info_dict = {}
+    common_info_dict['shape'] = args.shape
+    common_info_dict['wrapper'] = args.wrapper
+    common_info_dict['torch_repo'] = args.torch_repo
+    common_info_dict['torch_branch'] = args.torch_branch
+    common_info_dict['start_commit'] = start_commit
+    common_info_dict['end_commit'] = end_commit
+    with open(json_file, 'w') as file:
+        json.dump(common_info_dict, file, indent=4)
+
 def generate_model_list():
     model_list = pd.concat([
         new_performance_regression_model_list,
@@ -869,6 +896,7 @@ def generate_model_list():
         new_performance_improvement_model_list,
         new_fixed_failures_model_list])
     model_list.to_csv("guilty_commit_search_model_list.csv", index=False)
+    dump_common_info_json("guilty_commit_search_common_info.json")
     try:
         clean_model_list = pd.read_csv("guilty_commit_search_model_list.csv")
         clean_model_list.to_json('guilty_commit_search_model_list.json', indent=4, orient='records')
