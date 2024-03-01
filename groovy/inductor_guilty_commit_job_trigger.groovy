@@ -1,6 +1,6 @@
 node(NODE_LABEL){
-    checkout scm
     deleteDir()
+    checkout scm
     stage("Copy Artifacts"){
         copyArtifacts(
             projectName: "${target_job}",
@@ -108,15 +108,28 @@ node(NODE_LABEL){
             }
         } // for
         parallel job_list
+        
     } // stage trigger
 
-    // stage('Email') {
-    //     emailext(
-    //         subject: "Torchinductor-"
-    //         mimeType: "text/html",
-    //         from: "pytorch_inductor_val@intel.com",
-    //         to: default_mail,
-    //         body: '${FILE, path="html/guilty_commit_search_summary.html"}'
-    //     )
-    // }
+    stage("archiveArtifacts") {
+        archiveArtifacts artifacts: "**/inductor_guilty_commit_search/**", fingerprint: true
+        archiveArtifacts artifacts: "inductor_guilty_commit_search_summary.csv", fingerprint: true
+    }
+
+    stage('Email') {
+        sh'''
+            python -c "import pandas as pd; pd.read_csv('inductor_guilty_commit_search_summary.csv').to_html('table.html', index=False, render_links=True)"
+            cp html/0_css.html inductor_guilty_commit_search_summary.html
+            echo "<h1><a href='${BUILD_URL}'>Job Link</a></h1>" >> inductor_guilty_commit_search_summary.html
+            cat table.html >> inductor_guilty_commit_search_summary.html
+        '''
+        archiveArtifacts artifacts: "inductor_guilty_commit_search_summary.html", fingerprint: true
+        emailext(
+            mimeType: "text/html",
+            subject: "Torchinductor-Auto_guilty_commit_search_summary_report",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="inductor_guilty_commit_search_summary.html"}'
+        )
+    }
 }
