@@ -12,7 +12,7 @@ node(NODE_LABEL){
     stage('Trigger Guilty Commit Job'){
         sh'''
             touch ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
-            echo "suite,name,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+            echo "suite,model,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
         '''
         def common_info_dict = readJSON file: 'guilty_commit_search_common_info.json'
         def model_list_lines = readJSON file: 'guilty_commit_search_model_list.json'
@@ -70,7 +70,7 @@ node(NODE_LABEL){
                     withEnv([
                         "cur_job_number=${cur_job_number}",
                         "suite=${suite}",
-                        "name=${name}",
+                        "model=${model}",
                         "scenario=${scenario}",
                         "thread=${thread}",
                         "kind=${kind}",
@@ -87,11 +87,11 @@ node(NODE_LABEL){
                         if (fileExists("${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log") == true){
                             sh'''
                                 guilty_commit=`cat ${WORKSPACE}/inductor_guilty_commit_search/${cur_job_number}/*/inductor_log/guilty_commit.log | head -1`
-                                echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         } else {
                             sh'''
-                                echo "${suite},${name},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         }
                     }
