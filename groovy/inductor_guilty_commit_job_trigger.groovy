@@ -71,7 +71,7 @@ node(NODE_LABEL){
                     def cur_job_number = guilty_commit_job.getNumber()
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
                     def cur_job_duration = guilty_commit_job.getDurationString()
-                    def path = 'inductor_guilty_commit_search/${cur_job_number}/**/inductor_log/guilty_commit.log'
+                    def path = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log/guitly_commit.log'
 
                     copyArtifacts(
                         projectName: guilty_commit_search_job_name,
