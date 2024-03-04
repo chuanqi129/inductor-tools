@@ -442,9 +442,9 @@ node(NODE_LABEL){
             maillist="${default_mail}"
         }
 
-        if (fileExists("${WORKSPACE}/${_target}/inductor_log/guitly_commit.log") == true){
+        if (fileExists("${WORKSPACE}/${_target}/inductor_log/guilty_commit.log") == true){
             emailext(
-                subject: "Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WAPPER}-${env._scenario}-${env._threads}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
+                subject: "Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-${env._threads}-${env._scenario}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
                 mimeType: "text/html",
                 attachmentsPattern: "**/inductor_log/*_guilty_commit.log",
                 from: "pytorch_inductor_val@intel.com",
@@ -453,7 +453,7 @@ node(NODE_LABEL){
             )
         }else{
             emailext(
-                subject: "Failure occurs in Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WAPPER}-${env._scenario}-${env._threads}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
+                subject: "Failure occurs in Torchinductor-${env._backend}-${env._suite}-${env._model}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-${env._threads}-${env._scenario}-${env._kind}-guilty_commit_Report(AWS)_${env._target}",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: maillist,
