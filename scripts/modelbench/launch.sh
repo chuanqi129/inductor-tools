@@ -80,6 +80,7 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/script.py $USER:/workspace/pytorch
 
     # Generate SW info out of real test
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
