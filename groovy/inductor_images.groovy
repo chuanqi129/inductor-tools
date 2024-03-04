@@ -182,7 +182,7 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 docker system prune -af
                 docker logout ccr-registry.caas.intel.com
-                docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                docker login ccr-registry.caas.intel.com -u $USERNAME --password-stdin $PASSWORD
                 docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
                 docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
                 docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
