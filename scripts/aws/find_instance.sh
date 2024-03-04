@@ -13,7 +13,7 @@ if [ $ins_name == "icx-guilty-search" ]; then
     ins_type="c6i.16xlarge"
     store_size=200
 elif [ $ins_name == "icx-ondemand-tmp" ]; then
-    max_ins_num=3
+    max_ins_num=6
     ins_type="c6i.16xlarge"
     store_size=300
 elif [ $ins_name == "icx-regular" ]; then
@@ -25,11 +25,11 @@ elif [ $ins_name == "icx-regular-cppwrapper" ]; then
     ins_type="c6i.16xlarge"
     store_size=250
 elif [ $ins_name == "spr-guilty-search" ]; then
-    max_ins_num=5
+    max_ins_num=10
     ins_type="c7i.metal-24xl"
     store_size=200
 elif [ $ins_name == "spr-ondemand-tmp" ]; then
-    max_ins_num=2
+    max_ins_num=4
     ins_type="c7i.metal-24xl"
     store_size=300
 elif [ $ins_name == "spr-regular" ]; then
