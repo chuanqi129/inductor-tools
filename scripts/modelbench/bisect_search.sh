@@ -63,8 +63,8 @@ fi
 chmod +x bisect_run_test.sh
 git reset --hard HEAD && git checkout ${TORCH_BRANCH} && git pull && git checkout ${START_COMMIT}
 git bisect start ${START_COMMIT} ${END_COMMIT}
-git bisect run ./bisect_run_test.sh $SUITE $MODEL $MODE $PRECISION $SHAPE $WRAPPER $SCENARIO $KIND $THREADS $CHANNELS $FREEZE 0 $expected_perf $BACKEND $PERF_RATIO $EXTRA 2>&1 | tee ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${SCENARIO}-${THREADS}-${KIND}_guilty_commit.log
+git bisect run ./bisect_run_test.sh $SUITE $MODEL $MODE $PRECISION $SHAPE $WRAPPER $SCENARIO $KIND $THREADS $CHANNELS $FREEZE 0 $expected_perf $BACKEND $PERF_RATIO $EXTRA 2>&1 | tee ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${THREADS}-${SCENARIO}-${KIND}_guilty_commit.log
 git bisect reset
-cat ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${SCENARIO}-${THREADS}-${KIND}_guilty_commit.log | grep "is the first bad commit" | awk '{ print $1 }' > ${LOG_DIR}/guitly_commit.log
-echo "Start commit: ${START_COMMIT}" >> ${LOG_DIR}/guitly_commit.log
-echo "End commit: ${END_COMMIT}" >> ${LOG_DIR}/guitly_commit.log
+cat ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${THREADS}-${SCENARIO}-${KIND}_guilty_commit.log | grep "is the first bad commit" | awk '{ print $1 }' > ${LOG_DIR}/guilty_commit.log
+echo "Start commit: ${START_COMMIT}" >> ${LOG_DIR}/guilty_commit.log
+echo "End commit: ${END_COMMIT}" >> ${LOG_DIR}/guilty_commit.log
