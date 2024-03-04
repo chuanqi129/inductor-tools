@@ -476,6 +476,7 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/${_target}
                 fi
                 mkdir -p ${WORKSPACE}/${_target}
+                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                 break
             else
                 sleep 1h
@@ -484,6 +485,7 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
                     break
                 fi
             fi
@@ -491,14 +493,14 @@ node(NODE_LABEL){
         '''
     }
     // Add raw log artifact stage in advance to avoid crash in report generate stage
-    // stage("archive raw test results"){
-    //     sh '''
-    //         #!/usr/bin/env bash
-    //         mkdir -p $HOME/inductor_dashboard
-    //         cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
-    //     '''
-    //     archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
-    // }
+    stage("archive raw test results"){
+        sh '''
+            #!/usr/bin/env bash
+            mkdir -p $HOME/inductor_dashboard
+            cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
+        '''
+        archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
+    }
     stage("stop or terminate instance")
     {
         try{
