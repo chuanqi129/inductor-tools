@@ -74,9 +74,9 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
 
     if [ $TEST_MODE == "inference" ]; then
-        docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND inference $SUITE $EXTRA"
+        docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND inference $SUITE $EXTRA"
     elif [ $TEST_MODE == "training_full" ]; then
-        docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND training $SUITE $EXTRA"
+        docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND training $SUITE $EXTRA"
     elif [ $TEST_MODE == "training" ]; then
         docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
     fi
@@ -94,7 +94,7 @@ else
         MODE=$TEST_MODE \
         SCENARIO=$SCENARIO \
         PRECISION=$PRECISION \
-        SHAPE=$TEST_SHAPE \
+        SHAPE=$SHAPE \
         WRAPPER=$WRAPPER \
         KIND=$KIND \
         THREADS=$THREADS \
