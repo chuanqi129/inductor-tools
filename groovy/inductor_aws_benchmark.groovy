@@ -617,6 +617,9 @@ node(NODE_LABEL){
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
         }
+        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
+            archiveArtifacts  "all_model_list.csv"
+        }
     }
 
     stage("Sent Email"){
