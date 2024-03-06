@@ -26,6 +26,7 @@ docker build \
         --build-arg TORCH_BRANCH=$TORCH_BRANCH \
         --build-arg TORCH_COMMIT=$TORCH_COMMIT \
         --build-arg TORCH_VISION_COMMIT=$VISION \
+        --build-arg TRANSFORMERS_VERSION=$TRANSFORMERS_VERSION \
         --build-arg HF_TEST_REPO=$HF_TEST_REPO \
         --build-arg HF_TEST_BRANCH=$HF_TEST_BRANCH \
         --build-arg HF_TEST_COMMIT=$HF_TEST_COMMIT \
@@ -43,6 +44,7 @@ fi
 docker run -id --name $USER --privileged \
         --env https_proxy=${https_proxy} \
         --env http_proxy=${http_proxy} \
+        --env LOG_DIR=${LOG_DIR} \
         --net host --shm-size 20G \
         -v /home/ubuntu/.cache:/root/.cache \
         -v /home/ubuntu/docker/${LOG_DIR}:/workspace/hf_testcase/${LOG_DIR} hf_oob_test:${target}

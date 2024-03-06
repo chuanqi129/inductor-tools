@@ -102,8 +102,8 @@ ARG HF_TEST_BRANCH=$HF_TEST_BRANCH
 ARG HF_TEST_COMMIT=$HF_TEST_COMMIT
 RUN git clone -b ${HF_TEST_BRANCH} ${HF_TEST_REPO} && \
     cd hf_testcase && git checkout ${HF_TEST_COMMIT} && \
-    pip install -r requirements.txt && cd .. && \
-    pip install mpmath==1.3.0
+    cd .. && \
+    pip install mpmath==1.3.0 fire diffusers
 
 # Clean for final image
 FROM dev-base AS image
