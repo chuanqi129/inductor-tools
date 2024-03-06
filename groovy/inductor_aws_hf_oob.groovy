@@ -84,7 +84,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/docker/Dockerfile.hf_oob ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/env_groovy.txt ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash hf_oob_test.sh &>/dev/null &" &
+            ssh ubuntu@${current_ip} "cd /home/ubuntu/docker; nohup bash hf_oob_test.sh &>/dev/null &" &
             '''
         }
     }
