@@ -1,4 +1,14 @@
+set +e
+
 source /home/ubuntu/docker/env_groovy.txt
+
+# cd target dir
+echo cur_dir :$(pwd)
+cd /home/ubuntu/docker
+
+if [ -f finished.txt ]; then
+    rm finished.txt
+fi
 
 # clean up
 docker stop $(docker ps -aq)

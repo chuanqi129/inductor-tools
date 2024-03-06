@@ -84,13 +84,26 @@ RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git &&
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 
+ARG TRANSFORMERS_BRANCH=main
+ARG TRANSFORMERS_VERSION=${TRANSFORMERS_VERSION}
+RUN pip uninstall transformers -y && echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
+        git clone -b ${TRANSFORMERS_BRANCH} https://github.com/huggingface/transformers.git; \
+        cd transformers; \
+        git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
+        python setup.py bdist_wheel;  \
+        pip install dist/*.whl; \
+        cd ../; \
+    else \
+        pip install --upgrade transformers; \
+    fi
+
 ARG HF_TEST_REPO=$HF_TEST_REPO
 ARG HF_TEST_BRANCH=$HF_TEST_BRANCH
 ARG HF_TEST_COMMIT=$HF_TEST_COMMIT
 RUN git clone -b ${HF_TEST_BRANCH} ${HF_TEST_REPO} && \
-    cd hf_testcase && git checkout ${HF_TEST_COMMIT} && cd .. && \
-    pip install --upgrade transformers && \
-    pip install fire mpmath==1.3.0 diffusers
+    cd hf_testcase && git checkout ${HF_TEST_COMMIT} && \
+    pip install -r requirements.txt && cd .. && \
+    pip install mpmath==1.3.0
 
 # Clean for final image
 FROM dev-base AS image
