@@ -49,7 +49,7 @@ docker run -id --name $USER --privileged \
         -v /home/ubuntu/.cache:/root/.cache \
         -v /home/ubuntu/docker/${LOG_DIR}:/workspace/hf_testcase/${LOG_DIR} hf_oob_test:${target}
 
-docker exec -i $USER bash -c "bash run_cpu.sh"
+docker exec -e CONDA_PREFIX='/opt/conda' -i $USER bash -c "bash run_cpu.sh"
 status=${PIPESTATUS[0]}
 # create finished.txt when finished
 if [ ${status} -eq 0 ]; then
