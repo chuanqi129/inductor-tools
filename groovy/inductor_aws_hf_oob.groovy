@@ -153,7 +153,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             rm -rf ${WORKSPACE}/raw_log
         '''
-        archiveArtifacts artifacts: LOG_DIR, fingerprint: true
+        archiveArtifacts artifacts: "**/"+LOG_DIR+"/**", fingerprint: true
     }
 
     // stage("Sent Email"){
