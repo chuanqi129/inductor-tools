@@ -128,16 +128,32 @@ node(NODE_LABEL){
     }
 
     stage('Email') {
+        def common_info_dict = readJSON file: 'guilty_commit_search_common_info.json'
+        def model_list_lines = readJSON file: 'guilty_commit_search_model_list.json'
+        def first_elem = model_list_lines[0]
+        def precision = first_elem['precision']
+        def shape = common_info_dict['shape']
+        def wrapper = common_info_dict['wrapper']
+        def title_string = "TorchInductor-${precision}-${shape}-${wrapper}"
+        def job_link = "${JENKINS_URL}/job/${target_job}/${target_job_selector}"
+        if (target_job_selector == "lastSuccessfulBuild") {
+            def instance = Jenkins.instance.getItem(target_job)
+            job_link = instance.lastSuccessfulBuild.getAbsoluteUrl()
+        }
+        withEnv(["job_link=${job_link}","title_string=${title_string}"]){
         sh'''
             python -c "import pandas as pd; pd.read_csv('inductor_guilty_commit_search_summary.csv').to_html('table.html', index=False, render_links=True)"
             cp html/0_css.html inductor_guilty_commit_search_summary.html
-            echo "<h1><a href='${BUILD_URL}'>Job Link</a></h1>" >> inductor_guilty_commit_search_summary.html
+            echo "<h2><a href='${job_link}'>${title_string}</a></h2>" >> inductor_guilty_commit_search_summary.html
+            echo "<h2><a href='${BUILD_URL}'>Guilty Commit Trigger Job Link</a></h2>" >> inductor_guilty_commit_search_summary.html
             cat table.html >> inductor_guilty_commit_search_summary.html
         '''
+        }
         archiveArtifacts artifacts: "inductor_guilty_commit_search_summary.html", fingerprint: true
         emailext(
             mimeType: "text/html",
-            subject: "Torchinductor-Auto_guilty_commit_search_summary_report",
+            subject: title_string + "-Auto_guilty_commit_search_summary_report",
+            attachmentsPattern: "**/inductor_log/*.xlsx",
             from: "pytorch_inductor_val@intel.com",
             to: default_mail + ";" + devloper_email,
             body: '${FILE, path="inductor_guilty_commit_search_summary.html"}'
