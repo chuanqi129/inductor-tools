@@ -1,3 +1,5 @@
+env.devloper_email = "guobing.chen@intel.com;beilei.zheng@intel.com;xuan.liao@intel.com;chunyuan.wu@intel.com;haozhe.zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;shufan.wu@intel.com;diwei.sun@intel.com;leslie.fang@intel.com;mengfei.li@intel.com"
+
 node(NODE_LABEL){
     deleteDir()
     checkout scm
@@ -137,7 +139,7 @@ node(NODE_LABEL){
             mimeType: "text/html",
             subject: "Torchinductor-Auto_guilty_commit_search_summary_report",
             from: "pytorch_inductor_val@intel.com",
-            to: default_mail,
+            to: default_mail + ";" + devloper_email,
             body: '${FILE, path="inductor_guilty_commit_search_summary.html"}'
         )
     }
