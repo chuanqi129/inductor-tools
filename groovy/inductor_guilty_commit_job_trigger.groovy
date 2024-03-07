@@ -153,7 +153,7 @@ node(NODE_LABEL){
             subject: title_string + "-Auto_guilty_commit_search_summary_report",
             attachmentsPattern: "**/inductor_log/*.xlsx",
             from: "pytorch_inductor_val@intel.com",
-            to: default_mail,
+            to: default_mail + ";" + devloper_email,
             body: '${FILE, path="inductor_guilty_commit_search_summary.html"}'
         )
     }
