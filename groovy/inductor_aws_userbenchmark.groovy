@@ -565,29 +565,29 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
     }
 
-//     stage("Sent Email"){
-//         if ("${debug}" == "true"){
-//             maillist="${debug_mail}"
-//         }else{
-//             maillist="${default_mail}"
-//         }
-//         if (fileExists("${WORKSPACE}/inductor_log/userbenchmark_model_bench.html") == true){
-//             emailext(
-//                 subject: "Userbenchmark-Regular-Report(AWS)_${env._target}",
-//                 mimeType: "text/html",
-//                 attachmentsPattern: "**/inductor_log/*.xlsx",
-//                 from: "pytorch_inductor_val@intel.com",
-//                 to: maillist,
-//                 body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
-//             )
-//         }else{
-//             emailext(
-//                 subject: "Failure occurs in Userbenchmark-Regular-Report(AWS)_${env._target}",
-//                 mimeType: "text/html",
-//                 from: "pytorch_inductor_val@intel.com",
-//                 to: maillist,
-//                 body: 'Job build failed, please double check in ${BUILD_URL}'
-//             )
-//         }
-//     }//email
-// }
+    // stage("Sent Email"){
+    //     if ("${debug}" == "true"){
+    //         maillist="${debug_mail}"
+    //     }else{
+    //         maillist="${default_mail}"
+    //     }
+    //     if (fileExists("${WORKSPACE}/inductor_log/userbenchmark_model_bench.html") == true){
+    //         emailext(
+    //             subject: "Userbenchmark-Regular-Report(AWS)_${env._target}",
+    //             mimeType: "text/html",
+    //             attachmentsPattern: "**/inductor_log/*.xlsx",
+    //             from: "pytorch_inductor_val@intel.com",
+    //             to: maillist,
+    //             body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
+    //         )
+    //     }else{
+    //         emailext(
+    //             subject: "Failure occurs in Userbenchmark-Regular-Report(AWS)_${env._target}",
+    //             mimeType: "text/html",
+    //             from: "pytorch_inductor_val@intel.com",
+    //             to: maillist,
+    //             body: 'Job build failed, please double check in ${BUILD_URL}'
+    //         )
+    //     }
+    // }//email
+}
