@@ -52,6 +52,7 @@ elif [[ $BACKEND == "ipex" ]]; then
     Flag_extra+="--freezing "
     cd /workspace/pytorch
     patch -p1 < /workspace/0110.patch
+    pip install /workspace/intel*.whl
 fi
 
 Shape_extra=""
