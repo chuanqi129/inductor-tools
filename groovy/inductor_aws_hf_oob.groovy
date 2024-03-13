@@ -143,9 +143,14 @@ node(NODE_LABEL){
         }
     }
 
-    // stage("generate report"){
-    //    
-    // }
+    stage("generate report"){
+       // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+        sh '''
+            #!/usr/bin/env bash
+            python scripts/modelbench/hf_oob_report.py -t ${target}
+        '''
+        archiveArtifacts artifacts: "*.csv", fingerprint: true
+    }
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
