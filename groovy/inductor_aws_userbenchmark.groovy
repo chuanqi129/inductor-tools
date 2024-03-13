@@ -517,26 +517,26 @@ node(NODE_LABEL){
             echo err.getMessage()   
         }
     }
-    // stage("generate report"){
-    //     if(refer_build != '0') {
-    //         copyArtifacts(
-    //             projectName: currentBuild.projectName,
-    //             selector: specific("${refer_build}"),
-    //             fingerprintArtifacts: true
-    //         )           
-    //         sh '''
-    //         #!/usr/bin/env bash
-    //         cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-    //         cp scripts/modelbench/report_userbm.py ${WORKSPACE} && python report_userbm.py -r refer -t ${_target} --url ${BUILD_URL}
-    //         '''
-    //     }else{
-    //         sh '''
-    //         #!/usr/bin/env bash
-    //         cd ${WORKSPACE} && cp scripts/modelbench/report_userbm.py ${WORKSPACE}
-    //         python report_userbm.py -t ${_target} --url ${BUILD_URL}
-    //         '''
-    //     }
-    // }    
+    stage("generate report"){
+        if(refer_build != '0') {
+            copyArtifacts(
+                projectName: currentBuild.projectName,
+                selector: specific("${refer_build}"),
+                fingerprintArtifacts: true
+            )           
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+            cp scripts/modelbench/report_userbm.py ${WORKSPACE} && python report_userbm.py -r refer -t ${_target} --url ${BUILD_URL}
+            '''
+        }else{
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && cp scripts/modelbench/report_userbm.py ${WORKSPACE}
+            python report_userbm.py -t ${_target} --url ${BUILD_URL}
+            '''
+        }
+    }    
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
@@ -565,29 +565,29 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
     }
 
-    // stage("Sent Email"){
-    //     if ("${debug}" == "true"){
-    //         maillist="${debug_mail}"
-    //     }else{
-    //         maillist="${default_mail}"
-    //     }
-    //     if (fileExists("${WORKSPACE}/inductor_log/userbenchmark_model_bench.html") == true){
-    //         emailext(
-    //             subject: "Userbenchmark-Regular-Report(AWS)_${env._target}",
-    //             mimeType: "text/html",
-    //             attachmentsPattern: "**/inductor_log/*.xlsx",
-    //             from: "pytorch_inductor_val@intel.com",
-    //             to: maillist,
-    //             body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
-    //         )
-    //     }else{
-    //         emailext(
-    //             subject: "Failure occurs in Userbenchmark-Regular-Report(AWS)_${env._target}",
-    //             mimeType: "text/html",
-    //             from: "pytorch_inductor_val@intel.com",
-    //             to: maillist,
-    //             body: 'Job build failed, please double check in ${BUILD_URL}'
-    //         )
-    //     }
-    // }//email
+    stage("Sent Email"){
+        if ("${debug}" == "true"){
+            maillist="${debug_mail}"
+        }else{
+            maillist="${default_mail}"
+        }
+        if (fileExists("${WORKSPACE}/inductor_log/userbenchmark_model_bench.html") == true){
+            emailext(
+                subject: "Userbenchmark-Regular-Report(AWS)_${env._target}",
+                mimeType: "text/html",
+                attachmentsPattern: "**/inductor_log/*.xlsx",
+                from: "pytorch_inductor_val@intel.com",
+                to: maillist,
+                body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
+            )
+        }else{
+            emailext(
+                subject: "Failure occurs in Userbenchmark-Regular-Report(AWS)_${env._target}",
+                mimeType: "text/html",
+                from: "pytorch_inductor_val@intel.com",
+                to: maillist,
+                body: 'Job build failed, please double check in ${BUILD_URL}'
+            )
+        }
+    }//email
 }
