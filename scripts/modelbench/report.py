@@ -291,10 +291,10 @@ def str_to_dict(contents):
         res_dict[model] = reason
     return res_dict
 
-def failures_reason_parse(model,acc_tag,mode):
+def failures_reason_parse(model, acc_or_perf, mode):
     raw_log_pre="multi_threads_model_bench_log" if "multi" in mode else "single_thread_model_bench_log"
     raw_log=getfolder(args.target,raw_log_pre)
-    content=parse_acc_failure(raw_log,model) if acc_tag =="X" else parse_failure(raw_log,model)
+    content=parse_acc_failure(raw_log,model) if acc_or_perf =="accuracy" else parse_failure(raw_log,model)
     ct_dict=str_to_dict(content)
     try:
         line = ct_dict[model]
@@ -304,51 +304,49 @@ def failures_reason_parse(model,acc_tag,mode):
     return line
 
 def get_failures(target_path, thread_mode):
-    tmp=[]
+    all_model_df = pd.DataFrame()
+    failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
     for suite_name in suite_list:
         perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
         acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
 
-        perf_data=pd.read_csv(perf_path)
-        acc_data=pd.read_csv(acc_path)
+        perf_data = pd.read_csv(perf_path, usecols=["name", "batch_size", "speedup"]).rename(columns={'batch_size': 'perf_bs'})
+        acc_data = pd.read_csv(acc_path, usecols=["name", "batch_size", "accuracy"]).rename(columns={'batch_size': 'acc_bs'})
+        all_data = pd.merge(perf_data, acc_data, how='outer')
+        all_data.insert(loc=0, column='suite', value=suite_name)
+        all_model_df = pd.concat([all_model_df, all_data])
 
-        acc_data=acc_data.loc[(acc_data['accuracy'] =='fail_to_run') | (acc_data['accuracy'] =='infra_error') | (acc_data['accuracy'] =='fail_accuracy')| (acc_data['batch_size'] ==0),:]
-        acc_data.insert(loc=2, column='acc_suite', value=suite_name)
-        tmp.append(acc_data)
-
-        perf_data=perf_data.loc[(perf_data['batch_size'] ==0) | (perf_data['speedup'] ==0) | (perf_data['speedup'] =='infra_error'),:]
-        perf_data.insert(loc=3, column='pef_suite', value=suite_name)
-        tmp.append(perf_data)
-
-    failures=pd.concat(tmp)
-    failures=failures[['acc_suite','pef_suite','name','accuracy','speedup']]
-    failures['pef_suite'].fillna(0,inplace=True)
-    failures['acc_suite'].fillna(0,inplace=True)
+    all_model_df.to_csv("all_model_list.csv", index=False)
+    failures = all_model_df.loc[(all_model_df['accuracy'].isin(failure_msg_list))
+                                   | (all_model_df['acc_bs'] == 0)
+                                   | (all_model_df['speedup'] == 'infra_error') 
+                                   | (all_model_df['speedup'] == 0) 
+                                   | (all_model_df['perf_bs'] == 0) 
+                                   | (all_model_df['acc_bs'].isna()) 
+                                   | (all_model_df['perf_bs'].isna())]
+    
     # There is no failure in accuracy and performance, just return
-    if (len(failures['acc_suite']) == 0) and (len(failures['pef_suite']) == 0):
+    if (len(failures) == 0):
         return failures
-    failures['suite'] = failures.apply(lambda x: x['pef_suite'] if x['acc_suite']==0 else x['acc_suite'], axis=1)
-    failures=failures.rename(columns={
-        'suite':'suite',
-        'name':'name',
-        'accuracy':'accuracy',
-        'speedup':'perf'}) 
 
-    # 1 -> failed
-    failures['accuracy'].replace(['infra_error','timeout','fail_to_run','fail_accuracy','0.0000','model_fail_to_load','eager_fail_to_run'],[1,1,1,1,1,1,1],inplace=True)
-    failures['perf'].replace([0],['fail'],inplace=True)
-    failures['perf'].replace(['fail','infra_error','timeout'],[1,1,1],inplace=True)
-    failures['suite'].replace(["torchbench","huggingface","timm_models"],[3,4,5],inplace=True)   
-    failures=failures.groupby(by=['name']).sum(numeric_only=True).reset_index()
-    failures['suite'].replace([3,4,5,6,8,10],["torchbench","huggingface","timm_models","torchbench","huggingface","timm_models"],inplace=True)
-    failures['perf'].replace([0,1],["√","X"],inplace=True)
-    failures['accuracy'].replace([0,1],["√","X"],inplace=True)  
+    failures = failures.rename(columns={'speedup': 'perf'})
+    failures = failures[['suite', 'name', 'accuracy', 'perf']]
+    failures.replace(failure_msg_list, [0]*len(failure_msg_list), inplace=True)
+    failures['accuracy'].replace('pass', 1, inplace=True)
+    failures.loc[(failures['perf'] > 0), ['perf']] = 1
+    failures.fillna(2, inplace=True)
+    failures.replace([0, 1, 2],["X", "√", "N/A"],inplace=True)
+    
     # fill failure reasons
-    failures['name']=failures['name'].drop_duplicates()
-    failures_dict =  {key:values for key, values in zip(failures['name'], failures['accuracy'])}
+    failures_dict = {}
+    for key in failures['name']:
+        if failures.loc[(failures['name'] == key), ['accuracy']].values[0] == "X":
+            failures_dict[key] = 'accuracy'
+        else:
+            failures_dict[key] = 'perf'
     reason_content=[]
     for model in failures_dict.keys():
-        reason_content.append(failures_reason_parse(model,failures_dict[model],target_path))
+        reason_content.append(failures_reason_parse(model, failures_dict[model], target_path))
     failures['reason(reference only)'] = reason_content
     failures['thread'] = thread_mode
     col_order = ['suite', 'name', 'thread', 'accuracy', 'perf', 'reason(reference only)']
