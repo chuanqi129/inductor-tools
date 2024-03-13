@@ -14,6 +14,7 @@ SHAPE=${8:-static} # static / dynamic
 WRAPPER=${9:-default} # default / cpp
 BS=${10:-0}
 FREEZE=${11:-on}
+BACKEND=${12:-inductor}
 
 Mode_extra="--inference "
 if [[ $MODE == "training" ]]; then
@@ -56,13 +57,13 @@ multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
     export OMP_NUM_THREADS=$CORES
     end_core=$(expr $CORES - 1)    
-    numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} --timeout 9000 --backend=inductor  --output=/tmp/inductor_single_test_mt.csv && \
+    numactl -C 0-${end_core} --membind=0 python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} --timeout 9000 --backend=${BACKEND}  --output=/tmp/inductor_single_test_mt.csv && \
     cat /tmp/inductor_single_test_mt.csv && rm /tmp/inductor_single_test_mt.csv
 }
 
 single_thread_test() {
     export OMP_NUM_THREADS=1
-    numactl -C 0-0 --membind=0 python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} --timeout 9000 --backend=inductor  --output=/tmp/inductor_single_test_st.csv && \
+    numactl -C 0-0 --membind=0 python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} --timeout 9000 --backend=${BACKEND}  --output=/tmp/inductor_single_test_st.csv && \
     cat /tmp/inductor_single_test_st.csv && rm /tmp/inductor_single_test_st.csv
 }
 
