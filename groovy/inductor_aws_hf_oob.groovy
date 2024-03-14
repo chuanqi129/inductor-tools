@@ -171,7 +171,7 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "hf_oob_summary.html", fingerprint: true
         emailext(
             mimeType: "text/html",
-            subject: "Torchinductor-HF_OOB_summary_report",
+            subject: "Torch compile HF transformers pipeline benchmarks (OOB) performance report " + target,
             from: "pytorch_inductor_val@intel.com",
             to: default_mail,
             body: '${FILE, path="hf_oob_summary.html"}'
