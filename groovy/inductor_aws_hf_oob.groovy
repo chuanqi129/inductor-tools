@@ -153,11 +153,13 @@ node(NODE_LABEL){
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+        withEnv(["LOG_DIR=${LOG_DIR}"]){
         sh '''
             #!/usr/bin/env bash
             rm -rf ${WORKSPACE}/raw_log
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./ && rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/${LOG_DIR}/ ./ && rm -rf ${target}
         '''
+        }
         archiveArtifacts artifacts: "**/"+LOG_DIR+"/**", fingerprint: true
     }
 
