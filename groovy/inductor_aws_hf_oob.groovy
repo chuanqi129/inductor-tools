@@ -165,12 +165,16 @@ node(NODE_LABEL){
     }
 
     stage("Sent Email"){
-        withEnv(["target=${target}"]){
+        withEnv(["target=${target}","refer=${refer_build}"]){
         sh'''
             python -c "import pandas as pd; pd.read_csv('summary.csv').to_html('table.html', index=False, render_links=True)"
-            sed -i -e '/<thead>/,/<\/thead>/d' table.html
-            sed -i "s/target/${target}/g" html/1_hf_thead.html
-            sed -i '1 r html/1_hf_thead.html' table.html
+            if [ "${refer_build}" == "0" ];then
+                echo "no refer build table"
+            else
+                sed -i -e '/<thead>/,/<\/thead>/d' table.html
+                sed -i "s/target/${target}/g" html/1_hf_thead.html
+                sed -i '1 r html/1_hf_thead.html' table.html
+            fi
             cp html/0_css.html hf_oob_summary.html
             echo "<h2><a href='${BUILD_URL}'>Job Link</a></h2>" >> hf_oob_summary.html
             cat table.html >> hf_oob_summary.html
