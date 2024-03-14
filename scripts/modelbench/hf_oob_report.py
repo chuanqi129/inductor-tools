@@ -7,24 +7,24 @@ parser.add_argument('-r', '--reference', type=str, help='reference log file fold
 parser.add_argument('-f', '--files', type=str, default='cpu_output_OOB.log,cpu_output_compile.log', help='files to analyze')
 args = parser.parse_args()
 
-def analyze_log(file_name):
-    file_path = '{0}/hf_oob_log/{1}'.format(args.target, file_name)
+def analyze_log(file_dir, file_name):
+    file_path = '{0}/hf_oob_log/{1}'.format(file_dir, file_name)
     file = open(file_path, 'r')
 
     lines = file.readlines()
     write_line = ""
     task_name = ""
-    output_file_name = "{0}_output.csv".format(file_name.split('.')[0])
+    output_file_name = "{0}_{1}_output.csv".format(file_dir, file_name.split('.')[0])
     write_file = open(output_file_name, "w")
-    latency_name = "Eager latency"
+    latency_name = "{0} Eager latency".format(file_dir)
     if "compile" in file_name:
-        latency_name = "Compile latency"
+        latency_name = "{0} Compile latency".format(file_dir)
     title = "Task,Model,{0}\n".format(latency_name)
     write_file.write(title)
     for line in lines:
         if line.startswith('test '):
             # if model failed and has no avg time, the data len == 2.
-            if len(write_line.split(',')) == 2:
+            if len(write_line.split(',')) == 3:
                 write_line += ','
                 write_file.write(write_line)
                 write_file.write('\n')
@@ -33,7 +33,8 @@ def analyze_log(file_name):
         elif line.startswith('INFO:root:args'):
             model_name_list = line.split('model_id=')
             model_name = model_name_list[1].split("'")[1]
-            write_line = task_name + "," + model_name
+            precision = line.split('model_dtype=')[1].split("'")[1]
+            write_line = "{0},{1},{2}".format(task_name, model_name, precision)
         elif line.startswith('INFO:root:pipeline'):
             time_list = [] 
             if "[ms]:" in line:
@@ -47,21 +48,43 @@ def analyze_log(file_name):
     write_file.close()
     file.close()
 
-def merge_tables(files):
-    output_file_name_1 = "{0}_output.csv".format(files[0].split('.')[0])
-    output_file_name_2 = "{0}_output.csv".format(files[1].split('.')[0])
+def merge_tables(file_dir, files):
+    output_file_name_1 = "{0}_{1}_output.csv".format(file_dir, files[0].split('.')[0])
+    output_file_name_2 = "{0}_{1}_output.csv".format(file_dir, files[1].split('.')[0])
     data_df_1 = pd.read_csv(output_file_name_1)    
     data_df_2 = pd.read_csv(output_file_name_2)    
     summary_df = pd.merge(data_df_1, data_df_2, how='outer')
-    summary_df['Eager/Compile ratio'] = summary_df['Eager latency'] / summary_df['Compile latency']
-    summary_df.to_csv('summary.csv', index=False)
+    summary_df['{0} Eager/Compile ratio'.format(file_dir)] = \
+        summary_df['{0} Eager latency'.format(file_dir)] / summary_df["{0} Compile latency".format(file_dir)]
+    return summary_df
 
-def main():
+def generate_summary(file_dir):
     files = args.files.split(',')
     for file_name in files:
-       analyze_log(file_name)
+       analyze_log(file_dir, file_name)
+
     if len(files) == 2:
-        merge_tables(files)
+         return merge_tables(file_dir, files)
+    else:
+        return None
+
+def merge_refer_tables(target_df, refer_df):
+    summary_df = pd.merge(target_df, refer_df, how='outer')
+    summary_df['Eager ratio new/old'] = target_df["{0} Eager latency".format(args.target)]/refer_df["{0} Eager latency".format(args.reference)]
+    summary_df['Compile ratio new/old'] = target_df["{0} Compile latency".format(args.target)]/refer_df["{0} Compile latency".format(args.reference)]
+    return summary_df
+
+def main():
+    # Step 1: Analyze log and extract usefuly data save to .csv
+    target_df = generate_summary(args.target)
+    if args.reference is not None:
+        refer_df = generate_summary(args.reference)
+        target_df = merge_refer_tables(target_df, refer_df)    
+    if target_df is not None:
+        target_df.to_csv('summary.csv', index=False)
+    
+    # TODO: Add refer
+    # TODO: Add SW & HW info
 
 if __name__ == "__main__":
     main()
