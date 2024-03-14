@@ -156,7 +156,7 @@ node(NODE_LABEL){
         sh '''
             #!/usr/bin/env bash
             rm -rf ${WORKSPACE}/raw_log
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./ && rm -rf ${target}
         '''
         archiveArtifacts artifacts: "**/"+LOG_DIR+"/**", fingerprint: true
     }
