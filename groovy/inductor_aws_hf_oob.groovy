@@ -167,13 +167,15 @@ node(NODE_LABEL){
     stage("Sent Email"){
         withEnv(["target=${target}","refer=${refer_build}"]){
         sh'''
-            python -c "import pandas as pd; pd.read_csv('summary.csv').to_html('perf_table.html', index=False, render_links=True)"
+            # Jinja2 >= 3 required by Pandas.style
+            pip install Jinja2==3.1.2
+            python scripts/modelbench/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html'
             if [ "${refer_build}" == "0" ];then
                 echo "no refer build table"
             else
                 sed -i -e '/<thead>/,/<\/thead>/d' perf_table.html
                 sed -i "s/target/${target}/g" html/1_hf_thead.html
-                sed -i '1 r html/1_hf_thead.html' perf_table.html
+                sed -i '/<table/r html/1_hf_thead.html' perf_table.html
             fi
             python -c "import pandas as pd; pd.read_csv('version_summary.csv').to_html('version_table.html', index=False, render_links=True)"
 
