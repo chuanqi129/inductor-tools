@@ -160,7 +160,20 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "**/"+LOG_DIR+"/**", fingerprint: true
     }
 
-    // stage("Sent Email"){
-    //    
-    // }//email
+    stage("Sent Email"){
+       sh'''
+            python -c "import pandas as pd; pd.read_csv('summary.csv').to_html('table.html', index=False, render_links=True)"
+            cp html/0_css.html hf_oob_summary.html
+            echo "<h2><a href='${BUILD_URL}'>Job Link</a></h2>" >> hf_oob_summary.html
+            cat table.html >> hf_oob_summary.html
+        '''
+        archiveArtifacts artifacts: "hf_oob_summary.html", fingerprint: true
+        emailext(
+            mimeType: "text/html",
+            subject: "Torchinductor-HF_OOB_summary_report",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="hf_oob_summary.html"}'
+        )
+    }//email
 }
