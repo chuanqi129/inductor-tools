@@ -173,7 +173,7 @@ node(NODE_LABEL){
             if [ "${refer_build}" == "0" ];then
                 echo "no refer build table"
             else
-                sed -i -e "/<thead>/,/<\/thead>/d" perf_table.html
+                sed -i -e "/<thead>/,/<\\/thead>/d" perf_table.html
                 sed -i "s/target/${target}/g" html/1_hf_thead.html
                 sed -i '/<table/r html/1_hf_thead.html' perf_table.html
             fi
