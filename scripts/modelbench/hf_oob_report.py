@@ -58,8 +58,8 @@ def merge_tables(files):
 
 def main():
     files = args.files.split(',')
-    #for file_name in files:
-    #    analyze_log(file_name)
+    for file_name in files:
+       analyze_log(file_name)
     if len(files) == 2:
         merge_tables(files)
 
