@@ -74,6 +74,13 @@ def merge_refer_tables(target_df, refer_df):
     summary_df['Compile ratio new/old'] = target_df["{0} Compile latency".format(args.target)]/refer_df["{0} Compile latency".format(args.reference)]
     return summary_df
 
+def get_sw_df(file_dir):
+    sw_df = pd.read_csv("{0}/hf_oob_log/version.csv".format(file_dir))
+    sw_df = sw_df.rename(columns={
+        'branch':'{0}_branch'.format(file_dir),
+        'commit':'{0}_commit'.format(file_dir)})
+    return sw_df
+
 def main():
     # Step 1: Analyze log and extract usefuly data save to .csv
     target_df = generate_summary(args.target)
@@ -82,9 +89,15 @@ def main():
         target_df = merge_refer_tables(target_df, refer_df)    
     if target_df is not None:
         target_df.to_csv('summary.csv', index=False)
+    else:
+        print("No target dataframe found")
     
-    # TODO: Add refer
     # TODO: Add SW & HW info
+    target_sw_df = get_sw_df(args.target)
+    if args.reference is not None:
+        refer_sw_df = get_sw_df(args.reference)
+        target_sw_df = pd.merge(target_sw_df, refer_sw_df)
+    target_sw_df.to_csv('version_summary.csv', index=False)
 
 if __name__ == "__main__":
     main()
