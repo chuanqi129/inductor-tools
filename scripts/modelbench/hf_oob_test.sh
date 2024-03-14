@@ -49,6 +49,10 @@ docker run -id --name $USER --privileged \
         -v /home/ubuntu/.cache:/root/.cache \
         -v /home/ubuntu/docker/${LOG_DIR}:/workspace/hf_testcase/${LOG_DIR} hf_oob_test:${target}
 
+# Generate SW info out of real test
+docker cp /home/ubuntu/docker/version_collect_hf_oob.sh $USER:/workspace/hf_testcase
+docker exec -i $USER bash -c "bash version_collect_hf_oob.sh ${LOG_DIR}"
+
 docker exec -e CONDA_PREFIX='/opt/conda' -e HUGGING_FACE_HUB_TOKEN=${HF_TOKEN} -i $USER bash -c "bash run_cpu.sh"
 status=${PIPESTATUS[0]}
 # create finished.txt when finished

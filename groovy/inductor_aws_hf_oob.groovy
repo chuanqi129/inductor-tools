@@ -81,6 +81,7 @@ node(NODE_LABEL){
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/hf_oob_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/version_collect_hf_oob.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/docker/Dockerfile.hf_oob ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/env_groovy.txt ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
