@@ -578,7 +578,7 @@ node(NODE_LABEL){
                 attachmentsPattern: "**/inductor_log/*.xlsx",
                 from: "pytorch_inductor_val@intel.com",
                 to: maillist,
-                body: '${FILE,path="inductor_log/quantization_model_bench.html"}'
+                body: '${FILE,path="inductor_log/userbenchmark_model_bench.html"}'
             )
         }else{
             emailext(
