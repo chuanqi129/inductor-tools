@@ -42,6 +42,9 @@ if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
     # Workaround for test with runner.py
     sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' benchmarks/dynamo/runner.py
+    echo "Setting freezing for inductor backend by default."
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
 elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
