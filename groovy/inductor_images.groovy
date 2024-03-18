@@ -172,6 +172,22 @@ echo "iap_credential: $iap_credential"
 node(NODE_LABEL){
     stage("get dockerfile"){
         echo 'get dockerfile......'
+        sh '''#!/bin/bash
+            set -xe
+            # Start docker if docker deamon is not running
+            if systemctl is-active --quiet docker; then
+                echo "Docker daemon is running...";
+            else
+                echo "Starting docker deamon..." 
+                sudo systemctl start docker || true;
+            fi
+            # Clean up any existing containers
+            docker stop $(docker ps -aq) || true
+            docker system prune -af
+            # Clean up WORKSPACE
+            rm -rf ${WORKSPACE}/* || sudo rm -rf ${WORKSPACE}/* || \
+                docker run -i --rm -v ${WORKSPACE}:${WORKSPACE} ubuntu:22.04 rm -rf ${WORKSPACE}/*
+        '''
         deleteDir()
         checkout scm     
     }
@@ -180,7 +196,6 @@ node(NODE_LABEL){
             withCredentials([usernamePassword(credentialsId: iap_credential, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
                 sh '''
                 #!/usr/bin/env bash
-                docker system prune -af
                 # No need login for every time
                 # docker login ccr-registry.caas.intel.com --username $USERNAME --password $PASSWORD
                 docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
@@ -190,11 +205,6 @@ node(NODE_LABEL){
                 docker rmi -f ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
                 '''
             }
-        }else {
-            sh '''
-            #!/usr/bin/env bash
-            docker system prune -af
-            '''
         }
     }   
     stage("build image"){
@@ -202,7 +212,6 @@ node(NODE_LABEL){
             echo 'Building image......'
             sh '''
             #!/usr/bin/env bash
-            docker system prune -af
             cp docker/Dockerfile ./
             DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} --build-arg PT_REPO=${PT_REPO} --build-arg PT_BRANCH=${PT_BRANCH} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_BRANCH=${TORCH_VISION_BRANCH} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_BRANCH=${TORCH_DATA_BRANCH} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_BRANCH=${TORCH_TEXT_BRANCH} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_BRANCH=${TORCH_AUDIO_BRANCH} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_BRANCH=${TORCH_BENCH_BRANCH} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} --build-arg HF_HUB_TOKEN=${HF_TOKEN} -t ccr-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
             '''
