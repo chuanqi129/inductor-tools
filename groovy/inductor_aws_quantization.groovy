@@ -537,12 +537,6 @@ node(NODE_LABEL){
             cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
             cp scripts/modelbench/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
             '''
-        }else{
-            sh '''
-            #!/usr/bin/env bash
-            cd ${WORKSPACE} && cp scripts/modelbench/report_quant_perf.py ${WORKSPACE}
-            python report_quant_perf.py -t ${_target} --url ${BUILD_URL}
-            '''
         }
     }    
 
