@@ -67,40 +67,35 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
 
 FROM dev-base AS build
 COPY --from=conda /opt/conda /opt/conda
-COPY --from=conda /root/.bashrc /root/.bashrc
 WORKDIR /workspace
 ARG TORCH_REPO=$TORCH_REPO
-ARG TORCH_BRANCH=$TORCH_BRANCH
 ARG TORCH_COMMIT=$TORCH_COMMIT
-RUN git clone -b ${TORCH_BRANCH} ${TORCH_REPO} && \
+RUN git clone ${TORCH_REPO} && \
     cd pytorch && git checkout ${TORCH_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd .. && \
     python -c "import torch"
 
-ARG TORCH_VISION_BRANCH=main
 ARG TORCH_VISION_COMMIT=${VISION}
-RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
+RUN git clone https://github.com/pytorch/vision.git && \
     cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 
-ARG TRANSFORMERS_BRANCH=main
 ARG TRANSFORMERS_VERSION=${TRANSFORMERS_VERSION}
-RUN pip uninstall transformers -y && echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        git clone -b ${TRANSFORMERS_BRANCH} https://github.com/huggingface/transformers.git; \
+RUN echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
+        git clone https://github.com/huggingface/transformers.git; \
         cd transformers; \
         git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
         python setup.py bdist_wheel;  \
         pip install dist/*.whl; \
         cd ../; \
     else \
-        pip install --upgrade transformers; \
+        pip install transformers==${TRANSFORMERS_VERSION}; \
     fi
 
 ARG HF_TEST_REPO=$HF_TEST_REPO
-ARG HF_TEST_BRANCH=$HF_TEST_BRANCH
 ARG HF_TEST_COMMIT=$HF_TEST_COMMIT
-RUN git clone -b ${HF_TEST_BRANCH} ${HF_TEST_REPO} && \
+RUN git clone ${HF_TEST_REPO} && \
     cd hf_testcase && git checkout ${HF_TEST_COMMIT} && \
     cd .. && \
     pip install mpmath==1.3.0 fire diffusers
@@ -108,7 +103,6 @@ RUN git clone -b ${HF_TEST_BRANCH} ${HF_TEST_REPO} && \
 # Clean for final image
 FROM dev-base AS image
 COPY --from=build /opt/conda /opt/conda
-COPY --from=build /root/.bashrc /root/.bashrc
 COPY --from=build /workspace/pytorch /workspace/pytorch
 COPY --from=build /workspace/hf_testcase /workspace/hf_testcase
 COPY --from=build /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /opt/conda/lib
