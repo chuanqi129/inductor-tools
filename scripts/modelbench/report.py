@@ -115,6 +115,47 @@ def caculate_geomean(df,column_name):
         return "0.0x"
     return f"{gmean(cleaned_df):.2f}x"
 
+def percentage(part, whole, decimals=2):
+    if whole == 0:
+        return 0
+    return round(100 * float(part) / float(whole), decimals)
+
+def update_passrate_csv(df, target_path):
+    new_df = pd.concat([df]*2)
+    new_df.index = ['inductor', 'inductor_raw']
+    for suite_name in suite_list:
+        passrate_str = new_df.loc['inductor'][suite_name]
+        passed_num = int(passrate_str.split(', ')[1].split('/')[0])
+        perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
+        perf_df = pd.read_csv(perf_path, index_col=0)
+        acc_df = pd.read_csv(acc_path, index_col=0)
+        name_union_df = pd.merge(perf_df['name'], acc_df['name'], how='outer')
+        perc = int(percentage(passed_num, len(name_union_df), decimals=0))
+        passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
+        new_df.loc['inductor'][suite_name] = passrate_str_new
+    new_df.to_csv(target_path + '/passrate.csv')
+
+def update_passrate(reference):
+    if reference is not None:
+        if args.mode == "multiple" or args.mode == 'all':
+            reference_mt_pr_data = pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_mt_pr_data, reference_mt)
+            target_mt_pr_data = pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt)
+        if args.mode == "single" or args.mode == 'all':
+            reference_st_pr_data = pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_st_pr_data, reference_st)
+            target_st_pr_data = pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st)
+    else:
+        if args.mode == "multiple" or args.mode == 'all':
+            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt)
+        if args.mode == "single" or args.mode == 'all':
+            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st)
+
 def update_summary(excel, reference, target):
     if args.suite == 'all':
         data = {
@@ -156,26 +197,26 @@ def update_summary(excel, reference, target):
         if args.mode == "multiple" or args.mode == 'all':
             reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[2:3,4:7]=reference_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=reference
             summary.iloc[2:3,2]=reference 
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0) 
-            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target
         if args.mode == "single" or args.mode == 'all':
             reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
-            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:1,1:7]
             summary.iloc[6:7,4:7]=reference_st_gm_data.iloc[0:2,1:7]
             summary.iloc[4:5,2]=reference
             summary.iloc[6:7,2]=reference
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
             summary.iloc[7:8,2]=target
@@ -186,14 +227,14 @@ def update_summary(excel, reference, target):
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
@@ -902,6 +943,7 @@ def generate_model_list():
         print('No new issue or improvement compared with reference')
 
 def generate_report(excel, reference, target):
+    update_passrate(reference)
     update_summary(excel, reference, target)
     update_swinfo(excel)
     if args.mode == 'multiple' or args.mode == 'all':
