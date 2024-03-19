@@ -476,7 +476,7 @@ node(NODE_LABEL){
         for t in {1..100}
         do
             current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+            timeout 2m ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
                     rm -rf ${WORKSPACE}/${_target}
