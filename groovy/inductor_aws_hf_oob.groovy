@@ -145,10 +145,23 @@ node(NODE_LABEL){
     }
 
     stage("generate report"){
-        sh '''
-            #!/usr/bin/env bash
-            python scripts/hf_oob/hf_oob_report.py -t ${target}
-        '''
+        if(refer_build != '0') {
+            copyArtifacts(
+                projectName: currentBuild.projectName,
+                selector: specific("${refer_build}"),
+                fingerprintArtifacts: true
+            )
+            sh '''
+                #!/usr/bin/env bash
+                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                python scripts/hf_oob/hf_oob_report.py -t ${target} -r refer
+            '''
+        } else {
+            sh '''
+                #!/usr/bin/env bash
+                python scripts/hf_oob/hf_oob_report.py -t ${target}
+            '''
+        }
         archiveArtifacts artifacts: "*.csv", fingerprint: true
     }
 
@@ -169,7 +182,7 @@ node(NODE_LABEL){
         sh'''
             # Jinja2 >= 3 required by Pandas.style
             pip install Jinja2==3.1.2
-            python scripts/hf_oob/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html'
+            python scripts/hf_oob/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html' -t ${target} -r ${refer}
             if [ "${refer_build}" == "0" ];then
                 echo "no refer build table"
             else
