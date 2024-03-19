@@ -686,8 +686,8 @@ def update_issue_commits(precision):
     torchtext_commit = "main" # swinfo_df.at['torchtext', 'commit']
     torchaudio_branch = swinfo_df.at['torchaudio', 'branch']
     torchaudio_commit = swinfo_df.at['torchaudio', 'commit']
-    torchdata_branch = swinfo_df.at['torchdata', 'branch']
-    torchdata_commit = swinfo_df.at['torchdata', 'commit']
+    # torchdata_branch = swinfo_df.at['torchdata', 'branch']
+    # torchdata_commit = swinfo_df.at['torchdata', 'commit']
     dynamo_benchmarks_branch = swinfo_df.at['dynamo_benchmarks', 'branch']
     dynamo_benchmarks_commit = swinfo_df.at['dynamo_benchmarks', 'commit']
     sw_info = f'''
@@ -700,7 +700,6 @@ Torchbench|[{torchbench_branch}](https://github.com/pytorch/benchmark/tree/{torc
 torchaudio|[{torchaudio_branch}](https://github.com/pytorch/audio/tree/{torchaudio_branch})|[{torchaudio_commit}](https://github.com/pytorch/audio/commit/{torchaudio_commit})
 torchtext|[{torchtext_branch}](https://github.com/pytorch/text/tree/{torchtext_branch})| [{torchtext_commit}](https://github.com/pytorch/text/commit/{torchtext_commit})
 torchvision|[{torchvision_branch}](https://github.com/pytorch/vision/tree/{torchvision_branch})|[{torchvision_commit}](https://github.com/pytorch/vision/commit/{torchvision_commit})
-torchdata|[{torchdata_branch}](https://github.com/pytorch/data/tree/{torchdata_branch})|[{torchdata_commit}](https://github.com/pytorch/data/commit/{torchdata_commit})
 dynamo_benchmarks|[{dynamo_benchmarks_branch}](https://github.com/pytorch/pytorch/tree/{dynamo_benchmarks_branch})|[{dynamo_benchmarks_commit}](https://github.com/pytorch/pytorch/commit/{dynamo_benchmarks_commit})
 
 
