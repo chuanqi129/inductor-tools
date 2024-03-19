@@ -149,11 +149,12 @@ node(NODE_LABEL){
             copyArtifacts(
                 projectName: currentBuild.projectName,
                 selector: specific("${refer_build}"),
-                fingerprintArtifacts: true
+                fingerprintArtifacts: true,
+                target: "refer",
             )
             sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE}
                 python scripts/hf_oob/hf_oob_report.py -t ${target} -r refer
             '''
         } else {
