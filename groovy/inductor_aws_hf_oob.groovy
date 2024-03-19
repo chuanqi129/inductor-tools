@@ -80,7 +80,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/modelbench/hf_oob_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/hf_oob/hf_oob_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/version_collect_hf_oob.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/docker/Dockerfile.hf_oob ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/env_groovy.txt ubuntu@${current_ip}:/home/ubuntu/docker
@@ -147,7 +147,7 @@ node(NODE_LABEL){
     stage("generate report"){
         sh '''
             #!/usr/bin/env bash
-            python scripts/modelbench/hf_oob_report.py -t ${target}
+            python scripts/hf_oob/hf_oob_report.py -t ${target}
         '''
         archiveArtifacts artifacts: "*.csv", fingerprint: true
     }
@@ -169,7 +169,7 @@ node(NODE_LABEL){
         sh'''
             # Jinja2 >= 3 required by Pandas.style
             pip install Jinja2==3.1.2
-            python scripts/modelbench/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html'
+            python scripts/hf_oob/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html'
             if [ "${refer_build}" == "0" ];then
                 echo "no refer build table"
             else
