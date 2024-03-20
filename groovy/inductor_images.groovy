@@ -197,7 +197,8 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 # No need login for every time
-                # docker login ccr-registry.caas.intel.com --username $USERNAME --password $PASSWORD
+                docker logout ccr-registry.caas.intel.com
+                docker login ccr-registry.caas.intel.com --username $USERNAME --password $PASSWORD
                 docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly
                 docker tag ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
                 docker push ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
