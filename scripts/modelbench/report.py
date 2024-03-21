@@ -42,6 +42,7 @@ parser.add_argument('--shape',type=str,default='static',help='Shape: static or d
 parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
+parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -243,7 +244,9 @@ def parse_acc_failure(file,failed_model):
     if failed_model in known_failures.keys():
         result.append(failed_model+", "+known_failures[failed_model])
     else:
-        with open(file, 'r') as reader:
+        # if not ignore errors, aot_inductor log will throw
+        # UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 3122: invalid start byte
+        with open(file, 'r', errors='ignore') as reader:
             contents = reader.readlines()
             for line in contents:
                 # skip performance part
@@ -268,7 +271,7 @@ def parse_failure(file,failed_model):
     if failed_model in known_failures.keys():
         result.append(failed_model+", "+known_failures[failed_model])
     else:
-        with open(file, 'r') as reader:
+        with open(file, 'r', errors='ignore') as reader:
             contents = reader.readlines()
             for line in contents:
                 if found ==  False and "cpu  eval  " in line:
@@ -307,8 +310,8 @@ def get_failures(target_path, thread_mode):
     all_model_df = pd.DataFrame()
     failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
     for suite_name in suite_list:
-        perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
 
         perf_data = pd.read_csv(perf_path, usecols=["name", "batch_size", "speedup"]).rename(columns={'batch_size': 'perf_bs'})
         acc_data = pd.read_csv(acc_path, usecols=["name", "batch_size", "accuracy"]).rename(columns={'batch_size': 'acc_bs'})
@@ -440,14 +443,14 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite, thread):
-    target_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.target, thread), suite, args.precision, args.infer_or_train)
+    target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), args.backend, suite, args.precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
     target_data=target_data.copy()
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(getfolder(args.reference, thread), suite, args.precision, args.infer_or_train)
+        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.backend, suite, args.precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
@@ -715,7 +718,8 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 export TORCHINDUCTOR_FREEZING=1
 CORES=$(lscpu | grep Core | awk '{print $4}')
 export OMP_NUM_THREADS=$CORES
-python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --devices=cpu --dtypes=float32 --inference --compilers=inductor --extra-args="--timeout 9000" 
+''' + f'''
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --devices=cpu --dtypes=float32 --inference --compilers={args.backend} --extra-args="--timeout 9000" 
 
 ```
 '''
@@ -727,8 +731,8 @@ export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
 export TORCHINDUCTOR_FREEZING=1
 export OMP_NUM_THREADS=1
-
-python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --compilers=inductor --batch_size=1 --threads 1 --extra-args="--timeout 9000"
+''' + f'''
+python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --compilers={args.backend} --batch_size=1 --threads 1 --extra-args="--timeout 9000"
 
 ```
 '''
@@ -782,10 +786,10 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
             pass
 
 def html_head():
-    return '''<!DOCTYPE html>
+    return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
-<title> Inductor Regular Model Bench Report </title>
+<title> {args.backend} Regular Model Bench Report </title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
@@ -802,7 +806,7 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>Inductor Regular Model Bench Report </p></h3> '''
+  <p><h3>{args.backend} Regular Model Bench Report </p></h3> '''
 
 def html_tail():
     return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
@@ -822,9 +826,9 @@ def html_generate(html_off):
     if not html_off:
         try:
             if args.mode == 'all':
-                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2,3])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
             else:
-                content = pd.read_excel('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite),sheet_name=[0,1,2])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -946,7 +950,7 @@ def excel_postprocess(file):
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter('{0}/inductor_log/Inductor Dashboard Regression Check {0} {1}.xlsx'.format(args.target, args.suite))
+    excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)     

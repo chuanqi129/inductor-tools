@@ -431,9 +431,9 @@ node(NODE_LABEL){
                 cd ${WORKSPACE} && mkdir -p refer && mv inductor_log refer
                 docker cp ${WORKSPACE}/refer $USER:/workspace/pytorch/
                 if [ ${_dash_board} == "true" ]; then
-                     docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_image_tag}"
+                     docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_image_tag}" --backend ${_backend}
                 else
-                     docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}"
+                     docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}" --backend ${_backend}
                 fi
                 rm -rf refer
                 '''
@@ -441,9 +441,9 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 if [ ${_dash_board} == "true" ]; then
-                    docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}"
+                    docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}" --backend ${_backend}
                 else
-                    docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}"
+                    docker exec -i $USER bash -c "pip install datacompy pandas styleframe PyGithub beautifulsoup4;python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_image_tag}" --backend ${_backend}
                 fi
                 '''
             }
