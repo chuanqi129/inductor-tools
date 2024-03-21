@@ -30,7 +30,8 @@ pip uninstall transformers -y && pip install transformers==4.30.2
 pip uninstall networkx -y && pip install networkx
 
 # skip sam & nanogpt_generate for stable results
-sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py
+# skip llama_v2_7b_16h due to OOM
+sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate -x llama_v2_7b_16h"' benchmarks/dynamo/runner.py
 
 if [[ ${TEST_MODE} == "training_full" ]]; then
     # skip hf_GPT2_large, cuz it will OOM after using jemalloc
