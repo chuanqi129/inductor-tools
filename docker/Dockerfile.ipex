@@ -117,7 +117,7 @@ RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pyt
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \ 
-    python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
+    python -c "import torch, intel_extension_for_pytorch, torchvision, torchaudio"
 
 # Clean for final image
 FROM dev-base AS image
