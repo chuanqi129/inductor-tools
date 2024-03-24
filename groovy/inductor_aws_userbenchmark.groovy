@@ -173,6 +173,15 @@ if ('TORCH_COMMIT' in params) {
 }
 echo "TORCH_COMMIT: $TORCH_COMMIT"
 
+ONEDNN_BRANCH= 'default'
+if ('ONEDNN_BRANCH' in params) {
+    echo "ONEDNN_BRANCH in params"
+    if (params.ONEDNN_BRANCH != '') {
+        ONEDNN_BRANCH = params.ONEDNN_BRANCH
+    }
+}
+echo "ONEDNN_BRANCH: $ONEDNN_BRANCH"
+
 DYNAMO_BENCH= "$TORCH_COMMIT"
 if ('DYNAMO_BENCH' in params) {
     echo "DYNAMO_BENCH in params"
@@ -354,6 +363,7 @@ env._TORCH_REPO = "$TORCH_REPO"
 env._TORCH_BRANCH = "$TORCH_BRANCH"
 env._TORCH_COMMIT = "$TORCH_COMMIT"
 env._DYNAMO_BENCH = "$DYNAMO_BENCH"
+env._ONEDNN_BRANCH = "$ONEDNN_BRANCH"
 
 env._AUDIO = "$AUDIO"
 env._TEXT = "$TEXT"
@@ -429,7 +439,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/cpu_usebm.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/cpu_usebm_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_ONEDNN_BRANCH} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
             '''
         }
     }
