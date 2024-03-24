@@ -6,28 +6,29 @@ TEST_SHAPE=${4:-static}
 TORCH_REPO=${5:-https://github.com/pytorch/pytorch.git}
 TORCH_BRANCH=${6:-nightly}
 TORCH_COMMIT=${7:-nightly}
+ONEDNN_BRANCH=${8:-default}
 
-DYNAMO_BENCH=${8:-fea73cb}
+DYNAMO_BENCH=${9:-fea73cb}
 
-AUDIO=${9:-0a652f5}
-TEXT=${10:-c4ad5dd}
-VISION=${11:-f2009ab}
-DATA=${12:-5cb3e6d}
-TORCH_BENCH=${13:-a0848e19}
+AUDIO=${10:-0a652f5}
+TEXT=${11:-c4ad5dd}
+VISION=${12:-f2009ab}
+DATA=${13:-5cb3e6d}
+TORCH_BENCH=${14:-a0848e19}
 
-THREADS=${14:-all}
-CHANNELS=${15:-first}
-WRAPPER=${16:-default}
-HF_TOKEN=${17:-hf_xx}
-BACKEND=${18:-inductor}
-SUITE=${19:-all}
-MODEL=${20:-resnet50}
-TORCH_START_COMMIT=${21:-${TORCH_BRANCH}}
-TORCH_END_COMMIT=${22:-${TORCH_START_COMMIT}}
-SCENARIO=${23:-accuracy}
-KIND=${24:-crash} # issue kind crash/drop
-PERF_RATIO=${25:-1.1}
-EXTRA=${26}
+THREADS=${15:-all}
+CHANNELS=${16:-first}
+WRAPPER=${17:-default}
+HF_TOKEN=${18:-hf_xx}
+BACKEND=${19:-inductor}
+SUITE=${20:-all}
+MODEL=${21:-resnet50}
+TORCH_START_COMMIT=${22:-${TORCH_BRANCH}}
+TORCH_END_COMMIT=${23:-${TORCH_START_COMMIT}}
+SCENARIO=${24:-accuracy}
+KIND=${25:-crash} # issue kind crash/drop
+PERF_RATIO=${26:-1.1}
+EXTRA=${27}
 
 echo "TAG" : $TAG
 echo "PRECISION" : $PRECISION
@@ -37,6 +38,7 @@ echo "TORCH_REPO" : $TORCH_REPO
 echo "TORCH_BRANCH" : $TORCH_BRANCH
 echo "TORCH_COMMIT" : $TORCH_COMMIT
 echo "DYNAMO_BENCH" : $DYNAMO_BENCH
+echo "ONEDNN_BRANCH" : $ONEDNN_BRANCH
 echo "AUDIO" : $AUDIO
 echo "TEXT" : $TEXT
 echo "VISION" : $VISION
@@ -65,7 +67,7 @@ if [ -d ${LOG_DIR} ]; then
 fi
 mkdir -p ${LOG_DIR}
 
-DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
+DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg PT_REPO=$TORCH_REPO --build-arg ONEDNN_BRANCH=$ONEDNN_BRANCH --build-arg PT_BRANCH=$TORCH_BRANCH --build-arg PT_COMMIT=$TORCH_COMMIT --build-arg BENCH_COMMIT=$DYNAMO_BENCH --build-arg TORCH_AUDIO_COMMIT=$AUDIO --build-arg TORCH_TEXT_COMMIT=$TEXT --build-arg TORCH_VISION_COMMIT=$VISION --build-arg TORCH_DATA_COMMIT=$DATA --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH --build-arg https_proxy=${https_proxy} --build-arg HF_HUB_TOKEN=$HF_TOKEN -t pt_inductor:$TAG -f Dockerfile --target image . > ${LOG_DIR}/image_build.log 2>&1
 # Early exit for docker image build issue
 image_status=`tail -n 5 ${LOG_DIR}/image_build.log | grep ${TAG} | wc -l`
 if [ $image_status -eq 0 ]; then
