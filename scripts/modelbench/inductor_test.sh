@@ -24,8 +24,6 @@ EXTRA=${11}
 mkdir -p $LOG_DIR
 
 export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-# https://github.com/pytorch/pytorch/issues/107200
-pip uninstall transformers -y && pip install transformers==4.30.2
 # fix issue: AttributeError: module 'importlib.resources' has no attribute 'files'
 pip uninstall networkx -y && pip install networkx
 
