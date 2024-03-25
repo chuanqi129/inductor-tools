@@ -68,22 +68,6 @@ node(NODE_LABEL){
                     def guilty_commit_job = build propagate: false,
                         job: guilty_commit_search_job_name, parameters: job_parameters
                     
-                    // def cur_job_status = guilty_commit_job.getCurrentResult()
-                    // if (cur_job_status != "SUCCESS") {
-                    //     def rebuild_num = 2
-                    //     def new_job_status = "none"
-                    //     for (i = 0; i < rebuild_num; i += 1) {
-                    //         println("Rebuilding ... ")
-                    //         def new_guilty_commit_job = build propagate: false,
-                    //             job: guilty_commit_search_job_name, parameters: job_parameters
-                    //         new_job_status = new_guilty_commit_job.getCurrentResult()
-                    //         if (new_job_status == "SUCCESS") {
-                    //             guilty_commit_job = new_guilty_commit_job
-                    //             break;
-                    //         }
-                    //     }
-                    // }
-                    
                     def cur_job_number = guilty_commit_job.getNumber()
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
                     def cur_job_duration = guilty_commit_job.getDurationString()
