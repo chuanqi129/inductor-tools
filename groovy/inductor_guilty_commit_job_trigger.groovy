@@ -68,20 +68,39 @@ node(NODE_LABEL){
                     def guilty_commit_job = build propagate: false,
                         job: guilty_commit_search_job_name, parameters: job_parameters
                     
+                    // def cur_job_status = guilty_commit_job.getCurrentResult()
+                    // if (cur_job_status != "SUCCESS") {
+                    //     def rebuild_num = 2
+                    //     def new_job_status = "none"
+                    //     for (i = 0; i < rebuild_num; i += 1) {
+                    //         println("Rebuilding ... ")
+                    //         def new_guilty_commit_job = build propagate: false,
+                    //             job: guilty_commit_search_job_name, parameters: job_parameters
+                    //         new_job_status = new_guilty_commit_job.getCurrentResult()
+                    //         if (new_job_status == "SUCCESS") {
+                    //             guilty_commit_job = new_guilty_commit_job
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+                    
                     def cur_job_number = guilty_commit_job.getNumber()
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
                     def cur_job_duration = guilty_commit_job.getDurationString()
+                    def cur_job_status = guilty_commit_job.getCurrentResult()
                     def path = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log/guilty_commit.log'
                     def log_dir = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log'
                     def temp_files = findFiles glob: path
                     println(path)
                     println(temp_files.length)
 
-                    copyArtifacts(
-                        projectName: guilty_commit_search_job_name,
-                        selector: specific("${cur_job_number}"),
-                        target: "inductor_guilty_commit_search/${cur_job_number}"
-                    )
+                    if (cur_job_status == "SUCCESS") {
+                        copyArtifacts(
+                            projectName: guilty_commit_search_job_name,
+                            selector: specific("${cur_job_number}"),
+                            target: "inductor_guilty_commit_search/${cur_job_number}"
+                        )
+                    }
 
                     withEnv([
                         "cur_job_number=${cur_job_number}",
@@ -95,7 +114,8 @@ node(NODE_LABEL){
                         "wrapper=${wrapper}",
                         "cur_job_url=${cur_job_url}",
                         "file_path=${path}",
-                        "log_dir=${log_dir}"
+                        "log_dir=${log_dir}",
+                        "build_status=${cur_job_status}"
                     ]) {
                         def files = findFiles glob: path
                         println(files.length)
@@ -105,11 +125,11 @@ node(NODE_LABEL){
                         if (files.length > 0){
                             sh'''
                                 guilty_commit=`cat ${file_path} | head -1`
-                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         } else {
                             sh'''
-                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         }
                     }
