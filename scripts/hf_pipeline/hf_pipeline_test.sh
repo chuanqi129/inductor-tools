@@ -32,7 +32,7 @@ docker build \
         --build-arg HF_TEST_COMMIT=$HF_TEST_COMMIT \
         --build-arg http_proxy=${http_proxy} \
         --build-arg https_proxy=${https_proxy} \
-        -t hf_oob_test:${target} -f Dockerfile.hf_oob --target image . > ${LOG_DIR}/image_build.log 2>&1
+        -t hf_pipeline_test:${target} -f Dockerfile.hf_pipeline --target image . > ${LOG_DIR}/image_build.log 2>&1
 
 # Early exit for docker image build issue
 image_status=`tail -n 5 ${LOG_DIR}/image_build.log | grep ${target} | wc -l`
@@ -47,13 +47,13 @@ docker run -id --name $USER --privileged \
         --env LOG_DIR=${LOG_DIR} \
         --net host --shm-size 20G \
         -v /home/ubuntu/.cache:/root/.cache \
-        -v /home/ubuntu/docker/${LOG_DIR}:/workspace/hf_testcase/${LOG_DIR} hf_oob_test:${target}
+        -v /home/ubuntu/docker/${LOG_DIR}:/workspace/hf_testcase/${LOG_DIR} hf_pipeline_test:${target}
 
 # Generate SW info out of real test
-docker cp /home/ubuntu/docker/version_collect_hf_oob.sh $USER:/workspace/hf_testcase
-docker exec -i $USER bash -c "bash version_collect_hf_oob.sh ${LOG_DIR}"
+docker cp /home/ubuntu/docker/version_collect_hf_pipeline.sh $USER:/workspace/hf_testcase
+docker exec -i $USER bash -c "bash version_collect_hf_pipeline.sh ${LOG_DIR}"
 
-docker exec -e CONDA_PREFIX='/opt/conda' -e HUGGING_FACE_HUB_TOKEN=${HF_TOKEN} -i $USER bash -c "bash run_cpu.sh"
+docker exec -e CONDA_PREFIX='/opt/conda' -e HUGGING_FACE_HUB_TOKEN=${HF_TOKEN} -e LOG_DIR=${LOG_DIR} -i $USER bash -c "bash run_cpu.sh"
 status=${PIPESTATUS[0]}
 # create finished.txt when finished
 if [ ${status} -eq 0 ]; then

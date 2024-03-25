@@ -1,4 +1,4 @@
-LOG_DIR=${1:-hf_oob_log}
+LOG_DIR=${1:-hf_pipeline_log}
 
 # collect sw info
 curdir=$(pwd)

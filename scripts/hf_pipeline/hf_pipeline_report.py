@@ -8,7 +8,7 @@ parser.add_argument('-f', '--files', type=str, default='cpu_output_OOB.log,cpu_o
 args = parser.parse_args()
 
 def analyze_log(file_dir, file_name):
-    file_path = '{0}/hf_oob_log/{1}'.format(file_dir, file_name)
+    file_path = '{0}/hf_pipeline_log/{1}'.format(file_dir, file_name)
     file = open(file_path, 'r')
 
     lines = file.readlines()
@@ -75,7 +75,7 @@ def merge_refer_tables(target_df, refer_df):
     return summary_df
 
 def get_sw_df(file_dir):
-    sw_df = pd.read_csv("{0}/hf_oob_log/version.csv".format(file_dir))
+    sw_df = pd.read_csv("{0}/hf_pipeline_log/version.csv".format(file_dir))
     sw_df = sw_df.rename(columns={
         'branch':'{0}_branch'.format(file_dir),
         'commit':'{0}_commit'.format(file_dir)})

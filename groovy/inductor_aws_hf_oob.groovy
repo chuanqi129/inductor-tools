@@ -1,6 +1,6 @@
 env.instance_name = 'spr-hf-oob'
 env.target = new Date().format('yyyy_MM_dd')
-env.LOG_DIR = 'hf_oob_log'
+env.LOG_DIR = 'hf_pipeline_log'
 
 env.terminate_instance = 'False'
 if ('terminate_instance' in params) {
@@ -80,12 +80,12 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/hf_oob/hf_oob_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/version_collect_hf_oob.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/docker/Dockerfile.hf_oob ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/hf_pipeline/hf_pipeline_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/hf_pipeline/version_collect_hf_pipeline.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/docker/Dockerfile.hf_pipeline ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/env_groovy.txt ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "cd /home/ubuntu/docker; nohup bash hf_oob_test.sh &>/dev/null &" &
+            ssh ubuntu@${current_ip} "cd /home/ubuntu/docker; nohup bash hf_pipeline_test.sh &>/dev/null &" &
             '''
         }
     }
@@ -155,12 +155,12 @@ node(NODE_LABEL){
             sh '''
                 #!/usr/bin/env bash
                 cd ${WORKSPACE}
-                python scripts/hf_oob/hf_oob_report.py -t ${target} -r refer
+                python scripts/hf_pipeline/hf_pipeline_report.py -t ${target} -r refer
             '''
         } else {
             sh '''
                 #!/usr/bin/env bash
-                python scripts/hf_oob/hf_oob_report.py -t ${target}
+                python scripts/hf_pipeline/hf_pipeline_report.py -t ${target}
             '''
         }
         archiveArtifacts artifacts: "*.csv", fingerprint: true
@@ -183,7 +183,7 @@ node(NODE_LABEL){
         sh'''
             # Jinja2 >= 3 required by Pandas.style
             pip install Jinja2==3.1.2
-            python scripts/hf_oob/hf_oob_html_highlight.py -i 'summary.csv' -o 'perf_table.html' -t ${target} -r ${refer}
+            python scripts/hf_pipeline/hf_pipeline_html_highlight.py -i 'summary.csv' -o 'perf_table.html' -t ${target} -r ${refer}
             if [ "${refer_build}" == "0" ];then
                 echo "no refer build table"
             else
@@ -193,23 +193,23 @@ node(NODE_LABEL){
             fi
             python -c "import pandas as pd; pd.read_csv('version_summary.csv').to_html('version_table.html', index=False, render_links=True)"
 
-            cp html/0_css.html hf_oob_summary.html
-            echo "<h2><a href='${BUILD_URL}'>Job Link</a></h2>" >> hf_oob_summary.html
-            echo "<h2>Hardware info:</h2>" >> hf_oob_summary.html
-            cat html/2_spr_hw_info.html >> hf_oob_summary.html
-            echo "<h2>Software info:</h2>" >> hf_oob_summary.html
-            cat version_table.html >> hf_oob_summary.html
-            echo "<h2>Performance:</h2>" >> hf_oob_summary.html
-            cat perf_table.html >> hf_oob_summary.html
+            cp html/0_css.html hf_pipeline_summary.html
+            echo "<h2><a href='${BUILD_URL}'>Job Link</a></h2>" >> hf_pipeline_summary.html
+            echo "<h2>Hardware info:</h2>" >> hf_pipeline_summary.html
+            cat html/2_spr_hw_info.html >> hf_pipeline_summary.html
+            echo "<h2>Software info:</h2>" >> hf_pipeline_summary.html
+            cat version_table.html >> hf_pipeline_summary.html
+            echo "<h2>Performance:</h2>" >> hf_pipeline_summary.html
+            cat perf_table.html >> hf_pipeline_summary.html
         '''
         }
-        archiveArtifacts artifacts: "hf_oob_summary.html", fingerprint: true
+        archiveArtifacts artifacts: "hf_pipeline_summary.html", fingerprint: true
         emailext(
             mimeType: "text/html",
             subject: "Torch compile HF transformers pipeline benchmarks (OOB) performance report " + target,
             from: "pytorch_inductor_val@intel.com",
             to: default_mail,
-            body: '${FILE, path="hf_oob_summary.html"}'
+            body: '${FILE, path="hf_pipeline_summary.html"}'
         )
     }//email
 }
