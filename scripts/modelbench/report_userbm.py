@@ -82,12 +82,20 @@ def process_perf(excel, target, refer, suite):
     usebm_df = json2df(usebm_perf)
     usebm_df_ref = json2df(usebm_ref)
 
-    df_summary=pd.DataFrame(usebm_df.iloc[:,0])
-    df_summary.insert(loc=1, column='throughput_new', value=usebm_df.iloc[:,1])
-    df_summary.insert(loc=2, column='thrpughput_old', value=usebm_df_ref.iloc[:,1])
-    df_summary.insert(loc=3, column='throughput ratio(new/old)', value=round(usebm_df.iloc[:,1] / usebm_df_ref.iloc[:,1],2))
-
+    # df_summary=pd.DataFrame(usebm_df.iloc[:,0])
+    # df_summary.insert(loc=1, column='throughput_new', value=usebm_df.iloc[:,1])
+    # df_summary.insert(loc=2, column='thrpughput_old', value=usebm_df_ref.iloc[:,1])
+    # df_summary.insert(loc=3, column='throughput ratio(new/old)', value=round(usebm_df.iloc[:,1] / usebm_df_ref.iloc[:,1],2))
+    usebm_df['throughput'] = usebm_df['throughput'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
+    usebm_df_ref['throughput'] =usebm_df_ref['throughput'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
+    df_summary = pd.DataFrame({
+        'model_name': list(usebm_df['model']),
+        'throughput_new': list(usebm_df['throughput']),
+        'throughput_old': list(usebm_df_ref['throughput'])
+    })
+    df_summary['throughput ratio(new/old)']=pd.DataFrame(round(df_summary['throughput_new'] / df_summary['throughput_old'],2))
     #df_summary.to_excel(str(args.name) + '.xlsx', index=False)
+    geomean = f"{gmean(round(df_summary['throughput_new'] / df_summary['throughput_old'],2)):.2f}x"
     df_summary=StyleFrame(df_summary)
     df_summary.set_column_width(1, 32)
     df_summary.set_column_width(2, 32)
@@ -103,7 +111,7 @@ def process_perf(excel, target, refer, suite):
 
     df_summary.to_excel(sheet_name=suite, excel_writer=excel)
 
-    return f"{gmean(round(usebm_df.iloc[:,1] / usebm_df_ref.iloc[:,1],2)):.2f}x"
+    return geomean
 
 def html_head():
     return '''<!DOCTYPE html>
