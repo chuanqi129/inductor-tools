@@ -1,9 +1,9 @@
 mkdir logs
 
-model_all=${1:-key}
-numa_mode=${2:-throughput}
-sw_stack=${3:-torch_compile_quant} # the sw stack you use, this controls what additional options to add
-additional_options=$5
+model_all=${1:-text}
+sw_stack=${2:-torch_compile_quant} # the sw stack you use, this controls what additional options to add
+numa_mode=${3:-throughput}
+additional_options=$4
 
 if [ ${model_all} == "all" ]; then
     model_all="\
@@ -63,6 +63,24 @@ if [ ${model_all} == "all" ]; then
     summarization+t5-small,\
     summarization+t5-base,\
     "
+elif [ ${model_all} == "text" ]; then
+    model_all="\
+    text-classification+bert-base-cased,\
+    text-classification+prajjwal1/bert-tiny,\
+    text-classification+bert-large-cased,\
+    text-classification+distilbert-base-cased,\
+    text-classification+albert-base-v1,\
+    text-classification+roberta-base,\
+    text-classification+xlnet-base-cased,\
+    text-classification+xlm-roberta-base,\
+    text-classification+google/electra-base-generator,\
+    text-classification+google/electra-base-discriminator,\
+    text-classification+google/mobilebert-uncased,\
+    text-classification+bert-base-chinese,\
+    text-classification+distilbert-base-uncased-finetuned-sst-2-english,\
+    text-classification+mrm8488/bert-tiny-finetuned-sms-spam-detection,\
+    text-classification+microsoft/MiniLM-L12-H384-uncased,\
+    "
 elif  [ ${model_all} == "key" ]; then
     model_all="\
     text-classification+distilbert-base-cased,\
@@ -76,9 +94,11 @@ model_list=($(echo "${model_all}" |sed 's/,/ /g'))
 if [ ${sw_stack} == "pt" ]; then
     additional_options="${additional_options} --ipex True --channels_last 1 "
 elif [ ${sw_stack} == "torch_compile" ]; then
-    additional_options="${additional_options} --torch_compile "
+    additional_options="${additional_options} --torch_compile --report_to=none "
 elif [ ${sw_stack} == "torch_compile_quant" ]; then
     additional_options="${additional_options} --torch_compile --torch_compile_quant ptq_dynamic --report_to=none "
+elif [ ${sw_stack} == "torch_compile_quant_static" ]; then
+    additional_options="${additional_options} --torch_compile --torch_compile_quant ptq --report_to=none "
 fi
 
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so
