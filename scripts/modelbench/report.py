@@ -43,6 +43,7 @@ parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: defaul
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
 parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
+parser.add_argument('--threshold',type=float, default=0.1,help='threshold for checking performance regression and improvement')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -534,22 +535,22 @@ def process(input, thread):
         data.set_column_width(15, 28)
         data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
-        data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)],styler_obj=regression_style)
+        data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))],styler_obj=regression_style)
         global new_performance_regression
         global new_performance_regression_model_list
-        regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < 0.9)]
+        regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))]
         regression = regression.copy()
         regression.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
         model_list = get_perf_model_list(regression, thread, 'drop')
         if not model_list.empty:
             new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
-        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > 1.1],styler_obj=improve_style)
+        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > (1 + args.threshold)],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
         global new_performance_improvement
         global new_performance_improvement_model_list
-        improvement = data.loc[(data['Inductor Ratio(old/new)'] > 1.1)]
+        improvement = data.loc[(data['Inductor Ratio(old/new)'] > (1 + args.threshold))]
         improvement = improvement.copy()
         improvement.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
