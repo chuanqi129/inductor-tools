@@ -42,6 +42,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
     rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    rm -rf transformers && git clone -b main https://github.com/huggingface/transformers.git && cd transformers && git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip uninstall transformers -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
     detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
     current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
