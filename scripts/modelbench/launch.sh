@@ -84,6 +84,8 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_quant_accuracy.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/benchmark
     docker cp /home/ubuntu/docker/inductor_quant_acc_fp32.py $USER:/workspace/benchmark
+    docker cp /home/ubuntu/docker/hf_quant_test.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/inductor_dynamic_quant.sh $USER:/workspace/pytorch
 
     # Generate SW info out of real test
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
@@ -116,6 +118,7 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
         docker exec -i $USER bash -c "bash inductor_quant_performance.sh $LOG_DIR"
         docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
         docker exec -i $USER bash -c "bash inductor_quant_accuracy.sh $LOG_DIR"
+        docker exec -i $USER bash -c "bash inductor_dynamic_quant.sh $LOG_DIR"
     fi
 # Launch issue guilty commit search
 else
