@@ -127,7 +127,7 @@ elif [ ${numa_mode} == "multi_instance" ]; then
     num_instances=$(echo "${cores_per_node} / ${ncpi}" | bc)
     batch_size=1
 fi
-additional_options="${additional_options} --per_device_eval_batch_size ${batch_size} "
+# additional_options="${additional_options} --per_device_eval_batch_size ${batch_size} "
 numa_launch_header=" python -m numa_launcher --ninstances ${num_instances} --ncore_per_instance ${ncpi} "
 
 for model in ${model_list[@]}

@@ -135,25 +135,47 @@ def process_perf(excel, target, refer):
     qat_df_ref = json2df(qat_ref)
     inductor_df_ref = json2df(inductor_ref)
 
-    df_summary=pd.DataFrame(ptq_df.iloc[:,0])
-    df_summary.insert(loc=1, column='ptq_new', value=ptq_df.iloc[:,1])
-    df_summary.insert(loc=2, column='ptq_cpp_new', value=ptq_cpp_df.iloc[:,1])
-    df_summary.insert(loc=3, column='qat_new', value=qat_df.iloc[:,1])
-    df_summary.insert(loc=4, column='inductor_new', value=inductor_df.iloc[:,1])
+    # df_summary=pd.DataFrame(ptq_df.iloc[:,0])
+    # df_summary.insert(loc=1, column='ptq_new', value=ptq_df.iloc[:,1])
+    # df_summary.insert(loc=2, column='ptq_cpp_new', value=ptq_cpp_df.iloc[:,1])
+    # df_summary.insert(loc=3, column='qat_new', value=qat_df.iloc[:,1])
+    # df_summary.insert(loc=4, column='inductor_new', value=inductor_df.iloc[:,1])
 
-    df_summary.insert(loc=5, column='ptq_cpp/ptq(new)', value=round(ptq_cpp_df.iloc[:,1] / ptq_df.iloc[:,1],2))
-    df_summary.insert(loc=6, column='qat/ptq(new)', value=round(qat_df.iloc[:,1] / ptq_df.iloc[:,1],2))
+    # df_summary.insert(loc=5, column='ptq_cpp/ptq(new)', value=round(ptq_cpp_df.iloc[:,1] / ptq_df.iloc[:,1],2))
+    # df_summary.insert(loc=6, column='qat/ptq(new)', value=round(qat_df.iloc[:,1] / ptq_df.iloc[:,1],2))
 
-    df_summary.insert(loc=7, column='ptq_old', value=ptq_df_ref.iloc[:,1])
-    df_summary.insert(loc=8, column='ptq_cpp_old', value=ptq_cpp_df_ref.iloc[:,1])
-    df_summary.insert(loc=9, column='qat_old', value=qat_df_ref.iloc[:,1])
-    df_summary.insert(loc=10, column='inductor_old', value=inductor_df_ref.iloc[:,1])
+    # df_summary.insert(loc=7, column='ptq_old', value=ptq_df_ref.iloc[:,1])
+    # df_summary.insert(loc=8, column='ptq_cpp_old', value=ptq_cpp_df_ref.iloc[:,1])
+    # df_summary.insert(loc=9, column='qat_old', value=qat_df_ref.iloc[:,1])
+    # df_summary.insert(loc=10, column='inductor_old', value=inductor_df_ref.iloc[:,1])
 
-    df_summary.insert(loc=11, column='ptq ratio(new/old)', value=round(ptq_df.iloc[:,1] / ptq_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=12, column='ptq_cpp ratio(new/old)', value=round(ptq_cpp_df.iloc[:,1] / ptq_cpp_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=13, column='qat ratio(new/old)', value=round(qat_df.iloc[:,1] / qat_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=14, column='inductor ratio(new/old)', value=round(inductor_df.iloc[:,1] / inductor_df_ref.iloc[:,1],2))
+    # df_summary.insert(loc=11, column='ptq ratio(new/old)', value=round(ptq_df.iloc[:,1] / ptq_df_ref.iloc[:,1],2))
+    # df_summary.insert(loc=12, column='ptq_cpp ratio(new/old)', value=round(ptq_cpp_df.iloc[:,1] / ptq_cpp_df_ref.iloc[:,1],2))
+    # df_summary.insert(loc=13, column='qat ratio(new/old)', value=round(qat_df.iloc[:,1] / qat_df_ref.iloc[:,1],2))
+    # df_summary.insert(loc=14, column='inductor ratio(new/old)', value=round(inductor_df.iloc[:,1] / inductor_df_ref.iloc[:,1],2))
 
+    df_summary = pd.DataFrame({
+        'model_name': list(ptq_df['model']),
+        'ptq_new': list(ptq_df['throughput']),
+        'ptq_cpp_new': list(ptq_cpp_df['throughput']),
+        'qat_new': list(qat_df['throughput']),
+        'inductor_new': list(inductor_df['throughput']),
+        'ptq_old': list(ptq_df_ref['throughput']),
+        'ptq_cpp_old': list(ptq_cpp_df_ref['throughput']),
+        'qat_old': list(qat_df_ref['throughput']),
+        'inductor_old': list(inductor_df_ref['throughput'])
+    })
+    df_summary['ptq_cpp/ptq(new)']=pd.DataFrame(round(df_summary['ptq_cpp_new'] / df_summary['ptq_new'],2))
+    df_summary['qat/ptq(new)']=pd.DataFrame(round(df_summary['qat_new'] / df_summary['ptq_new'],2))
+    df_summary['ptq ratio(new/old)']=pd.DataFrame(round(df_summary['ptq_new'] / df_summary['ptq_old'],2))
+    df_summary['ptq_cpp ratio(new/old)']=pd.DataFrame(round(df_summary['ptq_cpp_new'] / df_summary['ptq_cpp_old'],2))
+    df_summary['qat ratio(new/old)']=pd.DataFrame(round(df_summary['qat_new'] / df_summary['qat_old'],2))
+    df_summary['inductor ratio(new/old)']=pd.DataFrame(round(df_summary['inductor_new'] / df_summary['inductor_old'],2))
+    
+    quant_data = {'Perf_Geomean':['PTQ_CPP_WRAPPER/PTQ', 'QAT/PTQ'], 'Ratio':[' ', ' ']}
+    perf_gm=pd.DataFrame(quant_data)
+    perf_gm.loc[0,"Ratio"]=f"{gmean(round(df_summary['ptq_cpp_new'] / df_summary['ptq_new'],2)):.2f}x"
+    perf_gm.loc[1,"Ratio"]=f"{gmean(round(df_summary['qat_new'] / df_summary['ptq_new'],2)):.2f}x"
     #df_summary.to_excel(str(args.name) + '.xlsx', index=False)
     df_summary=StyleFrame(df_summary)
     df_summary.set_column_width(1, 32)
@@ -190,11 +212,6 @@ def process_perf(excel, target, refer):
     update_new_perfer_regression(df_summary,'ptq_cpp ratio(new/old)')
 
     df_summary.to_excel(sheet_name='performance',excel_writer=excel)
-
-    quant_data = {'Perf_Geomean':['PTQ_CPP_WRAPPER/PTQ', 'QAT/PTQ'], 'Ratio':[' ', ' ']}
-    perf_gm=pd.DataFrame(quant_data)
-    perf_gm.loc[0,"Ratio"]=f"{gmean(round(ptq_cpp_df.iloc[:,1] / ptq_df.iloc[:,1],2)):.2f}x"
-    perf_gm.loc[1,"Ratio"]=f"{gmean(round(qat_df.iloc[:,1] / ptq_df.iloc[:,1],2)):.2f}x"
 
     gm = StyleFrame(perf_gm)
     gm.set_column_width(1, 30)
