@@ -12,7 +12,7 @@ node(NODE_LABEL){
     stage('Trigger Guilty Commit Job'){
         sh'''
             touch ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
-            echo "suite,model,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+            echo "job_status,suite,model,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
         '''
         def common_info_dict = readJSON file: 'guilty_commit_search_common_info.json'
         def model_list_lines = readJSON file: 'guilty_commit_search_model_list.json'
