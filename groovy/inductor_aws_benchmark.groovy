@@ -402,12 +402,7 @@ env._suite = "$suite"
 env._IPEX_REPO = "$IPEX_REPO"
 env._IPEX_BRANCH = "$IPEX_BRANCH"
 env._IPEX_COMMIT = "$IPEX_COMMIT"
-
-if ("$backend" == "ipex"){
-    env._log_name = "ipex_log"
-}else{
-    env._log_name = "inductor_log"
-}
+env._log_name = "${backend}_log"
 
 env._infer_or_train = "$infer_or_train"
 
@@ -522,7 +517,7 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/${_target}
                 fi
                 mkdir -p ${WORKSPACE}/${_target}
-                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/${_backend}_log ${WORKSPACE}/${_target}
                 break
             else
                 sleep 1h
@@ -531,7 +526,7 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
-                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/${_backend}_log ${WORKSPACE}/${_target}
                     break
                 fi
             fi
@@ -542,7 +537,7 @@ node(NODE_LABEL){
     stage("archive raw test results"){
         sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
+            mkdir -p $HOME/${_backend}_dashboard
             cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
@@ -575,14 +570,13 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                 if [ ${_backend} == "ipex"  ];then
-                    cd ${WORKSPACE} && mv ${_target}/inductor_log ${_target}/ipex_log
                     sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
                     mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
                 else
                     cd ${WORKSPACE}
                 fi
                 if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
                 else
                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
                 fi
@@ -591,7 +585,6 @@ node(NODE_LABEL){
                 sh '''
                 #!/usr/bin/env bash
                  if [ ${_backend} == "ipex"  ];then
-                    cd ${WORKSPACE} && mv ${_target}/inductor_log ${_target}/ipex_log
                     sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
                 fi
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
@@ -613,7 +606,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE} && mkdir -p refer && cp -r {_backend}_log refer && rm -rf {_backend}_log
                 cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
                 '''
             }else{
@@ -650,21 +643,27 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_log_name}/ ./ && rm -rf ${_target}
+            mkdir -p $HOME/${_backend}_dashboard
+            cp -r  ${WORKSPACE}/${_target} $HOME/{_backend}_dashboard
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/{_backend}_log/ ./ && rm -rf ${_target}
             '''
         }
         if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard/Train
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            mkdir -p $HOME/{_backend}_dashboard/Train
+            cp -r  ${WORKSPACE}/${_target} $HOME/{_backend}_dashboard/Train
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/{_backend}_log/ ./ && rm -rf ${_target}
             '''
         } 
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/{_backend}_log/**", fingerprint: true
+        if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
+            archiveArtifacts  "guilty_commit_search*"
+        }
+        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
+            archiveArtifacts  "all_model_list.csv"
+        }
     }
 
     stage("Sent Email"){
@@ -675,14 +674,14 @@ node(NODE_LABEL){
         }
         if ("${test_mode}" == "inference")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
+            if (fileExists("${WORKSPACE}/{_backend}_log/{_backend}_model_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/{_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    body: '${FILE,path="{_backend}_log/{_backend}_model_bench.html"}'
                 )
             }else{
                 emailext(
@@ -696,14 +695,14 @@ node(NODE_LABEL){
         }//inference
         if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
+            if (fileExists("${WORKSPACE}/{_backend}_log/{_backend}_model_training_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/{_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+                    body: '${FILE,path="{_backend}_log/{_backend}_model_training_bench.html"}'
                 )
             }else{
                 emailext(
