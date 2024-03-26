@@ -7,7 +7,7 @@ DT=${4:-float32} # float32 / amp
 SHAPE=${5:-static} # static / dynamic
 WRAPPER=${6:-default} # default / cpp
 SCENARIO=${7:-accuracy} # accuracy / performance
-KIND=${8:-drop} # crash / drop
+KIND=${8:-drop} # crash / drop / fixed / improve
 THREADS=${9:-multiple} # multiple / single
 CHANNELS=${10:-first} # first / last
 FREEZE=${11:-on} # on / off
@@ -25,11 +25,12 @@ prepare_test() {
     rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    rm -rf transformers && git clone -b main https://github.com/huggingface/transformers.git && cd transformers && git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip uninstall transformers -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
 }
 
 run_perf_drop_test() {
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
     result=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "=====result: $result======="
     ratio=$(echo "$result $EXP_PERF" | awk '{ printf "%.2f\n", $1/$2 }')
@@ -43,8 +44,23 @@ run_perf_drop_test() {
     fi
 }
 
+run_perf_improve_test() {
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
+    result=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    echo "=====result: $result======="
+    ratio=$(echo "$EXP_PERF $result" | awk '{ printf "%.2f\n", $1/$2 }')
+    echo "=====ratio: $ratio======="
+    if (( $(echo "$ratio > $PERF_RATIO" | bc -l) )); then
+	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
+        exit 1
+    else
+	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+        exit 0
+    fi
+}
+
 run_acc_drop_test() {
-    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
+    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ "X$acc_res" != "Xpass" ]; then
 	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
@@ -55,8 +71,20 @@ run_acc_drop_test() {
     fi
 }
 
+run_acc_improve_test() {
+    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $4}')
+    echo "=====acc: $acc_res======="
+    if [ "X$acc_res" != "Xpass" ]; then
+	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
+        exit 0
+    else
+	    echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+        exit 1
+    fi
+}
+
 run_crash_test() {
-    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./crash.log
+    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
         acc_status=`tail -n 1 ./crash.log | grep pass | wc -l`
         perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
@@ -85,6 +113,36 @@ run_crash_test() {
     fi
 }
 
+run_fixed_test() {
+    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND 2>&1 | tee ./fixed.log
+    if [ $? -eq 0 ]; then
+        acc_status=`tail -n 1 ./fixed.log | grep pass | wc -l`
+        perf_status=`tail -n 1 ./fixed.log | grep $MODEL | awk -F, '{print $3}'`
+        echo $acc_status
+        echo $perf_status
+        if [ "$SCENARIO" == "accuracy" ]; then
+            if [ $acc_status -eq 0 ]; then
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
+                exit 0
+            else
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+                exit 1
+            fi
+        elif [ "$SCENARIO" == "performance" ]; then
+            if [[ ! -z $perf_status ]] && [ $perf_status -gt 0 ]; then
+                echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+                exit 1
+            else
+                echo "`git rev-parse HEAD` is a BAD COMMIT!"
+                exit 0
+            fi
+        fi
+    else
+        echo "`git rev-parse HEAD` is a GOOD COMMIT!"
+        exit 1
+    fi
+}
+
 prepare_test > inductor_log/bisect_pt_build.log 2>&1
 
 if [ $? -eq 0 ]; then
@@ -100,6 +158,14 @@ if [ $KIND == "drop" ]; then
     else
         run_acc_drop_test
     fi
-else
+elif [ $KIND == "improve" ]; then
+    if [ $SCENARIO == "performance" ]; then
+        run_perf_improve_test
+    else
+        run_acc_improve_test
+    fi
+elif [ $KIND == "crash" ]; then
     run_crash_test
+elif [ $KIND == "fixed" ]; then
+    run_fixed_test
 fi
