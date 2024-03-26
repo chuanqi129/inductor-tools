@@ -41,28 +41,30 @@ def update_new_perfer_regression(df_summary, col):
     new_performance_regression = new_performance_regression.drop_duplicates()
 
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
+    data = {'SW':['Pytorch', 'oneDNN', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ', ' ',' ',' ','/']}
     swinfo=pd.DataFrame(data)
     try:
         version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        global torch_commit,torchbench_commit,torchaudio_commit,torchtext_commit,torchvision_commit,torchdata_commit,dynamo_benchmarks_commit
+        global torch_commit,torchbench_commit,oneDNN_commit,torchaudio_commit,torchtext_commit,torchvision_commit,torchdata_commit,dynamo_benchmarks_commit
         global torch_main_commit,torchaudio_main_commit,torchtext_main_commit,torchvision_main_commit,torchdata_main_commit
 
-        torch_commit=version.loc[ 1, "commit"][-7:]
+        torch_commit=version.loc[ 2, "commit"][-7:]
         torchbench_commit=version.loc[ 0, "commit"][-8:]
-        torchaudio_commit=version.loc[ 4, "commit"][-7:]
-        torchtext_commit=version.loc[ 3, "commit"][-7:]
-        torchvision_commit=version.loc[ 2, "commit"][-7:]
-        torchdata_commit=version.loc[ 5, "commit"][-7:]
-        dynamo_benchmarks_commit=version.loc[ 6, "commit"][-7:]
+        oneDNN_commit=version.loc[ 1, "commit"][0:10]
+        torchaudio_commit=version.loc[ 5, "commit"][-7:]
+        torchtext_commit=version.loc[ 4, "commit"][-7:]
+        torchvision_commit=version.loc[ 3, "commit"][-7:]
+        torchdata_commit=version.loc[ 6, "commit"][-7:]
+        dynamo_benchmarks_commit=version.loc[ 7, "commit"][-7:]
 
         swinfo.loc[0,"Nightly commit"]=torch_commit
-        swinfo.loc[1,"Main commit"]=torchbench_commit
-        swinfo.loc[2,"Nightly commit"]=torchaudio_commit
-        swinfo.loc[3,"Nightly commit"]=torchtext_commit
-        swinfo.loc[4,"Nightly commit"]=torchvision_commit
-        swinfo.loc[5,"Nightly commit"]=torchdata_commit
-        swinfo.loc[6,"Nightly commit"]=dynamo_benchmarks_commit
+        swinfo.loc[1,"Main commit"]=oneDNN_commit
+        swinfo.loc[2,"Main commit"]=torchbench_commit
+        swinfo.loc[3,"Nightly commit"]=torchaudio_commit
+        swinfo.loc[4,"Nightly commit"]=torchtext_commit
+        swinfo.loc[5,"Nightly commit"]=torchvision_commit
+        swinfo.loc[6,"Nightly commit"]=torchdata_commit
+        swinfo.loc[7,"Nightly commit"]=dynamo_benchmarks_commit
 
     except :
         print("version.txt not found")
