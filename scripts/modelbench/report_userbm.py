@@ -134,7 +134,7 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>Quantization Regular Model Bench Report </p></h3> '''
+  <p><h3>Userbenchmark Regular Model Bench Report </p></h3> '''
 
 def html_tail():
     return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
