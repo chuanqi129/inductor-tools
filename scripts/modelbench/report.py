@@ -409,6 +409,8 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
 
     # There is no failure in target, just return
     if (len(target_thread_failures) == 0):
+        sf = StyleFrame({'No failures': ['None']})
+        sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
         return
     target_thread_failures['thread'] = thread_mode
     sf = StyleFrame({'suite': list(target_thread_failures['suite']),
