@@ -476,7 +476,7 @@ node(NODE_LABEL){
         for t in {1..100}
         do
             current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+            timeout 2m ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
                     rm -rf ${WORKSPACE}/${_target}
@@ -529,15 +529,16 @@ node(NODE_LABEL){
                 copyArtifacts(
                     projectName: currentBuild.projectName,
                     selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
+                    fingerprintArtifacts: true,
+                    target: "refer",
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
                 else
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
                 fi
                 '''
             }else{
@@ -545,9 +546,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH}
+                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend}
                 else
-                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH}
+                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend}
                 fi
                 '''
             }
@@ -616,6 +617,9 @@ node(NODE_LABEL){
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
+        }
+        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
+            archiveArtifacts  "all_model_list.csv"
         }
     }
 

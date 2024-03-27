@@ -24,13 +24,12 @@ EXTRA=${11}
 mkdir -p $LOG_DIR
 
 export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-# https://github.com/pytorch/pytorch/issues/107200
-pip uninstall transformers -y && pip install transformers==4.30.2
 # fix issue: AttributeError: module 'importlib.resources' has no attribute 'files'
 pip uninstall networkx -y && pip install networkx
 
 # skip sam & nanogpt_generate for stable results
-sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x sam -x nanogpt_generate"' benchmarks/dynamo/runner.py
+# skip llama_v2_7b_16h due to OOM
+sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x llama_v2_7b_16h"' benchmarks/dynamo/runner.py
 
 if [[ ${TEST_MODE} == "training_full" ]]; then
     # skip hf_GPT2_large, cuz it will OOM after using jemalloc
@@ -42,6 +41,9 @@ if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
     # Workaround for test with runner.py
     sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' benchmarks/dynamo/runner.py
+    echo "Setting freezing for inductor backend by default."
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
 elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
