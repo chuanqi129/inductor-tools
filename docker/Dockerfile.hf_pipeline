@@ -82,9 +82,9 @@ RUN git clone https://github.com/pytorch/vision.git && \
 
 ARG TRANSFORMERS_VERSION=${TRANSFORMERS_VERSION}
 RUN echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_VERSION} \
+        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_VERSION}; \
     else \
-        pip install transformers==${TRANSFORMERS_VERSION}; \
+        pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi
 
 ARG HF_TEST_REPO=$HF_TEST_REPO

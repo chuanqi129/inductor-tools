@@ -109,16 +109,9 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
     python install.py --continue_on_fail && cd .. && \
     echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        git clone https://github.com/huggingface/transformers.git; \
-        cd transformers; \
-        git submodule sync; \
-        git submodule update --init --recursive; \
-        git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
-        python setup.py bdist_wheel;  \
-        pip install dist/*.whl; \
-        cd ../; \
+        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_VERSION}; \
     else \
-        pip install transformers==${TRANSFORMERS_VERSION}; \
+        pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
