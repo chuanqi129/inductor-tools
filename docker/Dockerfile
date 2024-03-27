@@ -109,7 +109,8 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
     python install.py --continue_on_fail && cd .. && \
     echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_VERSION}; \
+        export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
+        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}; \
     else \
         pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi && \
