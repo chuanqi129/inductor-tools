@@ -12,7 +12,7 @@ node(NODE_LABEL){
     stage('Trigger Guilty Commit Job'){
         sh'''
             touch ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
-            echo "suite,model,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+            echo "job_status,suite,model,scenario,thread,kind,precision,shape,wrapper,guilty_commit,job_link" > ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
         '''
         def common_info_dict = readJSON file: 'guilty_commit_search_common_info.json'
         def model_list_lines = readJSON file: 'guilty_commit_search_model_list.json'
@@ -71,17 +71,20 @@ node(NODE_LABEL){
                     def cur_job_number = guilty_commit_job.getNumber()
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
                     def cur_job_duration = guilty_commit_job.getDurationString()
+                    def cur_job_status = guilty_commit_job.getCurrentResult()
                     def path = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log/guilty_commit.log'
                     def log_dir = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log'
                     def temp_files = findFiles glob: path
                     println(path)
                     println(temp_files.length)
 
-                    copyArtifacts(
-                        projectName: guilty_commit_search_job_name,
-                        selector: specific("${cur_job_number}"),
-                        target: "inductor_guilty_commit_search/${cur_job_number}"
-                    )
+                    if (cur_job_status == "SUCCESS") {
+                        copyArtifacts(
+                            projectName: guilty_commit_search_job_name,
+                            selector: specific("${cur_job_number}"),
+                            target: "inductor_guilty_commit_search/${cur_job_number}"
+                        )
+                    }
 
                     withEnv([
                         "cur_job_number=${cur_job_number}",
@@ -95,7 +98,8 @@ node(NODE_LABEL){
                         "wrapper=${wrapper}",
                         "cur_job_url=${cur_job_url}",
                         "file_path=${path}",
-                        "log_dir=${log_dir}"
+                        "log_dir=${log_dir}",
+                        "build_status=${cur_job_status}"
                     ]) {
                         def files = findFiles glob: path
                         println(files.length)
@@ -105,11 +109,11 @@ node(NODE_LABEL){
                         if (files.length > 0){
                             sh'''
                                 guilty_commit=`cat ${file_path} | head -1`
-                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         } else {
                             sh'''
-                                echo "${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         }
                     }
