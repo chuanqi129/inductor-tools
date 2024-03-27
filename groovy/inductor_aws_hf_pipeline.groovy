@@ -156,6 +156,7 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE}
                 python scripts/hf_pipeline/hf_pipeline_report.py -t ${target} -r refer
+                rm -rf ${WORKSPACE}/refer
             '''
         } else {
             sh '''
