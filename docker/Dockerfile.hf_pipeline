@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}. # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE} AS dev-base
 RUN apt-get update && \
@@ -83,12 +83,7 @@ RUN git clone https://github.com/pytorch/vision.git && \
 
 ARG TRANSFORMERS_VERSION=${TRANSFORMERS_VERSION}
 RUN echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        git clone https://github.com/huggingface/transformers.git; \
-        cd transformers; \
-        git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
-        python setup.py bdist_wheel;  \
-        pip install dist/*.whl; \
-        cd ../; \
+        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_VERSION} \
     else \
         pip install transformers==${TRANSFORMERS_VERSION}; \
     fi
