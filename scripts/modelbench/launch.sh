@@ -89,7 +89,7 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 
 # Launch regular tests
 if [ $BACKEND == "ipex" ];then
-    docker cp /home/ubuntu/docker/*.patch $USER:/workspace/
+    docker cp /home/ubuntu/docker/0326.patch $USER:/workspace/
 fi
 
 if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
