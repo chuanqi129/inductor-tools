@@ -22,6 +22,6 @@ bash hf_quant_test.sh text torch_compile_quant
 mv logs/ hf_quant/dynamic_quant
 
 bash hf_quant_test.sh text torch_compile_quant_static
-mv logs/ hf_quant/dynamic_quant
+mv logs/ hf_quant/static_quant
 
 mv hf_quant/ /workspace/pytorch/$LOG_DIR/
