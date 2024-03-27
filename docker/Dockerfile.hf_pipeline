@@ -1,4 +1,3 @@
-pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}. # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE} AS dev-base
 RUN apt-get update && \
