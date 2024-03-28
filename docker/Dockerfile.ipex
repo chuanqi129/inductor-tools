@@ -109,7 +109,7 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     python install.py --continue_on_fail && cd .. && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
-ARG IPEX_BRANCH=dynamo_ipex113
+ARG IPEX_BRANCH${IPEX_BRANCH}
 ARG IPEX_COMMIT=${IPEX_BRANCH}
 RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pytorch.git ipex && \
     cd ipex && git checkout ${IPEX_COMMIT} && git submodule sync && git submodule update --init --recursive && \
@@ -117,7 +117,7 @@ RUN git clone -b ${IPEX_BRANCH} https://github.com/intel/intel-extension-for-pyt
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \ 
-    python -c "import torch, intel_extension_for_pytorch, torchvision, torchtext"
+    python -c "import torch, intel_extension_for_pytorch, torchvision, torchaudio"
 
 # Clean for final image
 FROM dev-base AS image
