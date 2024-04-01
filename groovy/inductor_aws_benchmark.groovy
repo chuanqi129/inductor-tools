@@ -695,14 +695,14 @@ node(NODE_LABEL){
         }//inference
         if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
-            if (fileExists("${WORKSPACE}/{_backend}_log/{_backend}_model_training_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${_backend}_log/${_backend}_model_training_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/${_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="${_backend}_log/{_backend}_model_training_bench.html"}'
+                    body: '${FILE,path="${_backend}_log/${_backend}_model_training_bench.html"}'
                 )
             }else{
                 emailext(
