@@ -70,8 +70,8 @@ def generate_summary(file_dir):
 
 def merge_refer_tables(target_df, refer_df):
     summary_df = pd.merge(target_df, refer_df, how='outer')
-    summary_df['Eager ratio new/old'] = target_df["{0} Eager latency".format(args.target)]/refer_df["{0} Eager latency".format(args.reference)]
-    summary_df['Compile ratio new/old'] = target_df["{0} Compile latency".format(args.target)]/refer_df["{0} Compile latency".format(args.reference)]
+    summary_df['Eager ratio old/new'] = refer_df["{0} Eager latency".format(args.reference)]/target_df["{0} Eager latency".format(args.target)]
+    summary_df['Compile ratio old/new'] = refer_df["{0} Compile latency".format(args.reference)]/target_df["{0} Compile latency".format(args.target)]
     return summary_df
 
 def get_sw_df(file_dir):

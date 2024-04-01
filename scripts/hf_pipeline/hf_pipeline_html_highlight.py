@@ -33,11 +33,11 @@ if args.refer == "0":
         highlight_null(subset=ratio_subset)
 else:
     ratio_subset = ['{0} Eager/Compile ratio'.format(args.target), 'refer Eager/Compile ratio']
-    new_old_subset = ['Eager ratio new/old', 'Compile ratio new/old']
+    old_new_subset = ['Eager ratio old/new', 'Compile ratio old/new']
     df_style = df.style.hide(axis="index").\
         highlight_between(left=0,right=1,subset=ratio_subset).\
         highlight_null(subset=ratio_subset).\
-        highlight_between(left=0,right=1-args.threshold,subset=new_old_subset,props='color:black;background-color:#ACFF33').\
-        highlight_between(left=1+args.threshold,right=float('inf'),subset=new_old_subset,props='color:black;background-color:#FF7A33').\
-        highlight_null(subset=new_old_subset)
+        highlight_between(left=0,right=1-args.threshold,subset=old_new_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1+args.threshold,right=float('inf'),subset=old_new_subset,props='color:black;background-color:#ACFF33').\
+        highlight_null(subset=old_new_subset)
 df_style.to_html(args.output)
