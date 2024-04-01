@@ -644,20 +644,20 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             mkdir -p $HOME/${_backend}_dashboard
-            cp -r  ${WORKSPACE}/${_target} $HOME/{_backend}_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/{_backend}_log/ ./ && rm -rf ${_target}
+            cp -r  ${WORKSPACE}/${_target} $HOME/${_backend}_dashboard
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_backend}_log/ ./ && rm -rf ${_target}
             '''
         }
         if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/{_backend}_dashboard/Train
-            cp -r  ${WORKSPACE}/${_target} $HOME/{_backend}_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/{_backend}_log/ ./ && rm -rf ${_target}
+            mkdir -p $HOME/${_backend}_dashboard/Train
+            cp -r  ${WORKSPACE}/${_target} $HOME/${_backend}_dashboard/Train
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_backend}_log/ ./ && rm -rf ${_target}
             '''
         } 
-        archiveArtifacts artifacts: "**/{_backend}_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/${_backend}_log/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
         }
@@ -674,14 +674,14 @@ node(NODE_LABEL){
         }
         if ("${test_mode}" == "inference")
         {
-            if (fileExists("${WORKSPACE}/{_backend}_log/{_backend}_model_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${_backend}_log/${_backend}_model_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/{_backend}_log/*.xlsx",
+                    attachmentsPattern: "**/${_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="{_backend}_log/{_backend}_model_bench.html"}'
+                    body: '${FILE,path="{_backend}_log/${_backend}_model_bench.html"}'
                 )
             }else{
                 emailext(
@@ -699,10 +699,10 @@ node(NODE_LABEL){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/{_backend}_log/*.xlsx",
+                    attachmentsPattern: "**/${_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="{_backend}_log/{_backend}_model_training_bench.html"}'
+                    body: '${FILE,path="${_backend}_log/{_backend}_model_training_bench.html"}'
                 )
             }else{
                 emailext(
