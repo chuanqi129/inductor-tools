@@ -203,6 +203,7 @@ node(NODE_LABEL){
         env.wrapper = params.get('WRAPPER')
         env.torch_repo = params.get('TORCH_REPO')
         env.torch_branch = params.get('TORCH_BRANCH')
+        env._suite = params.get('suite')
         sh '''
         #!/usr/bin/env bash
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
