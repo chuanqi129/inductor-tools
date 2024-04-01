@@ -606,7 +606,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r {_backend}_log refer && rm -rf {_backend}_log
+                cd ${WORKSPACE} && mkdir -p refer && cp -r ${_backend}_log refer && rm -rf ${_backend}_log
                 cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
                 '''
             }else{
