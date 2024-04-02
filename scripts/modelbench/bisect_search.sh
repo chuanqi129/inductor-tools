@@ -30,9 +30,10 @@ expected_perf=0
 if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     # Initial image build with END_COMMIT, no need rebuild
     git checkout ${END_COMMIT}
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
-    expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
-    echo "Expected performance: $expected_perf s" > ${LOG_DIR}/perf_drop.log
+    # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    expected_perf=$(bash ./quant_sigle_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    # expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    echo "Expected performance: $expected_perf " > ${LOG_DIR}/perf_drop.log
 
     # Check START_COMMIT performance for early stop
     rm -rf /tmp/*
@@ -42,12 +43,13 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
-    current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
-    echo "Current performance: $current_perf s" >> ${LOG_DIR}/perf_drop.log
+    # cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
+    # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    current_perf=$(bash ./quant_sigle_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    # current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    echo "Current performance: $current_perf " >> ${LOG_DIR}/perf_drop.log
 
-    ratio=$(echo "$current_perf $expected_perf" | awk '{ printf "%.2f\n", $1/$2 }')
+    ratio=$(echo "$expected_perf $current_perf" | awk '{ printf "%.2f\n", $1/$2 }')
     echo "=====ratio: $ratio======="
     if (( $(echo "$ratio > $PERF_RATIO" | bc -l) )); then
         echo "Real performance drop issue, will search guilty commit." >> ${LOG_DIR}/perf_drop.log
