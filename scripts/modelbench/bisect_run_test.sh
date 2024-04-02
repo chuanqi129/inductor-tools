@@ -31,7 +31,7 @@ prepare_test() {
 run_perf_drop_test() {
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
     detected_value=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
-    result=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    result=$(echo $detected_value | awk '{ printf "%.5f", $1/1 }')
     echo "=====result: $result======="
     ratio=$(echo "$EXP_PERF $result" | awk '{ printf "%.2f\n", $1/$2 }')
     echo "=====ratio: $ratio======="
