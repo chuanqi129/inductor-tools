@@ -103,19 +103,26 @@ node(NODE_LABEL){
                     ]) {
                         def files = findFiles glob: path
                         println(files.length)
-                        sh'''
-                            ls -l ${log_dir}
-                        '''
-                        if (files.length > 0){
+                        if (cur_job_status == "SUCCESS") {
                             sh'''
-                                guilty_commit=`cat ${file_path} | head -1`
-                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                ls -l ${log_dir}
                             '''
+                            if (files.length > 0){
+                                sh'''
+                                    guilty_commit=`cat ${file_path} | head -1`
+                                    echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},${guilty_commit},${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                '''
+                            } else {
+                                sh'''
+                                    echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                '''
+                            }
                         } else {
                             sh'''
-                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},fake,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
+                                echo "${build_status},${suite},${model},${scenario},${thread},${kind},${precision},${shape},${wrapper},FAILED,${cur_job_url}" >> ${WORKSPACE}/inductor_guilty_commit_search_summary.csv
                             '''
                         }
+                        
                     }
                 }
             }
