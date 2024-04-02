@@ -31,7 +31,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     # Initial image build with END_COMMIT, no need rebuild
     git checkout ${END_COMMIT}
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
-    expected_perf=$(bash ./quant_sigle_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    expected_perf=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
     # expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Expected performance: $expected_perf " > ${LOG_DIR}/perf_drop.log
 
@@ -45,7 +45,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd /workspace/pytorch
     # cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
-    current_perf=$(bash ./quant_sigle_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    current_perf=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
     # current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf " >> ${LOG_DIR}/perf_drop.log
 
