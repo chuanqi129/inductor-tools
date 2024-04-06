@@ -12,8 +12,10 @@ echo torchbench,main,$(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/versio
 
 cd /workspace/pytorch
 torch_branch=$(git rev-parse --abbrev-ref HEAD)
-if [[ "${torch_branch}" == "nightly" ]] || [[ "${torch_branch}" == "HEAD" ]];then
+if [[ "${torch_branch}" == "nightly" ]];then
     echo torch,main,$(git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1) >>${curdir}/${LOG_DIR}/version.csv
+elif [[ "${torch_branch}" == "HEAD" ]];then
+    echo torch,main,$(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/version.csv
 else
     echo torch,${torch_branch},$(git rev-parse --short HEAD) >>${curdir}/${LOG_DIR}/version.csv
 fi
