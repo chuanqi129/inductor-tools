@@ -112,6 +112,7 @@ node(REFRESH_NODE_LABEL){
                 sh '''
                 #!/bin/bash
                 scp -r ~/.aws yudongsi@mlt-ace:~/
+                scp -r ~/.aws weizhuoz@mlt-ace:~/
                 '''
             }
         }catch(err){
