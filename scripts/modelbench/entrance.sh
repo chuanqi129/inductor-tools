@@ -58,7 +58,7 @@ bash launch.sh \
     TAG=${TAG} \
     PRECISION=${PRECISION} \
     TEST_MODE=${TEST_MODE} \
-    SHAPE=${SHAPE} \
+    TEST_SHAPE=${SHAPE} \
     TORCH_REPO=${TORCH_REPO} \
     TORCH_COMMIT=${TORCH_COMMIT} \
     DYNAMO_BENCH=${DYNAMO_BENCH} \
