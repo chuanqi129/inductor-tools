@@ -29,13 +29,18 @@ pip uninstall networkx -y && pip install networkx
 
 # Bug fix: only skip cpu test list for torchbench
 # PR: https://github.com/pytorch/pytorch/pull/123544
-sed -i "/    if device ==/,+4d" benchmarks/dynamo/runner.py
-sed -i '/        skip_tests.update(module.TorchBenchmarkRunner().skip_models)/i\
-        if device == "cpu":\
-            skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cpu)\
-        elif device == "cuda":\
-            skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cuda)
-' benchmarks/dynamo/runner.py
+result=`sed -n "/    if device ==/p" benchmarks/dynamo/runner.py`
+if [ -z "${result}" ];then
+    echo "patch has been merged"
+else
+    sed -i "/    if device ==/,+4d" benchmarks/dynamo/runner.py
+    sed -i '/        skip_tests.update(module.TorchBenchmarkRunner().skip_models)/i\
+            if device == "cpu":\
+                skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cpu)\
+            elif device == "cuda":\
+                skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cuda)
+    ' benchmarks/dynamo/runner.py
+fi
 
 # skip sam & nanogpt_generate for stable results
 # skip llama_v2_7b_16h due to OOM
