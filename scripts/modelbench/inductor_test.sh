@@ -35,10 +35,10 @@ if [ -z "${result}" ];then
 else
     sed -i "/    if device ==/,+4d" benchmarks/dynamo/runner.py
     sed -i '/        skip_tests.update(module.TorchBenchmarkRunner().skip_models)/i\
-            if device == "cpu":\
-                skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cpu)\
-            elif device == "cuda":\
-                skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cuda)
+        if device == "cpu":\
+            skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cpu)\
+        elif device == "cuda":\
+            skip_tests.update(module.TorchBenchmarkRunner().skip_models_for_cuda)
     ' benchmarks/dynamo/runner.py
 fi
 
