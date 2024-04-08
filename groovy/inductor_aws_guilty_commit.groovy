@@ -112,15 +112,6 @@ if ('TORCH_REPO' in params) {
 }
 echo "TORCH_REPO: $TORCH_REPO"
 
-TORCH_BRANCH= 'main'
-if ('TORCH_BRANCH' in params) {
-    echo "TORCH_BRANCH in params"
-    if (params.TORCH_BRANCH != '') {
-        TORCH_BRANCH = params.TORCH_BRANCH
-    }
-}
-echo "TORCH_BRANCH: $TORCH_BRANCH"
-
 TORCH_START_COMMIT= "$TORCH_START_COMMIT"
 if ('TORCH_START_COMMIT' in params) {
     echo "TORCH_START_COMMIT in params"
@@ -157,15 +148,6 @@ if ('DYNAMO_BENCH_COMMIT' in params) {
 }
 echo "DYNAMO_BENCH_COMMIT: $DYNAMO_BENCH_COMMIT"
 
-TORCH_AUDIO_BRANCH= 'main'
-if ('TORCH_AUDIO_BRANCH' in params) {
-    echo "TORCH_AUDIO_BRANCH in params"
-    if (params.TORCH_AUDIO_BRANCH != '') {
-        TORCH_AUDIO_BRANCH = params.TORCH_AUDIO_BRANCH
-    }
-}
-echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
-
 TORCH_AUDIO_COMMIT= 'default'
 if ('TORCH_AUDIO_COMMIT' in params) {
     echo "TORCH_AUDIO_COMMIT in params"
@@ -174,15 +156,6 @@ if ('TORCH_AUDIO_COMMIT' in params) {
     }
 }
 echo "TORCH_AUDIO_COMMIT: $TORCH_AUDIO_COMMIT"
-
-TORCH_TEXT_BRANCH= 'main'
-if ('TORCH_TEXT_BRANCH' in params) {
-    echo "TORCH_TEXT_BRANCH in params"
-    if (params.TORCH_TEXT_BRANCH != '') {
-        TORCH_TEXT_BRANCH = params.TORCH_TEXT_BRANCH
-    }
-}
-echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
 TORCH_TEXT_COMMIT= 'default'
 if ('TORCH_TEXT_COMMIT' in params) {
@@ -193,15 +166,6 @@ if ('TORCH_TEXT_COMMIT' in params) {
 }
 echo "TORCH_TEXT_COMMIT: $TORCH_TEXT_COMMIT"
 
-TORCH_VISION_BRANCH= 'main'
-if ('TORCH_VISION_BRANCH' in params) {
-    echo "TORCH_VISION_BRANCH in params"
-    if (params.TORCH_VISION_BRANCH != '') {
-        TORCH_VISION_BRANCH = params.TORCH_VISION_BRANCH
-    }
-}
-echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
-
 TORCH_VISION_COMMIT= 'default'
 if ('TORCH_VISION_COMMIT' in params) {
     echo "TORCH_VISION_COMMIT in params"
@@ -211,15 +175,6 @@ if ('TORCH_VISION_COMMIT' in params) {
 }
 echo "TORCH_VISION_COMMIT: $TORCH_VISION_COMMIT"
 
-TORCH_DATA_BRANCH= 'main'
-if ('TORCH_DATA_BRANCH' in params) {
-    echo "TORCH_DATA_BRANCH in params"
-    if (params.TORCH_DATA_BRANCH != '') {
-        TORCH_DATA_BRANCH = params.TORCH_DATA_BRANCH
-    }
-}
-echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
-
 TORCH_DATA_COMMIT= 'default'
 if ('TORCH_DATA_COMMIT' in params) {
     echo "TORCH_DATA_COMMIT in params"
@@ -228,15 +183,6 @@ if ('TORCH_DATA_COMMIT' in params) {
     }
 }
 echo "TORCH_DATA_COMMIT: $TORCH_DATA_COMMIT"
-
-TORCH_BENCH_BRANCH= 'main'
-if ('TORCH_BENCH_BRANCH' in params) {
-    echo "TORCH_BENCH_BRANCH in params"
-    if (params.TORCH_BENCH_BRANCH != '') {
-        TORCH_BENCH_BRANCH = params.TORCH_BENCH_BRANCH
-    }
-}
-echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
 TORCH_BENCH_COMMIT= 'default'
 if ('TORCH_BENCH_COMMIT' in params) {
@@ -343,7 +289,6 @@ env._kind = "$kind"
 env._perf_ratio = "$perf_ratio"
 
 env._TORCH_REPO = "$TORCH_REPO"
-env._TORCH_BRANCH = "$TORCH_BRANCH"
 env._TORCH_COMMIT = "$TORCH_COMMIT"
 env._start_commit = "$TORCH_START_COMMIT"
 env._end_commit = "$TORCH_END_COMMIT"
@@ -408,7 +353,33 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/bisect_run_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
-        ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} ${_model} ${_start_commit} ${_end_commit} ${_scenario} ${_kind} ${_perf_ratio} ${_extra_param} &>/dev/null &" &
+        ssh ubuntu@${current_ip} "nohup bash entrance.sh \
+            TAG=${_target} \
+            PRECISION=${_precision} \
+            TEST_MODE=${_test_mode} \
+            SHAPE=${_shape} \
+            TORCH_REPO=${_TORCH_REPO} \
+            TORCH_COMMIT=${_TORCH_COMMIT} \
+            DYNAMO_BENCH=${_DYNAMO_BENCH} \
+            AUDIO=${_AUDIO} \
+            TEXT=${_TEXT} \
+            VISION=${_VISION} \
+            DATA=${_DATA} \
+            TORCH_BENCH=${_TORCH_BENCH} \
+            THREADS=${_THREADS} \
+            CHANNELS=${_CHANNELS} \
+            WRAPPER=${_WRAPPER} \
+            HF_TOKEN=${_HF_TOKEN} \
+            BACKEND=${_backend} \
+            SUITE=${_suite} \
+            MODEL=${_model} \
+            TORCH_START_COMMIT=${_start_commit} \
+            TORCH_END_COMMIT=${_end_commit} \
+            SCENARIO=${_scenario} \
+            KIND=${_kind} \
+            PERF_RATIO=${_perf_ratio} \
+            EXTRA=${_extra_param} \
+            &>/dev/null &" &
         '''
     }
     stage("log query") {
