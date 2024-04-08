@@ -125,7 +125,7 @@ if( 'gh_token' in params && params.gh_token != '' ) {
 }
 echo "gh_token: $gh_token"
 
-Build_Image= 'true'
+Build_Image= 'false'
 if ('Build_Image' in params) {
     echo "Build_Image in params"
     if (params.Build_Image != '') {
@@ -341,6 +341,33 @@ if( 'dashboard_title' in params && params.dashboard_title != '' ) {
 }
 echo "dashboard_title: $dashboard_title"
 
+IPEX_REPO= 'https://github.com/intel/intel-extension-for-pytorch.git'
+if ('IPEX_REPO' in params) {
+    echo "IPEX_REPO in params"
+    if (params.IPEX_REPO != '') {
+        IPEX_REPO = params.IPEX_REPO
+    }
+}
+echo "IPEX_REPO: $IPEX_REPO"
+
+IPEX_BRANCH= 'main'
+if ('IPEX_BRANCH' in params) {
+    echo "IPEX_BRANCH in params"
+    if (params.IPEX_BRANCH != '') {
+        IPEX_BRANCH = params.IPEX_BRANCH
+    }
+}
+echo "IPEX_BRANCH: $IPEX_BRANCH"
+
+IPEX_COMMIT= 'main'
+if ('IPEX_COMMIT' in params) {
+    echo "IPEX_COMMIT in params"
+    if (params.IPEX_COMMIT != '') {
+        IPEX_COMMIT = params.IPEX_COMMIT
+    }
+}
+echo "IPEX_COMMIT: $IPEX_COMMIT"
+
 env._terminate_ins = "$terminate_instance"
 env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
@@ -371,6 +398,12 @@ env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
+
+env._IPEX_REPO = "$IPEX_REPO"
+env._IPEX_BRANCH = "$IPEX_BRANCH"
+env._IPEX_COMMIT = "$IPEX_COMMIT"
+env._log_name = "${backend}_log"
+
 env._infer_or_train = "$infer_or_train"
 
 node(NODE_LABEL){
@@ -429,12 +462,14 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/docker/Dockerfile.ipex ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/*.patch ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash 1.1 ${IPEX_REPO} ${IPEX_BRANCH} ${IPEX_COMMIT} ${_extra_param}> entrance.log 2>&1 &" &
             '''
         }
     }
@@ -482,7 +517,7 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/${_target}
                 fi
                 mkdir -p ${WORKSPACE}/${_target}
-                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                scp -r ubuntu@${current_ip}:/home/ubuntu/docker/${_backend}_log ${WORKSPACE}/${_target}
                 break
             else
                 sleep 1h
@@ -491,7 +526,7 @@ node(NODE_LABEL){
                     echo restart instance now...
                     $aws ec2 stop-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && $aws ec2 start-instances --instance-ids ${ins_id} --profile pytorch && sleep 2m && current_ip=$($aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text) && echo update_ip $current_ip || echo $current_ip
                     ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "pwd"
-                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/inductor_log ${WORKSPACE}/${_target}
+                    scp -r ubuntu@${current_ip}:/home/ubuntu/docker/${_backend}_log ${WORKSPACE}/${_target}
                     break
                 fi
             fi
@@ -502,7 +537,7 @@ node(NODE_LABEL){
     stage("archive raw test results"){
         sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
+            mkdir -p $HOME/${_backend}_dashboard
             cp -r  ${WORKSPACE}/${_target} ${WORKSPACE}/raw_log
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
@@ -534,7 +569,12 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE}
+                if [ ${_backend} == "ipex"  ];then
+                    sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
+                    mkdir -p refer && cp -r ipex_log refer && rm -rf ipex_log
+                else
+                    cd ${WORKSPACE}
+                fi
                 if [ ${_dash_board} == "true" ]; then
                     cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
                 else
@@ -544,6 +584,9 @@ node(NODE_LABEL){
             }else{
                 sh '''
                 #!/usr/bin/env bash
+                 if [ ${_backend} == "ipex"  ];then
+                    sed -i 's/inductor/ipex/Ig' scripts/modelbench/report.py
+                fi
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
                     python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend}
@@ -563,7 +606,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE} && mkdir -p refer && cp -r ${_backend}_log refer && rm -rf ${_backend}_log
                 cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
                 '''
             }else{
@@ -600,21 +643,21 @@ node(NODE_LABEL){
         {
             sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            mkdir -p $HOME/${_backend}_dashboard
+            cp -r  ${WORKSPACE}/${_target} $HOME/${_backend}_dashboard
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_backend}_log/ ./ && rm -rf ${_target}
             '''
         }
         if ("${test_mode}" == "training")
         {
             sh '''
             #!/usr/bin/env bash
-            mkdir -p $HOME/inductor_dashboard/Train
-            cp -r  ${WORKSPACE}/${_target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/inductor_log/ ./ && rm -rf ${_target}
+            mkdir -p $HOME/${_backend}_dashboard/Train
+            cp -r  ${WORKSPACE}/${_target} $HOME/${_backend}_dashboard/Train
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${_target}/${_backend}_log/ ./ && rm -rf ${_target}
             '''
         } 
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/${_backend}_log/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
         }
@@ -631,14 +674,14 @@ node(NODE_LABEL){
         }
         if ("${test_mode}" == "inference")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${_backend}_log/${_backend}_model_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    body: '${FILE,path="{_backend}_log/${_backend}_model_bench.html"}'
                 )
             }else{
                 emailext(
@@ -652,14 +695,14 @@ node(NODE_LABEL){
         }//inference
         if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${_backend}_log/${_backend}_model_training_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${_backend}_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+                    body: '${FILE,path="${_backend}_log/${_backend}_model_training_bench.html"}'
                 )
             }else{
                 emailext(

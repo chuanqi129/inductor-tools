@@ -48,6 +48,12 @@ elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+elif [[ $BACKEND == "ipex" ]]; then
+    echo "Running Benchmakr with IPEX backend. "
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+    cd /workspace/pytorch
+    patch -p1 < /workspace/0326.patch
 fi
 
 Shape_extra=""
