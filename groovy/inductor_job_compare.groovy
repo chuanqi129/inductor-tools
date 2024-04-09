@@ -195,7 +195,7 @@ node(NODE_LABEL){
         env.torch_branch = params.get('TORCH_BRANCH')
         env._suite = params.get('suite')
         env._precision = params.get('precision')
-        env.backend = arams.get('backend')
+        env.backend = params.get('backend')
         sh '''
         #!/usr/bin/env bash
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
