@@ -54,7 +54,7 @@ def merge_tables(file_dir, files):
     data_df_1 = pd.read_csv(output_file_name_1)    
     data_df_2 = pd.read_csv(output_file_name_2)    
     summary_df = pd.merge(data_df_1, data_df_2, how='outer')
-    summary_df['{0} Eager/Compile ratio'.format(file_dir)] = \
+    summary_df['{0} Torch.compile vs. eager Speedup'.format(file_dir)] = \
         summary_df['{0} Eager latency'.format(file_dir)] / summary_df["{0} Compile latency".format(file_dir)]
     return summary_df
 
@@ -70,8 +70,8 @@ def generate_summary(file_dir):
 
 def merge_refer_tables(target_df, refer_df):
     summary_df = pd.merge(target_df, refer_df, how='outer')
-    summary_df['Eager ratio new/old'] = target_df["{0} Eager latency".format(args.target)]/refer_df["{0} Eager latency".format(args.reference)]
-    summary_df['Compile ratio new/old'] = target_df["{0} Compile latency".format(args.target)]/refer_df["{0} Compile latency".format(args.reference)]
+    summary_df['Eager ratio old/new'] = refer_df["{0} Eager latency".format(args.reference)]/target_df["{0} Eager latency".format(args.target)]
+    summary_df['Compile ratio old/new'] = refer_df["{0} Compile latency".format(args.reference)]/target_df["{0} Compile latency".format(args.target)]
     return summary_df
 
 def get_sw_df(file_dir):
