@@ -120,7 +120,7 @@ def caculate_geomean(df,column_name):
 def update_summary(excel, reference, target):
     if args.suite == 'all':
         data = {
-            'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
+            'Test Scenario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
             'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
             'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
@@ -129,7 +129,7 @@ def update_summary(excel, reference, target):
             'timm_models ':[' ', ' ', ' ', ' ',' ',' ',' ',' ']
         }
         data_target = {
-            'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
             'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
@@ -139,14 +139,14 @@ def update_summary(excel, reference, target):
         }
     else:
         data = {
-            'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
+            'Test Scenario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
             'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
             'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
             args.suite:[' ', ' ', ' ', ' ',' ',' ',' ',' ']
         }
         data_target = {
-            'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
             'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
@@ -605,7 +605,7 @@ def update_details(writer):
 def update_cppwrapper_gm(excel,reference,target):
     # cppwrapper vs pythonwrapper geomean speedup table
     cppwrapper_gm = {
-        'Test Secnario':['Single Socket Multi-Threads', 'Test Secnario','Single Core Single-Thread'], 
+        'Test Scenario':['Single Socket Multi-Threads', 'Test Scenario','Single Core Single-Thread'], 
         'Comp Item':['Geomean Speedup','Comp Item','Geomean Speedup'],
         'Date':[' ', ' Date', ' '],
         'Compiler':['inductor', 'Compiler', 'inductor'],

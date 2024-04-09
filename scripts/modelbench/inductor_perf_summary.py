@@ -166,7 +166,7 @@ def update_details(precision, mode, excel):
 
 def update_summary(excel):
     data = {
-        'Test Secnario': ['AMP_BF16 Inference', ' ', 'AMP_BF16 Training', ' ', 'AMP_FP16 Inference', ' ', 'AMP_FP16 Training', ' ', 'BF16 Inference', ' ', 'BF16 Training', ' ', 'FP16 Inference', ' ', 'FP16 Training', ' ', 'FP32 Inference', ' ', 'FP32 Training', ' '],
+        'Test Scenario': ['AMP_BF16 Inference', ' ', 'AMP_BF16 Training', ' ', 'AMP_FP16 Inference', ' ', 'AMP_FP16 Training', ' ', 'BF16 Inference', ' ', 'BF16 Training', ' ', 'FP16 Inference', ' ', 'FP16 Training', ' ', 'FP32 Inference', ' ', 'FP32 Training', ' '],
         'Comp Item': ['Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup', 'Pass Rate', 'Geomean Speedup'],
         'Date': [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         'Compiler': ['inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor', 'inductor'],
