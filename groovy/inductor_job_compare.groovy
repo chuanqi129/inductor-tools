@@ -7,15 +7,6 @@ if ('NODE_LABEL' in params) {
 }
 echo "NODE_LABEL: $NODE_LABEL"
 
-precision= 'float32'
-if ('precision' in params) {
-    echo "precision in params"
-    if (params.precision != '') {
-        precision = params.precision
-    }
-}
-echo "precision: $precision"
-
 debug = 'False'
 if ('debug' in params) {
     echo "debug in params"
@@ -139,7 +130,6 @@ if ('suite' in params) {
 }
 echo "suite: $suite"
 
-env._precision = "$precision"
 env._target_job = "$target_job"
 env._target_sc = "$target_job_selector"
 env._refer_job = "$refer_job"
@@ -204,6 +194,8 @@ node(NODE_LABEL){
         env.torch_repo = params.get('TORCH_REPO')
         env.torch_branch = params.get('TORCH_BRANCH')
         env._suite = params.get('suite')
+        env._precision = params.get('precision')
+        env.backend = params.get('backend')
         sh '''
         #!/usr/bin/env bash
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
