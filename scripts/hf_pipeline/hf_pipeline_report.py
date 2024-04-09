@@ -54,7 +54,7 @@ def merge_tables(file_dir, files):
     data_df_1 = pd.read_csv(output_file_name_1)    
     data_df_2 = pd.read_csv(output_file_name_2)    
     summary_df = pd.merge(data_df_1, data_df_2, how='outer')
-    summary_df['{0} Eager/Compile ratio'.format(file_dir)] = \
+    summary_df['{0} Torch.compile vs. eager Speedup'.format(file_dir)] = \
         summary_df['{0} Eager latency'.format(file_dir)] / summary_df["{0} Compile latency".format(file_dir)]
     return summary_df
 

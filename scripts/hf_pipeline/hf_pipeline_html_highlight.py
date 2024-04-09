@@ -27,12 +27,12 @@ def highlight_isnan(data, column):
 df = pd.read_csv(args.input)
 
 if args.refer == "0":
-    ratio_subset = ['{0} Eager/Compile ratio'.format(args.target)]
+    ratio_subset = ['{0} Torch.compile vs. eager Speedup'.format(args.target)]
     df_style = df.style.hide(axis="index").\
         highlight_between(left=0,right=1,subset=ratio_subset).\
         highlight_null(subset=ratio_subset)
 else:
-    ratio_subset = ['{0} Eager/Compile ratio'.format(args.target), 'refer Eager/Compile ratio']
+    ratio_subset = ['{0} Torch.compile vs. eager Speedup'.format(args.target), 'refer Torch.compile vs. eager Speedup']
     old_new_subset = ['Eager ratio old/new', 'Compile ratio old/new']
     df_style = df.style.hide(axis="index").\
         highlight_between(left=0,right=1,subset=ratio_subset).\
