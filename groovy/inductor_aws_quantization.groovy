@@ -537,7 +537,8 @@ node(NODE_LABEL){
             )           
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx
+            mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
             cp scripts/modelbench/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
             '''
         }
