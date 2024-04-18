@@ -9,7 +9,7 @@ rm -rf transformers accelerate
 git clone -b test https://github.com/chuanqi129/transformers && cd transformers && \
     python setup.py bdist_wheel && pip install --force-reinstall dist/*.whl && cd ..
 
-git clone -b test https://github.com/chuanqi129/accelerate && cd accelerate && \
+git clone -b test https://github.com/zxd1997066/accelerate.git && cd accelerate && \
     python setup.py bdist_wheel && pip install --no-deps --force-reinstall dist/*.whl && cd ..
 
 # Install requirements for each task
