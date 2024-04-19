@@ -316,10 +316,14 @@ def read_dynamic_log(log_path):
             with open(file_path, 'r') as file:
                 model.append(model_name)
                 for line in file:
-                    if 'eval_samples_per_second' in line:
-                        performance.append(float(line.split(' ')[-1].strip("\n")))
+                    if '7/7' in line:
+                        perf_data = line.split(' ')[-1].split('it/s')[0]
+                        # print(perf_data)
+                        # performance.append(float(line.split(' ')[-1].strip("\n")))
+                        
                     if 'eval_accuracy' in line:
                         accuracy.append(float(line.split(' ')[-1].strip("\n")))
+                performance.append(float(perf_data))
     quant = {'model':model, 'eval_samples_per_second':performance, 'eval_accuracy':accuracy}
     quant = pd.DataFrame(quant)
     quant.sort_values(by=['model'], key=lambda col: col.str.lower(),inplace=True)
@@ -379,7 +383,7 @@ def process_dynamic_perf(excel, target, refer):
 
     regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
     improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
-    perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
+    # perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
     perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['static_quant(new/old)'] < 0.9],styler_obj=regression_style)
     perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['static_quant(new/old)'] > 1.1],styler_obj=improve_style)
     perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant(new/old)'] > 1.1],styler_obj=improve_style)
@@ -389,7 +393,7 @@ def process_dynamic_perf(excel, target, refer):
     update_dynamic_perfor_regression(perf_summary,'static_quant(new/old)')
     update_dynamic_perfor_regression(perf_summary,'dynamic_quant(new/old)')
 
-    perf_summary.to_excel(sheet_name='eval_samples_per_second',excel_writer=excel)
+    perf_summary.to_excel(sheet_name='its_per_second',excel_writer=excel)
 
     gm = StyleFrame(quant_perf_gm)
     gm.set_column_width(1, 30)
@@ -451,7 +455,7 @@ def process_dynamic_acc(excel, target, refer):
 
     regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
     improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
-    acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
+    # acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
     acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['static_quant(new/old)'] < 0.9],styler_obj=regression_style)
     acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['static_quant(new/old)'] > 1.1],styler_obj=improve_style)
     acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant(new/old)'] > 1.1],styler_obj=improve_style)
