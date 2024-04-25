@@ -59,5 +59,5 @@ if [[ ${FREEZE} == "on" ]]; then
 fi 
 cd ../benchmark
 rm -rf .userbenchmark/
-python run_benchmark.py cpu -m ${MODEL} --torchdynamo inductor --quantize ${Wrapper_extra} --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+python run_benchmark.py cpu -m ${MODEL} --torchdynamo inductor --quantize --is_qat --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
 cat .userbenchmark/cpu/*.json | grep "throughput" | awk -F':' '{print $2}'
