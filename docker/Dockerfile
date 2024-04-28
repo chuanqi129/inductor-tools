@@ -66,53 +66,54 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
 
 FROM dev-base AS build
 ARG PT_REPO=https://github.com/pytorch/pytorch
-ARG PT_BRANCH=main
-ARG PT_COMMIT=${PT_BRANCH}
+ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
-RUN git clone -b ${PT_BRANCH} ${PT_REPO} && \
+RUN git clone ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd ..
-ARG TORCH_VISION_BRANCH=main
 ARG TORCH_VISION_COMMIT=default
-ARG TORCH_DATA_BRANCH=main
 ARG TORCH_DATA_COMMIT=default
-ARG TORCH_TEXT_BRANCH=main
 ARG TORCH_TEXT_COMMIT=default
-ARG TORCH_AUDIO_BRANCH=main
 ARG TORCH_AUDIO_COMMIT=default
-RUN git clone -b ${TORCH_VISION_BRANCH} https://github.com/pytorch/vision.git && \
+RUN git clone https://github.com/pytorch/vision.git && \
     cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_DATA_BRANCH} https://github.com/pytorch/data.git && \
+    git clone https://github.com/pytorch/data.git && \
     cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_TEXT_BRANCH} https://github.com/pytorch/text.git && \
+    git clone https://github.com/pytorch/text.git && \
     cd text && if [ "${TORCH_TEXT_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
-    git clone -b ${TORCH_AUDIO_BRANCH} https://github.com/pytorch/audio.git && \
+    git clone https://github.com/pytorch/audio.git && \
     cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
     # Workaround for https://github.com/pytorch/audio/issues/2784
     sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
-ARG TORCH_BENCH_BRANCH=main
 ARG TORCH_BENCH_COMMIT=default
+ARG TRANSFORMERS_VERSION=default
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
-RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
+RUN git clone https://github.com/pytorch/benchmark.git && \
     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 && pip install mpmath==1.3.0 && \
-    python install.py --continue_on_fail && \
+    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
+    python install.py --continue_on_fail && cd .. && \
+    echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
+        export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
+        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}; \
+    else \
+        pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
+    fi && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
-    python -c "import torch, torchvision, torchtext"
+    python -c "import torch, torchvision, torchaudio"
 
 # Clean for final image
 FROM dev-base AS image
