@@ -87,7 +87,7 @@ def update_dynamic_acc_regression(df_summary, col):
     dynamic_acc_regression = dynamic_acc_regression.drop_duplicates()
 
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
+    data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Branch':['nightly', 'chuanqiw/inductor_quant', 'nightly', 'nightly', 'nightly', 'nightly', 'nightly'], 'Target commit':[' ', ' ', ' ', ' ',' ',' ',' ']}
     swinfo=pd.DataFrame(data)
     try:
         version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
@@ -102,13 +102,13 @@ def update_swinfo(excel):
         torchdata_commit=version.loc[ 5, "commit"][-7:]
         dynamo_benchmarks_commit=version.loc[ 6, "commit"][-7:]
 
-        swinfo.loc[0,"Nightly commit"]=torch_commit
-        swinfo.loc[1,"Main commit"]=torchbench_commit
-        swinfo.loc[2,"Nightly commit"]=torchaudio_commit
-        swinfo.loc[3,"Nightly commit"]=torchtext_commit
-        swinfo.loc[4,"Nightly commit"]=torchvision_commit
-        swinfo.loc[5,"Nightly commit"]=torchdata_commit
-        swinfo.loc[6,"Nightly commit"]=dynamo_benchmarks_commit
+        swinfo.loc[0,"Target commit"]=torch_commit
+        swinfo.loc[1,"Target commit"]=torchbench_commit
+        swinfo.loc[2,"Target commit"]=torchaudio_commit
+        swinfo.loc[3,"Target commit"]=torchtext_commit
+        swinfo.loc[4,"Target commit"]=torchvision_commit
+        swinfo.loc[5,"Target commit"]=torchdata_commit
+        swinfo.loc[6,"Target commit"]=dynamo_benchmarks_commit
 
         # torch_main_commit=get_main_commit("pytorch",torch_commit)
         # torchaudio_main_commit=get_main_commit("audio",torchaudio_commit)
@@ -121,6 +121,26 @@ def update_swinfo(excel):
         # swinfo.loc[3,"Main commit"]=torchtext_main_commit
         # swinfo.loc[4,"Main commit"]=torchvision_main_commit
         # swinfo.loc[5,"Main commit"]=torchdata_main_commit
+        if args.refer is not None:
+            data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Refer commit':[' ', ' ', ' ', ' ',' ',' ',' ']}
+            refer_version=pd.DataFrame(data)
+            refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+            refer_torch_commit=refer_swinfo.loc[ 1, "commit"][-7:]
+            refer_torchbench_commit=refer_swinfo.loc[ 0, "commit"][-8:]
+            refer_torchaudio_commit=refer_swinfo.loc[ 4, "commit"][-7:]
+            refer_torchtext_commit=refer_swinfo.loc[ 3, "commit"][-7:]
+            refer_torchvision_commit=refer_swinfo.loc[ 2, "commit"][-7:]
+            refer_torchdata_commit=refer_swinfo.loc[ 5, "commit"][-7:]
+            refer_dynamo_benchmarks_commit=refer_swinfo.loc[ 6, "commit"][-7:]
+
+            refer_version.loc[0,"Refer commit"]=refer_torch_commit
+            refer_version.loc[1,"Refer commit"]=refer_torchbench_commit
+            refer_version.loc[2,"Refer commit"]=refer_torchaudio_commit
+            refer_version.loc[3,"Refer commit"]=refer_torchtext_commit
+            refer_version.loc[4,"Refer commit"]=refer_torchvision_commit
+            refer_version.loc[5,"Refer commit"]=refer_torchdata_commit
+            refer_version.loc[6,"Refer commit"]=refer_dynamo_benchmarks_commit
+            swinfo = pd.merge(swinfo, refer_version)
     except :
         print("version.txt not found")
         pass
@@ -518,17 +538,17 @@ def html_generate():
     dynamic_perf = pd.DataFrame(content[5]).to_html(classes="table",index = False)
     dynamic_acc = pd.DataFrame(content[7]).to_html(classes="table",index = False)
     swinfo= pd.DataFrame(content[8]).to_html(classes="table",index = False)
-    refer_swinfo_html = ''
-    if args.refer is not None:
-        refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
+    # refer_swinfo_html = ''
+    # if args.refer is not None:
+    #     refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+    #     refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)           
     perf_regression= new_performance_regression.to_html(classes="table",index = False)
     acc_regression= new_acc_regression.to_html(classes="table",index = False)
     dynamic_quant_perf_regression=dynamic_performance_regression.to_html(classes="table",index = False)
     dynamic_quant_acc_regression=dynamic_acc_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/quantization_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/quantization_perf_regression.html',mode = "a") as perf_f:
-        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html+html_tail())
-        perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
+        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+html_tail())
+        perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>")
     f.close()
     perf_f.close()            
     

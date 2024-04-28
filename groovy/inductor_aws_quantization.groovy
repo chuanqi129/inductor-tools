@@ -428,7 +428,7 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/entrance_quant.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/modelbench/version_collect_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_quant_performance.sh ubuntu@${current_ip}:/home/ubuntu/docker

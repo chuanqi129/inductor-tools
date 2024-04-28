@@ -93,23 +93,9 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/inductor_quant_performance.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/inductor_quant_accuracy.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/benchmark
-    docker cp /home/ubuntu/docker/inductor_quant_acc_fp32.py $USER:/workspace/benchmark
-    docker cp /home/ubuntu/docker/hf_quant_test.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/inductor_dynamic_quant.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/numa_launcher.py $USER:/workspace/pytorch
 
     # Generate SW info out of real test
     docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
-
-    prepare_imagenet(){
-        wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
-        mkdir -p /home/ubuntu/imagenet/val && mv ILSVRC2012_img_val.tar /home/ubuntu/imagenet/val && cd /home/ubuntu/imagenet/val && tar -xvf ILSVRC2012_img_val.tar && rm -f ILSVRC2012_img_val.tar
-        wget https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh
-        bash valprep.sh
-    }
 
     if [ $TEST_MODE == "inference" ]; then
         docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND inference $SUITE $EXTRA"
@@ -117,35 +103,12 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
         docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $PRECISION $TEST_SHAPE $LOG_DIR $WRAPPER $HF_TOKEN $BACKEND training $SUITE $EXTRA"
     elif [ $TEST_MODE == "training" ]; then
         docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $PRECISION $LOG_DIR $EXTRA"
-    elif [ $TEST_MODE == "performance" ]; then
-        docker exec -i $USER bash -c "bash inductor_quant_performance.sh $LOG_DIR"
-    elif [ $TEST_MODE == "accuracy" ]; then
-        if [ ! -d "/home/ubuntu/imagenet" ];then
-            prepare_imagenet
-        fi
-        docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
-        docker exec -i $USER bash -c "bash inductor_quant_accuracy.sh $LOG_DIR"
-    elif [ $TEST_MODE == "all" ]; then
-        if [ ! -d "/home/ubuntu/imagenet" ];then
-            prepare_imagenet
-        fi
-        docker exec -i $USER bash -c "bash inductor_quant_performance.sh $LOG_DIR"
-        docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
-        docker exec -i $USER bash -c "bash inductor_quant_accuracy.sh $LOG_DIR"
-        docker exec -i $USER bash -c "bash inductor_dynamic_quant.sh $LOG_DIR"
     fi
 # Launch issue guilty commit search
 else
-    wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
-    mkdir -p /home/ubuntu/imagenet/val && mv ILSVRC2012_img_val.tar /home/ubuntu/imagenet/val && cd /home/ubuntu/imagenet/val && tar -xvf ILSVRC2012_img_val.tar && rm -f ILSVRC2012_img_val.tar
-    wget https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh
-    bash valprep.sh
     docker cp /home/ubuntu/docker/bisect_search.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/quant_single_run.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/pytorch
-    docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
     # TODO: Hard code freeze on and default bs, add them as params future
     docker exec -i $USER bash -c "bash bisect_search.sh \
         START_COMMIT=$TORCH_START_COMMIT \

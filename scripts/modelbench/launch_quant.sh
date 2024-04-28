@@ -79,7 +79,7 @@ docker run -id --name $USER --privileged --env https_proxy=${https_proxy} --env 
 if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/inductor_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_train.sh $USER:/workspace/pytorch
-    docker cp /home/ubuntu/docker/version_collect.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/version_collect_quant.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_performance.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_accuracy.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/benchmark
@@ -89,7 +89,7 @@ if [ $TORCH_START_COMMIT == $TORCH_END_COMMIT ]; then
     docker cp /home/ubuntu/docker/numa_launcher.py $USER:/workspace/pytorch
 
     # Generate SW info out of real test
-    docker exec -i $USER bash -c "bash version_collect.sh $LOG_DIR $DYNAMO_BENCH"
+    docker exec -i $USER bash -c "bash version_collect_quant.sh $LOG_DIR $DYNAMO_BENCH"
 
     prepare_imagenet(){
         wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
