@@ -118,7 +118,10 @@ def run_model(model_name, args):
             torch.ao.quantization.move_exported_model_to_eval(converted_model)
             # Lower into Inductor
             optimized_model = torch.compile(converted_model)
-            
+    elif args.is_fp32:
+        print("using fp32")
+        with torch.no_grad():
+            optimized_model = torch.compile(model)     
     else:
         print("using ptq")
         with torch.no_grad():
@@ -171,6 +174,11 @@ if __name__ == "__main__":
         "--is_qat",
         action='store_true',
         help="enable qat quantization for inductor",
+    )
+    parser.add_argument(
+        "--is_fp32",
+        action='store_true',
+        help="fp32 inductor",
     )
     args = parser.parse_args()
     for model in model_list:
