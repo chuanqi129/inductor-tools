@@ -118,7 +118,10 @@ def run_model(model_name, args):
             torch.ao.quantization.move_exported_model_to_eval(converted_model)
             # Lower into Inductor
             optimized_model = torch.compile(converted_model)
-            
+    elif args.is_fp32:
+        print("using fp32")
+        with torch.no_grad():
+            optimized_model = torch.compile(model)     
     else:
         print("using ptq")
         with torch.no_grad():
@@ -136,23 +139,25 @@ def run_model(model_name, args):
             torch.ao.quantization.move_exported_model_to_eval(converted_model)
             optimized_model = torch.compile(converted_model)
     # Benchmark
-    for i, (images, target) in enumerate(val_loader):
-        #output = model(images)
-        #acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        #top1.update(acc1[0], images.size(0))
-        #top5.update(acc5[0], images.size(0))
-        quant_output = optimized_model(images)
-        quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
-        quant_top1.update(quant_acc1[0], images.size(0))
-        quant_top5.update(quant_acc5[0], images.size(0))
-    #print(model_name + " fp32: ")
-    #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-    #      .format(top1=top1, top5=top5))
-    print(model_name + " int8: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-        .format(top1=quant_top1, top5=quant_top5))
+    with torch.no_grad():
+        for i, (images, target) in enumerate(val_loader):
+            #output = model(images)
+            #acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            #top1.update(acc1[0], images.size(0))
+            #top5.update(acc5[0], images.size(0))
+            quant_output = optimized_model(images)
+            quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
+            quant_top1.update(quant_acc1[0], images.size(0))
+            quant_top5.update(quant_acc5[0], images.size(0))
+        #print(model_name + " fp32: ")
+        #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+        #      .format(top1=top1, top5=top5))
+        print(model_name + " int8: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+            .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
     model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
+    # model_list=["alexnet"]
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -169,6 +174,11 @@ if __name__ == "__main__":
         "--is_qat",
         action='store_true',
         help="enable qat quantization for inductor",
+    )
+    parser.add_argument(
+        "--is_fp32",
+        action='store_true',
+        help="fp32 inductor",
     )
     args = parser.parse_args()
     for model in model_list:

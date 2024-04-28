@@ -14,7 +14,9 @@ parser.add_argument('-r', '--refer', type=str, help='refer log file')
 parser.add_argument('-l', '--url', type=str, help='jenkins job build url')
 args=parser.parse_args()
 new_performance_regression=pd.DataFrame()
+dynamic_performance_regression=pd.DataFrame()
 new_acc_regression=pd.DataFrame()
+dynamic_acc_regression=pd.DataFrame()
 
 def getfolder(round,thread):
     for root, dirs, files in os.walk(round):
@@ -52,19 +54,37 @@ def log2df(acc):
     model_acc.sort_values(by=['model'], key=lambda col: col.str.lower(),inplace=True)
     return model_acc
 
-def update_new_perfer_regression(df_summary, col):
+def update_new_perfor_regression(df_summary, col):
     global new_performance_regression
     regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.9)]
     regression = regression.copy()
     regression.loc[0] = list(regression.shape[1]*'*')
     new_performance_regression = pd.concat([new_performance_regression,regression])
+    new_performance_regression = new_performance_regression.drop_duplicates()
+
+def update_dynamic_perfor_regression(df_summary, col):
+    global dynamic_performance_regression
+    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.9)]
+    regression = regression.copy()
+    regression.loc[0] = list(regression.shape[1]*'*')
+    dynamic_performance_regression = pd.concat([dynamic_performance_regression,regression])
+    dynamic_performance_regression = dynamic_performance_regression.drop_duplicates()
 
 def update_new_acc_regression(df_summary, col):
     global new_acc_regression
-    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.99)]
+    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.95)]
     regression = regression.copy()
     regression.loc[0] = list(regression.shape[1]*'*')
     new_acc_regression = pd.concat([new_acc_regression,regression])
+    new_acc_regression = new_acc_regression.drop_duplicates()
+
+def update_dynamic_acc_regression(df_summary, col):
+    global dynamic_acc_regression
+    regression = df_summary.loc[(df_summary[col] > 0) & (df_summary[col] < 0.95)]
+    regression = regression.copy()
+    regression.loc[0] = list(regression.shape[1]*'*')
+    dynamic_acc_regression = pd.concat([dynamic_acc_regression,regression])
+    dynamic_acc_regression = dynamic_acc_regression.drop_duplicates()
 
 def update_swinfo(excel):
     data = {'SW':['Pytorch', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ',' ',' ','/']}
@@ -114,12 +134,12 @@ def update_swinfo(excel):
 
 def process_perf(excel, target, refer):
     ptq_perf = getfolder(target,'ptq')
-    ptq_cpp_perf = getfolder(target,'ptq_cpp')
+    ptq_cpp_perf = getfolder(target,'cpp')
     qat_perf = getfolder(target,'qat')
     inductor_perf = getfolder(target,'general')
 
     ptq_ref = getfolder(refer,'ptq')
-    ptq_cpp_ref = getfolder(refer,'ptq_cpp')
+    ptq_cpp_ref = getfolder(refer,'cpp')
     qat_ref = getfolder(refer,'qat')
     inductor_ref = getfolder(refer,'general')
 
@@ -133,25 +153,28 @@ def process_perf(excel, target, refer):
     qat_df_ref = json2df(qat_ref)
     inductor_df_ref = json2df(inductor_ref)
 
-    df_summary=pd.DataFrame(ptq_df.iloc[:,0])
-    df_summary.insert(loc=1, column='ptq_new', value=ptq_df.iloc[:,1])
-    df_summary.insert(loc=2, column='ptq_cpp_new', value=ptq_cpp_df.iloc[:,1])
-    df_summary.insert(loc=3, column='qat_new', value=qat_df.iloc[:,1])
-    df_summary.insert(loc=4, column='inductor_new', value=inductor_df.iloc[:,1])
-
-    df_summary.insert(loc=5, column='ptq_cpp/ptq(new)', value=round(ptq_cpp_df.iloc[:,1] / ptq_df.iloc[:,1],2))
-    df_summary.insert(loc=6, column='qat/ptq(new)', value=round(qat_df.iloc[:,1] / ptq_df.iloc[:,1],2))
-
-    df_summary.insert(loc=7, column='ptq_old', value=ptq_df_ref.iloc[:,1])
-    df_summary.insert(loc=8, column='ptq_cpp_old', value=ptq_cpp_df_ref.iloc[:,1])
-    df_summary.insert(loc=9, column='qat_old', value=qat_df_ref.iloc[:,1])
-    df_summary.insert(loc=10, column='inductor_old', value=inductor_df_ref.iloc[:,1])
-
-    df_summary.insert(loc=11, column='ptq ratio(new/old)', value=round(ptq_df.iloc[:,1] / ptq_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=12, column='ptq_cpp ratio(new/old)', value=round(ptq_cpp_df.iloc[:,1] / ptq_cpp_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=13, column='qat ratio(new/old)', value=round(qat_df.iloc[:,1] / qat_df_ref.iloc[:,1],2))
-    df_summary.insert(loc=14, column='inductor ratio(new/old)', value=round(inductor_df.iloc[:,1] / inductor_df_ref.iloc[:,1],2))
-
+    df_summary = pd.DataFrame({
+        'model_name': list(ptq_df['model']),
+        'ptq_new': list(ptq_df['throughput']),
+        'ptq_cpp_new': list(ptq_cpp_df['throughput']),
+        'qat_new': list(qat_df['throughput']),
+        'inductor_new': list(inductor_df['throughput']),
+        'ptq_old': list(ptq_df_ref['throughput']),
+        'ptq_cpp_old': list(ptq_cpp_df_ref['throughput']),
+        'qat_old': list(qat_df_ref['throughput']),
+        'inductor_old': list(inductor_df_ref['throughput'])
+    })
+    df_summary['ptq_cpp/ptq(new)']=pd.DataFrame(round(df_summary['ptq_cpp_new'] / df_summary['ptq_new'],2))
+    df_summary['qat/ptq(new)']=pd.DataFrame(round(df_summary['qat_new'] / df_summary['ptq_new'],2))
+    df_summary['ptq ratio(new/old)']=pd.DataFrame(round(df_summary['ptq_new'] / df_summary['ptq_old'],2))
+    df_summary['ptq_cpp ratio(new/old)']=pd.DataFrame(round(df_summary['ptq_cpp_new'] / df_summary['ptq_cpp_old'],2))
+    df_summary['qat ratio(new/old)']=pd.DataFrame(round(df_summary['qat_new'] / df_summary['qat_old'],2))
+    df_summary['inductor ratio(new/old)']=pd.DataFrame(round(df_summary['inductor_new'] / df_summary['inductor_old'],2))
+    
+    quant_data = {'Perf_Geomean':['PTQ_CPP_WRAPPER/PTQ', 'QAT/PTQ'], 'Ratio':[' ', ' ']}
+    perf_gm=pd.DataFrame(quant_data)
+    perf_gm.loc[0,"Ratio"]=f"{gmean(round(df_summary['ptq_cpp_new'] / df_summary['ptq_new'],2)):.2f}x"
+    perf_gm.loc[1,"Ratio"]=f"{gmean(round(df_summary['qat_new'] / df_summary['ptq_new'],2)):.2f}x"
     #df_summary.to_excel(str(args.name) + '.xlsx', index=False)
     df_summary=StyleFrame(df_summary)
     df_summary.set_column_width(1, 32)
@@ -183,16 +206,11 @@ def process_perf(excel, target, refer):
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] > 1.1],styler_obj=improve_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] < 0.9],styler_obj=regression_style)
 
-    update_new_perfer_regression(df_summary,'ptq ratio(new/old)')
-    update_new_perfer_regression(df_summary,'qat ratio(new/old)')
-    update_new_perfer_regression(df_summary,'ptq_cpp ratio(new/old)')
+    update_new_perfor_regression(df_summary,'ptq ratio(new/old)')
+    update_new_perfor_regression(df_summary,'qat ratio(new/old)')
+    update_new_perfor_regression(df_summary,'ptq_cpp ratio(new/old)')
 
     df_summary.to_excel(sheet_name='performance',excel_writer=excel)
-
-    quant_data = {'Perf_Geomean':['PTQ_CPP_WRAPPER/PTQ', 'QAT/PTQ'], 'Ratio':[' ', ' ']}
-    perf_gm=pd.DataFrame(quant_data)
-    perf_gm.loc[0,"Ratio"]=f"{gmean(round(ptq_cpp_df.iloc[:,1] / ptq_df.iloc[:,1],2)):.2f}x"
-    perf_gm.loc[1,"Ratio"]=f"{gmean(round(qat_df.iloc[:,1] / ptq_df.iloc[:,1],2)):.2f}x"
 
     gm = StyleFrame(perf_gm)
     gm.set_column_width(1, 30)
@@ -259,16 +277,16 @@ def process_acc(excel, target, refer):
 
     regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
     improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp/ptq(new)'] < 0.99],styler_obj=regression_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat/ptq(new)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp/ptq(new)'] < 0.95],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat/ptq(new)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['ptq_cpp ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['qat ratio(new/old)'] < 0.95],styler_obj=regression_style)
     df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] > 1.1],styler_obj=improve_style)
-    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] < 0.99],styler_obj=regression_style)
+    df_summary.apply_style_by_indexes(indexes_to_style=df_summary[df_summary['inductor ratio(new/old)'] < 0.95],styler_obj=regression_style)
 
     update_new_acc_regression(df_summary,'ptq ratio(new/old)')
     update_new_acc_regression(df_summary,'qat ratio(new/old)')
@@ -286,6 +304,174 @@ def process_acc(excel, target, refer):
     gm.set_column_width(2, 20)
 
     gm.to_excel(sheet_name='ACC Geomean',excel_writer=excel)
+
+def read_dynamic_log(log_path):
+    model = []
+    accuracy = []
+    performance = []
+    for root, dirs, files in os.walk(log_path):
+        for f in files:
+            file_path=os.path.join(log_path, f)
+            model_name=f.split('-throughput-')[0]
+            with open(file_path, 'r') as file:
+                model.append(model_name)
+                for line in file:
+                    if '7/7' in line:
+                        perf_data = line.split(' ')[-1].split('it/s')[0]
+                        # print(perf_data)
+                        # performance.append(float(line.split(' ')[-1].strip("\n")))
+                        
+                    if 'eval_accuracy' in line:
+                        accuracy.append(float(line.split(' ')[-1].strip("\n")))
+                performance.append(float(perf_data))
+    quant = {'model':model, 'eval_samples_per_second':performance, 'eval_accuracy':accuracy}
+    quant = pd.DataFrame(quant)
+    quant.sort_values(by=['model'], key=lambda col: col.str.lower(),inplace=True)
+    return quant
+
+def process_dynamic_perf(excel, target, refer):
+    target_dynamic_quant_path = os.path.join(target, 'inductor_log', 'hf_quant', 'dynamic_quant')
+    target_fp32_compile_path = os.path.join(target, 'inductor_log', 'hf_quant', 'fp32_compile')
+    target_static_quant_path = os.path.join(target, 'inductor_log', 'hf_quant', 'static_quant')
+    
+    target_dynamic_quant = read_dynamic_log(target_dynamic_quant_path)
+    target_fp32_compile = read_dynamic_log(target_fp32_compile_path)
+    target_static_quant = read_dynamic_log(target_static_quant_path)
+
+    refer_dynamic_quant_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'dynamic_quant')
+    refer_fp32_compile_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'fp32_compile')
+    refer_static_quant_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'static_quant')
+    
+    refer_dynamic_quant = read_dynamic_log(refer_dynamic_quant_path)
+    refer_fp32_compile = read_dynamic_log(refer_fp32_compile_path)
+    refer_static_quant = read_dynamic_log(refer_static_quant_path)
+
+    perf_summary = pd.DataFrame({
+        'model_name': list(target_dynamic_quant['model']),
+        'fp32_compile_new': list(target_fp32_compile['eval_samples_per_second']),
+        'static_quant_new': list(target_static_quant['eval_samples_per_second']),
+        'dynamic_quant_new': list(target_dynamic_quant['eval_samples_per_second']),
+        'fp32_compile_old': list(refer_fp32_compile['eval_samples_per_second']),
+        'static_quant_old': list(refer_static_quant['eval_samples_per_second']),
+        'dynamic_quant_old': list(refer_dynamic_quant['eval_samples_per_second']),
+    })
+
+    perf_summary['dynamic_quant/fp32_compile(new)']=pd.DataFrame(round(perf_summary['dynamic_quant_new'] / perf_summary['fp32_compile_new'],2))
+    perf_summary['dynamic_quant/static_quant(new)']=pd.DataFrame(round(perf_summary['dynamic_quant_new'] / perf_summary['static_quant_new'],2))
+    perf_summary['fp32_compile(new/old)']=pd.DataFrame(round(perf_summary['fp32_compile_new'] / perf_summary['fp32_compile_old'],2))
+    perf_summary['static_quant(new/old)']=pd.DataFrame(round(perf_summary['static_quant_new'] / perf_summary['static_quant_old'],2))
+    perf_summary['dynamic_quant(new/old)']=pd.DataFrame(round(perf_summary['dynamic_quant_new'] / perf_summary['dynamic_quant_old'],2))
+
+    quant_data = {'Perf_Geomean':['dynamic_quant/fp32_compile', 'dynamic_quant/static_quant'], 'Ratio':[' ', ' ']}
+    quant_perf_gm=pd.DataFrame(quant_data)
+    quant_perf_gm.loc[0,"Ratio"]=f"{gmean(round(perf_summary['dynamic_quant_new'] / perf_summary['fp32_compile_new'],2)):.2f}x"
+    quant_perf_gm.loc[1,"Ratio"]=f"{gmean(round(perf_summary['dynamic_quant_new'] / perf_summary['static_quant_new'],2)):.2f}x"
+    #df_summary.to_excel(str(args.name) + '.xlsx', index=False)
+    perf_summary=StyleFrame(perf_summary)
+    perf_summary.set_column_width(1, 32)
+    perf_summary.set_column_width(2, 20)
+    perf_summary.set_column_width(3, 20)
+    perf_summary.set_column_width(4, 20)
+    perf_summary.set_column_width(5, 20)
+    perf_summary.set_column_width(6, 20)
+    perf_summary.set_column_width(7, 20)
+    perf_summary.set_column_width(8, 20)
+    perf_summary.set_column_width(9, 20)
+    perf_summary.set_column_width(10, 20)
+    perf_summary.set_column_width(11, 20)
+    perf_summary.set_column_width(12, 20)
+
+    regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
+    improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
+    # perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
+    perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['static_quant(new/old)'] < 0.9],styler_obj=regression_style)
+    perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['static_quant(new/old)'] > 1.1],styler_obj=improve_style)
+    perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant(new/old)'] > 1.1],styler_obj=improve_style)
+    perf_summary.apply_style_by_indexes(indexes_to_style=perf_summary[perf_summary['dynamic_quant(new/old)'] < 0.9],styler_obj=regression_style)
+
+
+    update_dynamic_perfor_regression(perf_summary,'static_quant(new/old)')
+    update_dynamic_perfor_regression(perf_summary,'dynamic_quant(new/old)')
+
+    perf_summary.to_excel(sheet_name='its_per_second',excel_writer=excel)
+
+    gm = StyleFrame(quant_perf_gm)
+    gm.set_column_width(1, 30)
+    gm.set_column_width(2, 20)
+
+    gm.to_excel(sheet_name='Dynamic Perf Geomean',excel_writer=excel)
+
+def process_dynamic_acc(excel, target, refer):
+    target_dynamic_quant_path = os.path.join(target, 'inductor_log', 'hf_quant', 'dynamic_quant')
+    target_fp32_compile_path = os.path.join(target, 'inductor_log', 'hf_quant', 'fp32_compile')
+    target_static_quant_path = os.path.join(target, 'inductor_log', 'hf_quant', 'static_quant')
+    
+    target_dynamic_quant = read_dynamic_log(target_dynamic_quant_path)
+    target_fp32_compile = read_dynamic_log(target_fp32_compile_path)
+    target_static_quant = read_dynamic_log(target_static_quant_path)
+
+    refer_dynamic_quant_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'dynamic_quant')
+    refer_fp32_compile_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'fp32_compile')
+    refer_static_quant_path = os.path.join(refer, 'inductor_log', 'hf_quant', 'static_quant')
+    
+    refer_dynamic_quant = read_dynamic_log(refer_dynamic_quant_path)
+    refer_fp32_compile = read_dynamic_log(refer_fp32_compile_path)
+    refer_static_quant = read_dynamic_log(refer_static_quant_path)
+
+    acc_summary = pd.DataFrame({
+        'model_name': list(target_dynamic_quant['model']),
+        'fp32_compile_new': list(target_fp32_compile['eval_accuracy']),
+        'static_quant_new': list(target_static_quant['eval_accuracy']),
+        'dynamic_quant_new': list(target_dynamic_quant['eval_accuracy']),
+        'fp32_compile_old': list(refer_fp32_compile['eval_accuracy']),
+        'static_quant_old': list(refer_static_quant['eval_accuracy']),
+        'dynamic_quant_old': list(refer_dynamic_quant['eval_accuracy']),
+    })
+
+    acc_summary['dynamic_quant/fp32_compile(new)']=pd.DataFrame(round(acc_summary['dynamic_quant_new'] / acc_summary['fp32_compile_new'],2))
+    acc_summary['dynamic_quant/static_quant(new)']=pd.DataFrame(round(acc_summary['dynamic_quant_new'] / acc_summary['static_quant_new'],2))
+    acc_summary['fp32_compile(new/old)']=pd.DataFrame(round(acc_summary['fp32_compile_new'] / acc_summary['fp32_compile_old'],2))
+    acc_summary['static_quant(new/old)']=pd.DataFrame(round(acc_summary['static_quant_new'] / acc_summary['static_quant_old'],2))
+    acc_summary['dynamic_quant(new/old)']=pd.DataFrame(round(acc_summary['dynamic_quant_new'] / acc_summary['dynamic_quant_old'],2))
+
+    quant_data = {'ACC_Geomean':['dynamic_quant/fp32_compile', 'dynamic_quant/static_quant'], 'Ratio':[' ', ' ']}
+    quant_acc_gm=pd.DataFrame(quant_data)
+    quant_acc_gm.loc[0,"Ratio"]=f"{gmean(round(acc_summary['dynamic_quant_new'] / acc_summary['fp32_compile_new'],2)):.2f}x"
+    quant_acc_gm.loc[1,"Ratio"]=f"{gmean(round(acc_summary['dynamic_quant_new'] / acc_summary['static_quant_new'],2)):.2f}x"
+    #df_summary.to_excel(str(args.name) + '.xlsx', index=False)
+    acc_summary=StyleFrame(acc_summary)
+    acc_summary.set_column_width(1, 32)
+    acc_summary.set_column_width(2, 20)
+    acc_summary.set_column_width(3, 20)
+    acc_summary.set_column_width(4, 20)
+    acc_summary.set_column_width(5, 20)
+    acc_summary.set_column_width(6, 20)
+    acc_summary.set_column_width(7, 20)
+    acc_summary.set_column_width(8, 20)
+    acc_summary.set_column_width(9, 20)
+    acc_summary.set_column_width(10, 20)
+    acc_summary.set_column_width(11, 20)
+    acc_summary.set_column_width(12, 20)
+
+    regression_style = Styler(bg_color='#F0E68C', font_color=utils.colors.red)
+    improve_style = Styler(bg_color='#00FF00', font_color=utils.colors.black)
+    # acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant/static_quant(new)'] < 0.9],styler_obj=regression_style)
+    acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['static_quant(new/old)'] < 0.9],styler_obj=regression_style)
+    acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['static_quant(new/old)'] > 1.1],styler_obj=improve_style)
+    acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant(new/old)'] > 1.1],styler_obj=improve_style)
+    acc_summary.apply_style_by_indexes(indexes_to_style=acc_summary[acc_summary['dynamic_quant(new/old)'] < 0.9],styler_obj=regression_style)
+
+
+    update_dynamic_acc_regression(acc_summary,'static_quant(new/old)')
+    update_dynamic_acc_regression(acc_summary,'dynamic_quant(new/old)')
+
+    acc_summary.to_excel(sheet_name='eval_accuracy',excel_writer=excel)
+
+    gm = StyleFrame(quant_acc_gm)
+    gm.set_column_width(1, 30)
+    gm.set_column_width(2, 20)
+
+    gm.to_excel(sheet_name='Dynamic ACC Geomean',excel_writer=excel)
 
 def html_head():
     return '''<!DOCTYPE html>
@@ -326,27 +512,33 @@ def html_tail():
 
 def html_generate():
     
-    content = pd.read_excel(args.target+'/inductor_log/Quantization_Regression_Check_'+args.target+'.xlsx',sheet_name=[0,1,2,3,4])
+    content = pd.read_excel(args.target+'/inductor_log/Quantization_Regression_Check_'+args.target+'.xlsx',sheet_name=[0,1,2,3,4,5,6,7,8])
     summary_perf= pd.DataFrame(content[1]).to_html(classes="table",index = False)
     summary_acc = pd.DataFrame(content[3]).to_html(classes="table",index = False)
-    swinfo= pd.DataFrame(content[4]).to_html(classes="table",index = False)
+    dynamic_perf = pd.DataFrame(content[5]).to_html(classes="table",index = False)
+    dynamic_acc = pd.DataFrame(content[7]).to_html(classes="table",index = False)
+    swinfo= pd.DataFrame(content[8]).to_html(classes="table",index = False)
     refer_swinfo_html = ''
     if args.refer is not None:
         refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
         refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
     perf_regression= new_performance_regression.to_html(classes="table",index = False)
     acc_regression= new_acc_regression.to_html(classes="table",index = False)
+    dynamic_quant_perf_regression=dynamic_performance_regression.to_html(classes="table",index = False)
+    dynamic_quant_acc_regression=dynamic_acc_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/quantization_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/quantization_perf_regression.html',mode = "a") as perf_f:
-        f.write(html_head()+"<p>Summary_Perf</p>"+summary_perf+"<p>Summary_ACC</p>"+summary_acc+"<p>SW info</p>"+swinfo+"<p>new_perf_regression</p>"+perf_regression+"<p>new_acc_regression</p>"+acc_regression+html_tail())
-        perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
+        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html+html_tail())
+        perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html)
     f.close()
     perf_f.close()            
     
 excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Quantization_Regression_Check_'+args.target+'.xlsx')
 process_perf(excel, args.target, args.refer)
 process_acc(excel, args.target, args.refer)
+process_dynamic_perf(excel, args.target, args.refer)
+process_dynamic_acc(excel, args.target, args.refer)
 update_swinfo(excel)
-excel.save()
+excel.close()
 html_generate()
 
 

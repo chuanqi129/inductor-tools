@@ -12,7 +12,7 @@ TORCHINDUCTOR_CPP_WRAPPER=1 python inductor_quant_acc.py --cpp_wrapper 2>&1 |& t
 mv ./inductor_quant_acc_ptq_cpp_wrapper.log inductor_quant_acc/
 python inductor_quant_acc.py  --is_qat 2>&1 |& tee "./inductor_quant_acc_qat.log"
 mv ./inductor_quant_acc_qat.log inductor_quant_acc/
-python inductor_quant_acc_fp32.py 2>&1 |& tee "./inductor_quant_acc_fp32.log"
+python inductor_quant_acc.py --is_fp32 2>&1 |& tee "./inductor_quant_acc_fp32.log"
 mv ./inductor_quant_acc_fp32.log inductor_quant_acc/
 
 mv inductor_quant_acc ../pytorch/$LOG_DIR/
