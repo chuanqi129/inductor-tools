@@ -212,6 +212,9 @@ node(NODE_LABEL){
         env.wrapper = params.get('WRAPPER')
         env.torch_repo = params.get('TORCH_REPO')
         env.torch_branch = params.get('TORCH_BRANCH')
+        env._suite = params.get('suite')
+        env._precision = params.get('precision')
+        env.backend = params.get('backend')
 
         def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
         env.ref_backend = ref_params.get('backend')
