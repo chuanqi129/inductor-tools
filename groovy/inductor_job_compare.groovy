@@ -212,6 +212,10 @@ node(NODE_LABEL){
         env.wrapper = params.get('WRAPPER')
         env.torch_repo = params.get('TORCH_REPO')
         env.torch_branch = params.get('TORCH_BRANCH')
+
+        def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
+        env.ref_backend = ref_params.get('backend')
+
         sh '''
         #!/usr/bin/env bash
         if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
