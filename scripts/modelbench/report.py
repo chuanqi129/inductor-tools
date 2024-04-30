@@ -391,7 +391,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=args.backend)
     # new failures compare with reference logs
     if args.reference is not None:
-        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=args.backend)
+        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=args.ref_backend)
         # New Failures
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
