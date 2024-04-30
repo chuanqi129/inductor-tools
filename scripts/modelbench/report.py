@@ -43,6 +43,7 @@ parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: defaul
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
 parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
+parser.add_argument('--ref_backend',type=str,help='reference backend for comparsion')
 parser.add_argument('--threshold',type=float, default=0.1,help='threshold for checking performance regression and improvement')
 args=parser.parse_args()
 
@@ -307,12 +308,12 @@ def failures_reason_parse(model, acc_or_perf, mode):
         pass
     return line
 
-def get_failures(target_path, thread_mode):
+def get_failures(target_path, thread_mode, backend_pattern):
     all_model_df = pd.DataFrame()
     failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
     for suite_name in suite_list:
-        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
 
         perf_data = pd.read_csv(perf_path, usecols=["name", "batch_size", "speedup"]).rename(columns={'batch_size': 'perf_bs'})
         acc_data = pd.read_csv(acc_path, usecols=["name", "batch_size", "accuracy"]).rename(columns={'batch_size': 'acc_bs'})
@@ -387,10 +388,10 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_fixed_failures
     global new_failures_model_list
     global new_fixed_failures_model_list
-    target_thread_failures = get_failures(target_thread, thread_mode)
+    target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=args.backend)
     # new failures compare with reference logs
     if args.reference is not None:
-        refer_thread_failures = get_failures(refer_thread, thread_mode)
+        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=args.backend)
         # New Failures
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
@@ -451,7 +452,7 @@ def process_suite(suite, thread):
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.backend, suite, args.precision, args.infer_or_train)
+        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.ref_backend, suite, args.precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
