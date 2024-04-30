@@ -139,6 +139,24 @@ if ('suite' in params) {
 }
 echo "suite: $suite"
 
+backend = 'backend'
+if ('backend' in params) {
+    echo "backend in params"
+    if (params.backend != '') {
+        backend = params.backend
+    }
+}
+echo "backend: $backend"
+
+ref_backend = 'ref_backend'
+if ('ref_backend' in params) {
+    echo "ref_backend in params"
+    if (params.ref_backend != '') {
+        ref_backend = params.ref_backend
+    }
+}
+echo "ref_backend: $ref_backend"
+
 env._precision = "$precision"
 env._target_job = "$target_job"
 env._target_sc = "$target_job_selector"
@@ -212,9 +230,9 @@ node(NODE_LABEL){
         pip install scipy datacompy PyGithub styleframe pandas bs4 requests
         cp scripts/modelbench/report.py ${WORKSPACE}
         if [ ${_cppwp_gm} == 'True' ];then
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}  --backend ${backend} --threshold ${threshold}
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}  --backend ${backend} --ref_backend ${ref_backend} --threshold ${threshold}
         else
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch} --backend ${backend} --threshold ${threshold}
+            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch} --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 
         fi
         mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./
         '''
