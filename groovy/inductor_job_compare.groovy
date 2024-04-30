@@ -139,15 +139,6 @@ if ('suite' in params) {
 }
 echo "suite: $suite"
 
-backend = 'backend'
-if ('backend' in params) {
-    echo "backend in params"
-    if (params.backend != '') {
-        backend = params.backend
-    }
-}
-echo "backend: $backend"
-
 ref_backend = 'ref_backend'
 if ('ref_backend' in params) {
     echo "ref_backend in params"
