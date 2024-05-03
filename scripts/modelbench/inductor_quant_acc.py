@@ -149,11 +149,12 @@ def run_model(model_name, args):
             quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
             quant_top1.update(quant_acc1[0], images.size(0))
             quant_top5.update(quant_acc5[0], images.size(0))
-        #print(model_name + " fp32: ")
-        #print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-        #      .format(top1=top1, top5=top5))
-        print(model_name + " int8: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-            .format(top1=quant_top1, top5=quant_top5))
+        if args.is_fp32:
+            print(model_name + " fp32: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+                .format(top1=quant_top1, top5=quant_top5))
+        else:
+            print(model_name + " int8: " + ' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+                .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
     model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
