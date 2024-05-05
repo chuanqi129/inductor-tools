@@ -119,7 +119,7 @@ def run_model(model_name, args):
             # Lower into Inductor
             optimized_model = torch.compile(converted_model)
     elif args.is_fp32:
-        print("using fp32")
+        print("using")
         with torch.no_grad():
             optimized_model = torch.compile(model)     
     else:
