@@ -547,7 +547,7 @@ def html_generate():
     dynamic_quant_perf_regression=dynamic_performance_regression.to_html(classes="table",index = False)
     dynamic_quant_acc_regression=dynamic_acc_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/quantization_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/quantization_perf_regression.html',mode = "a") as perf_f:
-        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+html_tail())
+        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+swinfo+html_tail())
         perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>")
     f.close()
     perf_f.close()            
