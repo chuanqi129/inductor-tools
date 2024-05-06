@@ -63,6 +63,10 @@ elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+elif [[ $BACKEND == "inductor_max_autotune" ]]; then
+    echo "Setting freezing for inductor with max autotune by default."
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
 fi
 
 Shape_extra=""
