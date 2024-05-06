@@ -404,8 +404,8 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/entrance_quant.sh ubuntu@${current_ip}:/home/ubuntu
         scp ${WORKSPACE}/scripts/modelbench/launch_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/bisect_search.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/bisect_run_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/bisect_search_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/bisect_run_test_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/quant_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_quant_acc.py ubuntu@${current_ip}:/home/ubuntu/docker
