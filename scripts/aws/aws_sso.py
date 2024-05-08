@@ -29,7 +29,7 @@ def authorize_request(browser):
     # aws login approval
     print("APPROV...")
     sleep(10)
-    approval= '//*[@id="cli_login_button"]/span'
+    approval= '//*[@data-testid="allow-access-button"]/span'
     get_element_refresh(browser, approval, "click", 5)
     # success='//*[@id="LoginForm"]/div/span'
     # WebDriverWait(browser, 60).until(EC.visibility_of_element_located((By.XPATH, success)))
