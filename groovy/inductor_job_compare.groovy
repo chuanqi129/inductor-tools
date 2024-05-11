@@ -167,85 +167,97 @@ node(NODE_LABEL){
         deleteDir()
         checkout scm   
     }
-    stage("copy"){
-        copyArtifacts(
-            projectName: "${target_job}",
-            selector: specific("${target_job_selector}"),
-            fingerprintArtifacts: true
-        )          
-        sh '''
-        #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_target_job}_${_target_sc} && mv inductor_log ${_target_job}_${_target_sc}
-        '''
-        copyArtifacts(
-            projectName: "${refer_job}",
-            selector: specific("${refer_job_selector}"),
-            fingerprintArtifacts: true
-        )            
-        sh '''
-        #!/usr/bin/env bash
-        cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_refer_job}_${_refer_sc} && mv inductor_log ${_refer_job}_${_refer_sc}
-        '''        
-    }
-    stage("report"){
-        def params = getUpstreamParameters(_target_job, _target_sc)
-        env.shape = params.get('shape')
-        env.wrapper = params.get('WRAPPER')
-        env.torch_repo = params.get('TORCH_REPO')
-        env.torch_branch = params.get('TORCH_BRANCH')
-        env._suite = params.get('suite')
-        env._precision = params.get('precision')
-        env.backend = params.get('backend')
-
-        def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
-        env.ref_backend = ref_params.get('backend')
-        sh '''
-        #!/usr/bin/env bash
-        if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
-            source activate pytorch
-        fi
-        # Install dependencies
-        pip install scipy datacompy PyGithub styleframe pandas bs4 requests
-        cp scripts/modelbench/report.py ${WORKSPACE}
-        if [ ${_cppwp_gm} == 'True' ];then
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}  --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 
-        else
-            python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch} --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 
-        fi
-        mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./
-        '''
-        archiveArtifacts  "*.xlsx, *.html"
-        if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
-            archiveArtifacts  "guilty_commit_search*"
-        }
-        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
-            archiveArtifacts  "all_model_list.csv"
-        }
-    }
-
-    stage("Email"){
-        if ("${debug}" == "true"){
-            maillist="${debug_mail}"
-        }else{
-            maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
-        }
-        if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
-            emailext(
-                subject: "[report-compare]-${env._target_job}-${env._refer_job}",
-                mimeType: "text/html",
-                attachmentsPattern: "**/*.xlsx",
-                from: "pytorch_inductor_val@intel.com",
-                to: maillist,
-                body: '${FILE,path="inductor_model_bench.html"}'
-            )
-        }else{
+    if ((_target_job == _refer_job) && (_target_sc == _refer_sc)) {
+        stage("email"){
             emailext(
                 subject: "Failure occurs in inductor job compare",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: maillist,
-                body: 'Job build failed, please double check in ${BUILD_URL}'
+                body: 'Target job and Reference job are the same, please double check in ${BUILD_URL}'
             )
         }
-    }//email
+    } else {
+        stage("copy"){
+            copyArtifacts(
+                projectName: "${target_job}",
+                selector: specific("${target_job_selector}"),
+                fingerprintArtifacts: true
+            )          
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_target_job}_${_target_sc} && mv inductor_log ${_target_job}_${_target_sc}
+            '''
+            copyArtifacts(
+                projectName: "${refer_job}",
+                selector: specific("${refer_job_selector}"),
+                fingerprintArtifacts: true
+            )            
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_refer_job}_${_refer_sc} && mv inductor_log ${_refer_job}_${_refer_sc}
+            '''        
+        }
+        stage("report"){
+            def params = getUpstreamParameters(_target_job, _target_sc)
+            env.shape = params.get('shape')
+            env.wrapper = params.get('WRAPPER')
+            env.torch_repo = params.get('TORCH_REPO')
+            env.torch_branch = params.get('TORCH_BRANCH')
+            env._suite = params.get('suite')
+            env._precision = params.get('precision')
+            env.backend = params.get('backend')
+
+            def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
+            env.ref_backend = ref_params.get('backend')
+            sh '''
+            #!/usr/bin/env bash
+            if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
+                source activate pytorch
+            fi
+            # Install dependencies
+            pip install scipy datacompy PyGithub styleframe pandas bs4 requests
+            cp scripts/modelbench/report.py ${WORKSPACE}
+            if [ ${_cppwp_gm} == 'True' ];then
+                python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}  --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 
+            else
+                python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m all --md_off --url ${BUILD_URL} --precision ${_precision} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch} --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 
+            fi
+            mv ${_target_job}_${_target_sc}/inductor_log/*.xlsx ./ && mv ${_target_job}_${_target_sc}/inductor_log/*.html ./
+            '''
+            archiveArtifacts  "*.xlsx, *.html"
+            if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
+                archiveArtifacts  "guilty_commit_search*"
+            }
+            if (fileExists("${WORKSPACE}/all_model_list.csv")) {
+                archiveArtifacts  "all_model_list.csv"
+            }
+        }
+
+        stage("Email"){
+            if ("${debug}" == "true"){
+                maillist="${debug_mail}"
+            }else{
+                maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
+            }
+            if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
+                emailext(
+                    subject: "[report-compare]-${env._target_job}-${env._refer_job}",
+                    mimeType: "text/html",
+                    attachmentsPattern: "**/*.xlsx",
+                    from: "pytorch_inductor_val@intel.com",
+                    to: maillist,
+                    body: '${FILE,path="inductor_model_bench.html"}'
+                )
+            }else{
+                emailext(
+                    subject: "Failure occurs in inductor job compare",
+                    mimeType: "text/html",
+                    from: "pytorch_inductor_val@intel.com",
+                    to: maillist,
+                    body: 'Job build failed, please double check in ${BUILD_URL}'
+                )
+            }
+        }//email
+    }
 }
