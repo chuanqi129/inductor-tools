@@ -149,7 +149,10 @@ env._NODE = "$NODE_LABEL"
 def getUpstreamParameters(String job_name, String job_id) {
     def params = [:]
     try {
-        def upstream_job = Jenkins.getInstance().getItemByFullName(job_name).getBuildByNumber(job_id.toInteger())
+        def upstream_job = Jenkins.getInstance().getItemByFullName(job_name).getLastSuccessfulBuild()
+        if (job_id != "lastSuccessfulBuild") {
+            upstream_job = Jenkins.getInstance().getItemByFullName(job_name).getBuildByNumber(job_id.toInteger())
+        }
         def param_list = upstream_job.actions.find{ a -> a instanceof ParametersAction }?.parameters
 
         param_list.each { p ->
