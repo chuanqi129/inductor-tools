@@ -161,6 +161,12 @@ def getUpstreamParameters(String job_name, String job_id) {
     return params
 }
 
+if ("${debug}" == "true"){
+    maillist="${debug_mail}"
+}else{
+    maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
+}
+
 node(NODE_LABEL){
     stage("prepare"){
         echo 'prepare......'
@@ -235,11 +241,6 @@ node(NODE_LABEL){
         }
 
         stage("Email"){
-            if ("${debug}" == "true"){
-                maillist="${debug_mail}"
-            }else{
-                maillist="Chuanqi.Wang@intel.com;guobing.chen@intel.com;beilei.zheng@intel.com;xiangdong.zeng@intel.com;xuan.liao@intel.com;Chunyuan.Wu@intel.com;Haozhe.Zhu@intel.com;weiwen.xia@intel.com;jiong.gong@intel.com;eikan.wang@intel.com;fan.zhao@intel.com;shufan.wu@intel.com;weizhuo.zhang@intel.com;yudong.si@intel.com;diwei.sun@intel.com"
-            }
             if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
                 emailext(
                     subject: "[report-compare]-${env._target_job}-${env._refer_job}",
