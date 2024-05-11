@@ -219,6 +219,14 @@ node(NODE_LABEL){
 
             def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
             env.ref_backend = ref_params.get('backend')
+            
+            def default_backend = "inductor"
+            if (env.backend == "null") {
+                env.backend = default_backend
+            }
+            if (env.ref_backend == "null") {
+                env.ref_backend = default_backend
+            }
             sh '''
             #!/usr/bin/env bash
             if [ ${_NODE} == 'mlp-spr-04.sh.intel.com' ];then
