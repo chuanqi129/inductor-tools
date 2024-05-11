@@ -177,11 +177,11 @@ node(NODE_LABEL){
         checkout scm   
     }
     param_compare_flag = "SUCCESS"
-    error_email_msg = "Please double check in ${BUILD_URL}"
+    env.error_email_msg = "Please double check in ${BUILD_URL}"
     stage("parameter compare") {
         if ((_target_job == _refer_job) && (_target_sc == _refer_sc)){
             param_compare_flag = "FAILED"
-            error_email_msg = "Target job and Reference job are the same. " + error_email_msg
+            env.error_email_msg = "Target job and Reference job are the same. " + error_email_msg
         } else {
             def target_params = getUpstreamParameters(_target_job, _target_sc)
             def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
@@ -189,7 +189,7 @@ node(NODE_LABEL){
             for (param_title in params_title_list) {
                 if (target_params.get(param_title) != ref_params.get(param_title)) {
                     param_compare_flag = "FAILED"
-                    error_email_msg = param_title + " is not same, target is " + target_params.get(param_title) + ". refer is " + ref_params.get(param_title) + ".\\n" + error_email_msg
+                    env.error_email_msg = param_title + " is not same, target is " + target_params.get(param_title) + ". refer is " + ref_params.get(param_title) + ".<br>" + error_email_msg
                 }
             }
         }
@@ -201,7 +201,7 @@ node(NODE_LABEL){
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: maillist,
-                body: error_email_msg
+                body: """${error_email_msg}"""
             )
         }
     } else {
