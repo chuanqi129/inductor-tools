@@ -189,7 +189,7 @@ node(NODE_LABEL){
             for (param_title in params_title_list) {
                 if (target_params.get(param_title) != ref_params.get(param_title)) {
                     param_compare_flag = "FAILED"
-                    error_email_msg = param_title + "is not same, target is " + target_params.get(param_title) + "refer is " + ref_params.get(param_title) + ".\n" + error_email_msg
+                    error_email_msg = param_title + "is not same, target is " + target_params.get(param_title) + ". refer is " + ref_params.get(param_title) + ".\n" + error_email_msg
                 }
             }
         }
