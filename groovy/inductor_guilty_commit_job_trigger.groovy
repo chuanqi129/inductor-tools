@@ -68,10 +68,27 @@ node(NODE_LABEL){
                     def guilty_commit_job = build propagate: false,
                         job: guilty_commit_search_job_name, parameters: job_parameters
                     
-                    def cur_job_number = guilty_commit_job.getNumber()
-                    def cur_job_url = guilty_commit_job.getAbsoluteUrl()
-                    def cur_job_duration = guilty_commit_job.getDurationString()
                     def cur_job_status = guilty_commit_job.getCurrentResult()
+                    def cur_job_url = guilty_commit_job.getAbsoluteUrl()
+
+                    int retry_num = 4;
+                    for (def i = 0; i < retry_num; i += 1) {
+                        if (cur_job_status == "SUCCESS") {
+                            break;
+                        } else {
+                            println (cur_job_url + " Job failed: retry No." + i)
+                            guilty_commit_job = build propagate: false,
+                                job: guilty_commit_search_job_name, parameters: job_parameters
+                            cur_job_status = guilty_commit_job.getCurrentResult()
+                            cur_job_url = guilty_commit_job.getAbsoluteUrl()
+                        }
+                    } // for
+
+                    cur_job_status = guilty_commit_job.getCurrentResult()
+                    cur_job_url = guilty_commit_job.getAbsoluteUrl()
+                    def cur_job_number = guilty_commit_job.getNumber()
+                    def cur_job_duration = guilty_commit_job.getDurationString()
+
                     def path = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log/guilty_commit.log'
                     def log_dir = 'inductor_guilty_commit_search/'+ cur_job_number + '/**/inductor_log'
                     def temp_files = findFiles glob: path
