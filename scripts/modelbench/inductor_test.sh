@@ -123,6 +123,7 @@ single_thread_test() {
 }
 
 
+echo 1 > /proc/sys/vm/drop_caches
 if [[ $THREAD == "multiple" ]]; then
     echo "multi-threads testing...."
     multi_threads_test
