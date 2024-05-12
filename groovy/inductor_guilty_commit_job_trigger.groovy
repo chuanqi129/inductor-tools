@@ -72,7 +72,7 @@ node(NODE_LABEL){
                     def cur_job_url = guilty_commit_job.getAbsoluteUrl()
 
                     int retry_num = 4;
-                    for (i = 0; i < retry_num; i += 1) {
+                    for (def i = 0; i < retry_num; i += 1) {
                         if (cur_job_status == "SUCCESS") {
                             break;
                         } else {
