@@ -586,9 +586,9 @@ node(NODE_LABEL){
                     cd ${WORKSPACE}
                 fi
                 if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} --issue_number ${_issue_number} && rm -rf refer
                 else
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} --issue_number ${_issue_number} && rm -rf refer
                 fi
                 '''
             }else{
