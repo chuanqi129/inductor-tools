@@ -51,6 +51,10 @@ if [[ ${TEST_MODE} == "training_full" ]]; then
     sed -i "/SKIP_TRAIN = {/a\    \"hf_GPT2_large\"," benchmarks/dynamo/torchbench.py
 fi
 
+# Add drop cache before running model
+sed -i '/        t_iter_begin = time.perf_counter()/i\
+        os.system("echo 1 >/proc/sys/vm/drop_caches")' benchmarks/dynamo/common.py
+
 Flag_extra="$EXTRA "
 if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
