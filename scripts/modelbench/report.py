@@ -1,5 +1,5 @@
 """
-Generate report or data compare report from specified inductor logs.
+Generate report or data compare report from specified ipex logs.
 Usage:
   python report.py -r WW48.2 -t WW48.4 -m all --html_off --md_off --precision bfloat16
   python report.py -r WW48.2 -t WW48.4 -m all --gh_token github_pat_xxxxx --dashboard dynamic
@@ -20,7 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
-parser = argparse.ArgumentParser(description="Generate report from two specified inductor logs")
+parser = argparse.ArgumentParser(description="Generate report from two specified ipex logs")
 parser.add_argument('-t','--target',type=str,help='target log file')
 parser.add_argument('-r','--reference',type=str,help='reference log file')
 parser.add_argument('-l', '--url', type=str, help='jenkins job build url')
@@ -44,6 +44,7 @@ parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
 parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
 parser.add_argument('--threshold',type=float, default=0.1,help='threshold for checking performance regression and improvement')
+parser.add_argument('--issue_number',type=int, default=93531,help='issue number for pytorch dashboard')
 args=parser.parse_args()
 
 # known failure @20230423
@@ -102,10 +103,10 @@ else:
     suite_list = [args.suite]
 
 def filter_df_by_threshold(df, interval_start,interval_end):
-    df = df[df['inductor_new'] > 0]
-    filtered_data_small = df[df['inductor_old'] <= interval_start]
-    filtered_data_medium = df[(df['inductor_old'] > interval_start)  & (df['inductor_old'] <= interval_end)]
-    filtered_data_large = df[df['inductor_old'] > interval_end]
+    df = df[df['ipex_new'] > 0]
+    filtered_data_small = df[df['ipex_old'] <= interval_start]
+    filtered_data_medium = df[(df['ipex_old'] > interval_start)  & (df['ipex_old'] <= interval_end)]
+    filtered_data_large = df[df['ipex_old'] > interval_end]
     return filtered_data_small, filtered_data_medium,filtered_data_large
 
 def get_passing_entries(df,column_name):
@@ -123,7 +124,7 @@ def update_summary(excel, reference, target):
             'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
             'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
             'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
-            'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
+            'Compiler':['ipex', 'ipex', 'ipex', 'ipex','ipex','ipex','ipex','ipex'],
             'torchbench':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
             'huggingface':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
             'timm_models ':[' ', ' ', ' ', ' ',' ',' ',' ',' ']
@@ -132,7 +133,7 @@ def update_summary(excel, reference, target):
             'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
             'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
-            'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
+            'Compiler':['ipex', 'ipex', 'ipex', 'ipex'],
             'torchbench':[' ', ' ', ' ', ' '],
             'huggingface':[' ', ' ', ' ', ' '],
             'timm_models ':[' ', ' ', ' ', ' ']
@@ -142,14 +143,14 @@ def update_summary(excel, reference, target):
             'Test Secnario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
             'Comp Item':['Pass Rate', ' ', 'Geomean Speedup', ' ','Pass Rate',' ','Geomean Speedup',' '],
             'Date':[' ', ' ', ' ', ' ',' ',' ',' ',' '],
-            'Compiler':['inductor', 'inductor', 'inductor', 'inductor','inductor','inductor','inductor','inductor'],
+            'Compiler':['ipex', 'ipex', 'ipex', 'ipex','ipex','ipex','ipex','ipex'],
             args.suite:[' ', ' ', ' ', ' ',' ',' ',' ',' ']
         }
         data_target = {
             'Test Secnario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
             'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
-            'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
+            'Compiler':['ipex', 'ipex', 'ipex', 'ipex'],
             args.suite:[' ', ' ', ' ', ' ']
         }
 
@@ -205,24 +206,24 @@ def update_summary(excel, reference, target):
     sf.to_excel(sheet_name='Summary',excel_writer=excel)
 
 def update_swinfo(excel):
-    if not (os.path.exists(args.target+'/inductor_log/version.csv')):
+    if not (os.path.exists(args.target+'/ipex_log/version.csv')):
         print("target version.csv not found")
         return
     refer_read_flag = True
     global start_commit
     global end_commit
     try:
-        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+        swinfo_df = pd.read_csv(args.target+'/ipex_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
         start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         if args.reference is not None:
-            refer_swinfo_df = pd.read_csv(args.reference+'/inductor_log/version.csv')
+            refer_swinfo_df = pd.read_csv(args.reference+'/ipex_log/version.csv')
             refer_swinfo_df = refer_swinfo_df.rename(columns={'branch':'refer_branch','commit':'refer_commit'})
             swinfo_df = pd.merge(swinfo_df, refer_swinfo_df)
             end_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'refer_commit'].values[0]
     except :
         print("referece version.csv not found")
-        swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+        swinfo_df = pd.read_csv(args.target+'/ipex_log/version.csv')
         swinfo_df = swinfo_df.rename(columns={'branch':'target_branch','commit':'target_commit'})
         start_commit = swinfo_df.loc[swinfo_df['name'] == 'torch', 'target_commit'].values[0]
         refer_read_flag = False
@@ -245,7 +246,7 @@ def parse_acc_failure(file,failed_model):
     if failed_model in known_failures.keys():
         result.append(failed_model+", "+known_failures[failed_model])
     else:
-        # if not ignore errors, aot_inductor log will throw
+        # if not ignore errors, aot_ipex log will throw
         # UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 3122: invalid start byte
         with open(file, 'r', errors='ignore') as reader:
             contents = reader.readlines()
@@ -441,7 +442,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
         new_failures_list = new_failures['name'].values.tolist()
         for failed_model in new_failures_list:
             sf.apply_style_by_indexes(indexes_to_style=sf[sf['name'] == failed_model],styler_obj=regression_style)
-    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
+    sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('ipex_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite, thread):
     target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), args.backend, suite, args.precision, args.infer_or_train)
@@ -472,19 +473,19 @@ def process_thread(thread):
  
 def process(input, thread):
     if args.reference is not None:
-        data_new=input[['suite','name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'inductor_new',"compilation_latency_x":'compilation_latency_new'})
-        data_new['inductor_new']=data_new['inductor_new'].astype(float).div(1000)
+        data_new=input[['suite','name','batch_size_x','speedup_x','abs_latency_x','compilation_latency_x']].rename(columns={'name':'name','batch_size_x':'batch_size_new','speedup_x':'speed_up_new',"abs_latency_x":'ipex_new',"compilation_latency_x":'compilation_latency_new'})
+        data_new['ipex_new']=data_new['ipex_new'].astype(float).div(1000)
         data_new['speed_up_new']=data_new['speed_up_new'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
-        data_new['eager_new'] = data_new['speed_up_new'] * data_new['inductor_new']        
-        data_old=input[['batch_size_y','speedup_y','abs_latency_y','compilation_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'inductor_old',"compilation_latency_y":'compilation_latency_old'})    
-        data_old['inductor_old']=data_old['inductor_old'].astype(float).div(1000)
+        data_new['eager_new'] = data_new['speed_up_new'] * data_new['ipex_new']        
+        data_old=input[['batch_size_y','speedup_y','abs_latency_y','compilation_latency_y']].rename(columns={'batch_size_y':'batch_size_old','speedup_y':'speed_up_old',"abs_latency_y":'ipex_old',"compilation_latency_y":'compilation_latency_old'})    
+        data_old['ipex_old']=data_old['ipex_old'].astype(float).div(1000)
         data_old['speed_up_old']=data_old['speed_up_old'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
-        data_old['eager_old'] = data_old['speed_up_old'] * data_old['inductor_old']
+        data_old['eager_old'] = data_old['speed_up_old'] * data_old['ipex_old']
         input['speedup_x']=input['speedup_x'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         input['speedup_y']=input['speedup_y'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
         data_ratio= pd.DataFrame(round(input['speedup_x'] / input['speedup_y'],2),columns=['Ratio Speedup(New/old)'])
         data_ratio['Eager Ratio(old/new)'] = pd.DataFrame(round(data_old['eager_old'] / data_new['eager_new'],2))
-        data_ratio['Inductor Ratio(old/new)'] = pd.DataFrame(round(data_old['inductor_old'] / data_new['inductor_new'],2))
+        data_ratio['ipex Ratio(old/new)'] = pd.DataFrame(round(data_old['ipex_old'] / data_new['ipex_new'],2))
         data_ratio['Compilation_latency_Ratio(old/new)'] = pd.DataFrame(round(data_old['compilation_latency_old'] / data_new['compilation_latency_new'],2))
         
         combined_data = pd.DataFrame({
@@ -492,31 +493,31 @@ def process(input, thread):
             'name': list(data_new['name']),
             'batch_size_new': list(data_new['batch_size_new']),
             'speed_up_new': list(data_new['speed_up_new']),
-            'inductor_new': list(data_new['inductor_new']),
+            'ipex_new': list(data_new['ipex_new']),
             'eager_new': list(data_new['eager_new']),
             'compilation_latency_new': list(data_new['compilation_latency_new']),
             'batch_size_old': list(data_old['batch_size_old']),
             'speed_up_old': list(data_old['speed_up_old']),
-            'inductor_old': list(data_old['inductor_old']),
+            'ipex_old': list(data_old['ipex_old']),
             'eager_old': list(data_old['eager_old']),
             'compilation_latency_old': list(data_old['compilation_latency_old']),
             'Ratio Speedup(New/old)': list(data_ratio['Ratio Speedup(New/old)']),
             'Eager Ratio(old/new)': list(data_ratio['Eager Ratio(old/new)']),
-            'Inductor Ratio(old/new)': list(data_ratio['Inductor Ratio(old/new)']),
+            'ipex Ratio(old/new)': list(data_ratio['ipex Ratio(old/new)']),
             'Compilation_latency_Ratio(old/new)': list(data_ratio['Compilation_latency_Ratio(old/new)'])
             })
         if args.cppwrapper_gm:
             global multi_threads_gm, single_thread_gm
             if thread == "multiple":
                 combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.mt_interval_start,args.mt_interval_end)             
-                multi_threads_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
-                multi_threads_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
-                multi_threads_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')
+                multi_threads_gm['small'] = caculate_geomean(combined_data_small,'ipex Ratio(old/new)')
+                multi_threads_gm['medium'] = caculate_geomean(combined_data_medium,'ipex Ratio(old/new)')
+                multi_threads_gm['large'] = caculate_geomean(combined_data_large,'ipex Ratio(old/new)')
             if thread == "single":
                 combined_data_small, combined_data_medium,combined_data_large=filter_df_by_threshold(combined_data,args.st_interval_start,args.st_interval_end)
-                single_thread_gm['small'] = caculate_geomean(combined_data_small,'Inductor Ratio(old/new)')
-                single_thread_gm['medium'] = caculate_geomean(combined_data_medium,'Inductor Ratio(old/new)')
-                single_thread_gm['large'] = caculate_geomean(combined_data_large,'Inductor Ratio(old/new)')      
+                single_thread_gm['small'] = caculate_geomean(combined_data_small,'ipex Ratio(old/new)')
+                single_thread_gm['medium'] = caculate_geomean(combined_data_medium,'ipex Ratio(old/new)')
+                single_thread_gm['large'] = caculate_geomean(combined_data_large,'ipex Ratio(old/new)')      
         data = StyleFrame(combined_data)
         data.set_column_width(1, 10)
         data.set_column_width(2, 10)
@@ -535,22 +536,22 @@ def process(input, thread):
         data.set_column_width(15, 28)
         data.set_column_width(16, 32)
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
-        data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))],styler_obj=regression_style)
+        data.apply_style_by_indexes(indexes_to_style=data[(data['ipex Ratio(old/new)'] > 0) & (data['ipex Ratio(old/new)'] < (1 - args.threshold))],styler_obj=regression_style)
         global new_performance_regression
         global new_performance_regression_model_list
-        regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))]
+        regression = data.loc[(data['ipex Ratio(old/new)'] > 0) & (data['ipex Ratio(old/new)'] < (1 - args.threshold))]
         regression = regression.copy()
         regression.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
         model_list = get_perf_model_list(regression, thread, 'drop')
         if not model_list.empty:
             new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
-        data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > (1 + args.threshold)],styler_obj=improve_style)
+        data.apply_style_by_indexes(indexes_to_style=data[data['ipex Ratio(old/new)'] > (1 + args.threshold)],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
         global new_performance_improvement
         global new_performance_improvement_model_list
-        improvement = data.loc[(data['Inductor Ratio(old/new)'] > (1 + args.threshold))]
+        improvement = data.loc[(data['ipex Ratio(old/new)'] > (1 + args.threshold))]
         improvement = improvement.copy()
         improvement.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
@@ -558,16 +559,16 @@ def process(input, thread):
         if not model_list.empty:
             new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
     else:
-        data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
-        data_new['inductor']=data_new['inductor'].astype(float).div(1000)
+        data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'ipex',"compilation_latency":'compilation_latency'})
+        data_new['ipex']=data_new['ipex'].astype(float).div(1000)
         data_new['speedup']=data_new['speedup'].apply(pd.to_numeric, errors='coerce').fillna(0.0)
-        data_new['eager'] = data_new['speedup'] * data_new['inductor']        
+        data_new['eager'] = data_new['speedup'] * data_new['ipex']        
         data = StyleFrame({
             'suite': list(data_new['suite']),
             'name': list(data_new['name']),
             'batch_size': list(data_new['batch_size']),
             'speedup': list(data_new['speedup']),
-            'inductor': list(data_new['inductor']),
+            'ipex': list(data_new['ipex']),
             'eager': list(data_new['eager']),
             'compilation_latency': list(data_new['compilation_latency']),})
         data.set_column_width(1, 10)
@@ -608,7 +609,7 @@ def update_cppwrapper_gm(excel,reference,target):
         'Test Secnario':['Single Socket Multi-Threads', 'Test Secnario','Single Core Single-Thread'], 
         'Comp Item':['Geomean Speedup','Comp Item','Geomean Speedup'],
         'Date':[' ', ' Date', ' '],
-        'Compiler':['inductor', 'Compiler', 'inductor'],
+        'Compiler':['ipex', 'Compiler', 'ipex'],
         f'small(t<={args.mt_interval_start}s)':[' ', f'small(t<={args.st_interval_start}s)', ' '],
         f'medium({args.mt_interval_start}s<t<={args.mt_interval_end}s)':[' ', f'medium({args.st_interval_start}s<t<={args.st_interval_end}s)', ' '],
         f'large(t>{args.mt_interval_end}s)':[' ', f'large(t>{args.st_interval_end}s)', ' ']
@@ -633,7 +634,7 @@ def update_cppwrapper_gm(excel,reference,target):
         cppwrapper_sf.set_column_width(i, 30) if i==6 else cppwrapper_sf.set_column_width(i, 18)
     cppwrapper_sf.to_excel(sheet_name='Cppwrapper_GM',excel_writer=excel)
 
-def update_issue_commits(precision):
+def update_issue_commits(precision, issue_number):
     from github import Github
     # generate md files
     icx_hw_info=f'''
@@ -676,7 +677,7 @@ def update_issue_commits(precision):
     print(hw_info)
     
     # Software information
-    swinfo_df = pd.read_csv(args.target+'/inductor_log/version.csv')
+    swinfo_df = pd.read_csv(args.target+'/ipex_log/version.csv')
     swinfo_df.set_index('name', inplace=True)
     torch_branch = swinfo_df.at['torch', 'branch']
     torch_commit = swinfo_df.at['torch', 'commit']
@@ -716,7 +717,7 @@ Test command
 ```bash
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
-export TORCHINDUCTOR_FREEZING=1
+export TORCHipex_FREEZING=1
 CORES=$(lscpu | grep Core | awk '{print $4}')
 export OMP_NUM_THREADS=$CORES
 ''' + f'''
@@ -730,7 +731,7 @@ Test command
 ```bash
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:-1,muzzy_decay_ms:-1"
-export TORCHINDUCTOR_FREEZING=1
+export TORCHipex_FREEZING=1
 export OMP_NUM_THREADS=1
 ''' + f'''
 python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --devices=cpu --dtypes=float32 --inference --compilers={args.backend} --batch_size=1 --threads 1 --extra-args="--timeout 9000"
@@ -739,7 +740,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
 '''
     if not args.md_off:
         # mt
-        mt_result=open(args.target+'/inductor_log/mt_'+args.target+'.md','a+')
+        mt_result=open(args.target+'/ipex_log/mt_'+args.target+'.md','a+')
         mt_folder = getfolder(args.target,'multi_threads_cf_logs')
         mt_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-Socket Multi-threads ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         mt_result.writelines(mt_title)
@@ -755,7 +756,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         with open(mt_inference,'r') as inference_file:
             mt_result.writelines(inference_file.readlines())
         # st
-        st_result=open(args.target+'/inductor_log/st_'+args.target+'.md','a+')
+        st_result=open(args.target+'/ipex_log/st_'+args.target+'.md','a+')
         st_folder = getfolder(args.target,'single_thread_cf_logs')
         st_title=f'# [{args.dashboard}] Performance Dashboard for {args.precision} precision -- Single-core Single-thread ('+str((datetime.now() - timedelta(days=2)).date())+' nightly release) ##'
         st_result.writelines(st_title)
@@ -775,7 +776,7 @@ python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--
         g = Github(ESI_SYD_TK)
         g = Github(base_url="https://api.github.com", login_or_token=ESI_SYD_TK)
         repo = g.get_repo("pytorch/pytorch")
-        issue = repo.get_issue(number=93531)
+        issue = repo.get_issue(number=issue_number)
         print(issue)
         try:
             mt_result.seek(0)
@@ -827,9 +828,9 @@ def html_generate(html_off):
     if not html_off:
         try:
             if args.mode == 'all':
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                content = pd.read_excel('{0}/ipex_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
             else:
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2])
+                content = pd.read_excel('{0}/ipex_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -849,11 +850,11 @@ def html_generate(html_off):
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
             fixed_failures = new_fixed_failures.to_html(classes="table",index = False)
-            with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f, \
-                open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f, \
-                open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f, \
-                open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost_f, \
-                open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
+            with open(args.target+'/ipex_log/ipex_model_bench.html',mode = "a") as f, \
+                open(args.target+'/ipex_log/ipex_perf_regression.html',mode = "a") as perf_f, \
+                open(args.target+'/ipex_log/ipex_failures.html',mode = "a") as failure_f, \
+                open(args.target+'/ipex_log/ipex_perf_improvement.html',mode = "a") as perf_boost_f, \
+                open(args.target+'/ipex_log/ipex_fixed_failures.html',mode = "a") as fixed_failure_f:
                 f.write(html_head() + "<p>Summary</p>" + summary + \
                         "<p>SW info</p>" + swinfo + \
                         failures_html + \
@@ -863,15 +864,15 @@ def html_generate(html_off):
                         "<h3><font color='#00dd00'>Improvement</font></h3>" + \
                         "<p>new_perf_improvement</p>" + perf_improvement + \
                         "<p>new_fixed_failures</p>" + fixed_failures + \
-                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
+                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_ipex:{args.image_tag}</p>" + html_tail())
                 perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_ipex:{args.image_tag}</p>")
                 failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_ipex:{args.image_tag}</p>")
                 perf_boost_f.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_ipex:{args.image_tag}</p>")
                 fixed_failure_f.write(f"<p>new_fixed_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_ipex:{args.image_tag}</p>")
             f.close()
             perf_f.close()
             failure_f.close()
@@ -951,8 +952,8 @@ def excel_postprocess(file):
     wb.save(file)
 
 if __name__ == '__main__':
-    excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
+    excel = StyleFrame.ExcelWriter('{0}/ipex_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
     excel_postprocess(excel)
     html_generate(args.html_off)     
-    update_issue_commits(args.precision)
+    update_issue_commits(args.precision, args.issue_number)
