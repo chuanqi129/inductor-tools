@@ -368,6 +368,15 @@ if ('IPEX_COMMIT' in params) {
 }
 echo "IPEX_COMMIT: $IPEX_COMMIT"
 
+issue_number= '93531'
+if ('issue_number' in params) {
+    echo "issue_number in params"
+    if (params.issue_number != '') {
+        issue_number = params.issue_number
+    }
+}
+echo "issue_number: $issue_number"
+
 env._terminate_ins = "$terminate_instance"
 env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
@@ -403,6 +412,7 @@ env._IPEX_REPO = "$IPEX_REPO"
 env._IPEX_BRANCH = "$IPEX_BRANCH"
 env._IPEX_COMMIT = "$IPEX_COMMIT"
 env._log_name = "${backend}_log"
+env._issue_number = "$issue_number"
 
 env._infer_or_train = "$infer_or_train"
 
@@ -589,9 +599,9 @@ node(NODE_LABEL){
                 fi
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend}
+                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} --issue_number ${_issue_number}
                 else
-                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend}
+                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --torch_branch ${_TORCH_BRANCH} --backend ${_backend} --issue_number ${_issue_number}
                 fi
                 '''
             }
