@@ -42,8 +42,8 @@ parser.add_argument('--shape',type=str,default='static',help='Shape: static or d
 parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
-parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
-parser.add_argument('--ref_backend',type=str,help='reference backend for comparsion')
+parser.add_argument('--backend',type=str, help='pytorch dynamo backend')
+parser.add_argument('--ref_backend',type=str, default='inductor', help='reference backend for comparsion')
 parser.add_argument('--threshold',type=float, default=0.1,help='threshold for checking performance regression and improvement')
 args=parser.parse_args()
 
