@@ -431,7 +431,7 @@ node(NODE_LABEL){
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/scripts/modelbench/entrance_userbm.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/docker/Dockerfile.userbm ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/launch_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/version_collect_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
