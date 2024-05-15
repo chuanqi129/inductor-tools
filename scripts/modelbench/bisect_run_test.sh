@@ -25,11 +25,12 @@ prepare_test() {
     rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}
     cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
 }
 
 run_perf_drop_test() {
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
     result=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "=====result: $result======="
     ratio=$(echo "$result $EXP_PERF" | awk '{ printf "%.2f\n", $1/$2 }')
@@ -44,7 +45,7 @@ run_perf_drop_test() {
 }
 
 run_perf_improve_test() {
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
     result=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "=====result: $result======="
     ratio=$(echo "$EXP_PERF $result" | awk '{ printf "%.2f\n", $1/$2 }')
@@ -59,7 +60,7 @@ run_perf_improve_test() {
 }
 
 run_acc_drop_test() {
-    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
+    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ "X$acc_res" != "Xpass" ]; then
 	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
@@ -71,7 +72,7 @@ run_acc_drop_test() {
 }
 
 run_acc_improve_test() {
-    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $4}')
+    acc_res=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $4}')
     echo "=====acc: $acc_res======="
     if [ "X$acc_res" != "Xpass" ]; then
 	    echo "`git rev-parse HEAD` is a BAD COMMIT!"
@@ -83,7 +84,7 @@ run_acc_improve_test() {
 }
 
 run_crash_test() {
-    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./crash.log
+    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
         acc_status=`tail -n 1 ./crash.log | grep pass | wc -l`
         perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
@@ -113,7 +114,7 @@ run_crash_test() {
 }
 
 run_fixed_test() {
-    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE 2>&1 | tee ./fixed.log
+    bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND 2>&1 | tee ./fixed.log
     if [ $? -eq 0 ]; then
         acc_status=`tail -n 1 ./fixed.log | grep pass | wc -l`
         perf_status=`tail -n 1 ./fixed.log | grep $MODEL | awk -F, '{print $3}'`

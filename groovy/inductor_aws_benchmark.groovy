@@ -161,15 +161,6 @@ if ('TORCH_REPO' in params) {
 }
 echo "TORCH_REPO: $TORCH_REPO"
 
-TORCH_BRANCH= 'nightly'
-if ('TORCH_BRANCH' in params) {
-    echo "TORCH_BRANCH in params"
-    if (params.TORCH_BRANCH != '') {
-        TORCH_BRANCH = params.TORCH_BRANCH
-    }
-}
-echo "TORCH_BRANCH: $TORCH_BRANCH"
-
 TORCH_COMMIT= 'nightly'
 if ('TORCH_COMMIT' in params) {
     echo "TORCH_COMMIT in params"
@@ -188,15 +179,6 @@ if ('DYNAMO_BENCH' in params) {
 }
 echo "DYNAMO_BENCH: $DYNAMO_BENCH"
 
-TORCH_AUDIO_BRANCH= 'main'
-if ('TORCH_AUDIO_BRANCH' in params) {
-    echo "TORCH_AUDIO_BRANCH in params"
-    if (params.TORCH_AUDIO_BRANCH != '') {
-        TORCH_AUDIO_BRANCH = params.TORCH_AUDIO_BRANCH
-    }
-}
-echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
-
 AUDIO= 'default'
 if ('AUDIO' in params) {
     echo "AUDIO in params"
@@ -205,15 +187,6 @@ if ('AUDIO' in params) {
     }
 }
 echo "AUDIO: $AUDIO"
-
-TORCH_TEXT_BRANCH= 'main'
-if ('TORCH_TEXT_BRANCH' in params) {
-    echo "TORCH_TEXT_BRANCH in params"
-    if (params.TORCH_TEXT_BRANCH != '') {
-        TORCH_TEXT_BRANCH = params.TORCH_TEXT_BRANCH
-    }
-}
-echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
 TEXT= 'default'
 if ('TEXT' in params) {
@@ -224,15 +197,6 @@ if ('TEXT' in params) {
 }
 echo "TEXT: $TEXT"
 
-TORCH_VISION_BRANCH= 'main'
-if ('TORCH_VISION_BRANCH' in params) {
-    echo "TORCH_VISION_BRANCH in params"
-    if (params.TORCH_VISION_BRANCH != '') {
-        TORCH_VISION_BRANCH = params.TORCH_VISION_BRANCH
-    }
-}
-echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
-
 VISION= 'default'
 if ('VISION' in params) {
     echo "VISION in params"
@@ -242,15 +206,6 @@ if ('VISION' in params) {
 }
 echo "VISION: $VISION"
 
-TORCH_DATA_BRANCH= 'main'
-if ('TORCH_DATA_BRANCH' in params) {
-    echo "TORCH_DATA_BRANCH in params"
-    if (params.TORCH_DATA_BRANCH != '') {
-        TORCH_DATA_BRANCH = params.TORCH_DATA_BRANCH
-    }
-}
-echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
-
 DATA= 'default'
 if ('DATA' in params) {
     echo "DATA in params"
@@ -259,15 +214,6 @@ if ('DATA' in params) {
     }
 }
 echo "DATA: $DATA"
-
-TORCH_BENCH_BRANCH= 'main'
-if ('TORCH_BENCH_BRANCH' in params) {
-    echo "TORCH_BENCH_BRANCH in params"
-    if (params.TORCH_BENCH_BRANCH != '') {
-        TORCH_BENCH_BRANCH = params.TORCH_BENCH_BRANCH
-    }
-}
-echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
 TORCH_BENCH= 'default'
 if ('TORCH_BENCH' in params) {
@@ -357,7 +303,6 @@ env._report_only = "$report_only"
 env._dashboard_title = "$dashboard_title"
 
 env._TORCH_REPO = "$TORCH_REPO"
-env._TORCH_BRANCH = "$TORCH_BRANCH"
 env._TORCH_COMMIT = "$TORCH_COMMIT"
 env._DYNAMO_BENCH = "$DYNAMO_BENCH"
 
@@ -434,7 +379,33 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} "nohup bash entrance.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
+            ssh ubuntu@${current_ip} " bash entrance.sh \
+                        TAG=${_target} \
+                        PRECISION=${_precision} \
+                        TEST_MODE=${_test_mode} \
+                        SHAPE=${_shape} \
+                        TORCH_REPO=${_TORCH_REPO} \
+                        TORCH_COMMIT=${_TORCH_COMMIT} \
+                        DYNAMO_BENCH=${_DYNAMO_BENCH} \
+                        AUDIO=${_AUDIO} \
+                        TEXT=${_TEXT} \
+                        VISION=${_VISION} \
+                        DATA=${_DATA} \
+                        TORCH_BENCH=${_TORCH_BENCH} \
+                        THREADS=${_THREADS} \
+                        CHANNELS=${_CHANNELS} \
+                        WRAPPER=${_WRAPPER} \
+                        HF_TOKEN=${_HF_TOKEN} \
+                        BACKEND=${_backend} \
+                        SUITE=${_suite} \
+                        MODEL=resnet50 \
+                        TORCH_START_COMMIT=${_TORCH_COMMIT} \
+                        TORCH_END_COMMIT=${_TORCH_COMMIT} \
+                        SCENARIO=accuracy \
+                        KIND=crash \
+                        PERF_RATIO="-1.1" \
+                        EXTRA=${_extra_param} \
+                        &>/dev/null & " &
             '''
         }
     }
@@ -444,17 +415,11 @@ node(NODE_LABEL){
                     [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
                     [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
                     [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
-                    [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${TORCH_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${VISION}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TEXT}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${DATA}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${AUDIO}"],
-                    [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
                     [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
                     [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_aws"],
@@ -476,7 +441,7 @@ node(NODE_LABEL){
         for t in {1..100}
         do
             current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+            timeout 2m ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
                     rm -rf ${WORKSPACE}/${_target}
@@ -529,15 +494,16 @@ node(NODE_LABEL){
                 copyArtifacts(
                     projectName: currentBuild.projectName,
                     selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
+                    fingerprintArtifacts: true,
+                    target: "refer",
                 )           
                 sh '''
                 #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+                cd ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend} && rm -rf refer
                 else
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} && rm -rf refer
+                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend} && rm -rf refer
                 fi
                 '''
             }else{
@@ -545,9 +511,9 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
                 if [ ${_dash_board} == "true" ]; then
-                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train}
+                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend}
                 else
-                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train}
+                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend}
                 fi
                 '''
             }
@@ -615,7 +581,10 @@ node(NODE_LABEL){
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
-            archiveArtifacts  "guilty_commit_search_model_list.*"
+            archiveArtifacts  "guilty_commit_search*"
+        }
+        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
+            archiveArtifacts  "all_model_list.csv"
         }
     }
 
