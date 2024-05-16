@@ -131,9 +131,10 @@ def update_passrate_csv(df, target_path):
         passed_num = int(passrate_str.split(', ')[1].split('/')[0])
         perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
         acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
-        perf_df = pd.read_csv(perf_path, index_col=0)
-        acc_df = pd.read_csv(acc_path, index_col=0)
-        name_union_df = pd.merge(perf_df['name'], acc_df['name'], how='outer')
+        perf_df = pd.read_csv(perf_path)
+        acc_df = pd.read_csv(acc_path)
+        acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
+        name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
         new_df.loc['inductor'][suite_name] = passrate_str_new
