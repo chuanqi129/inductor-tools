@@ -123,41 +123,41 @@ def percentage(part, whole, decimals=2):
         return 0
     return round(100 * float(part) / float(whole), decimals)
 
-def update_passrate_csv(df, target_path):
+def update_passrate_csv(df, target_path, backend):
     new_df = df.copy()
     for suite_name in suite_list:
-        passrate_str = new_df.loc['inductor'][suite_name]
+        passrate_str = new_df.loc[backend][suite_name]
         passed_num = int(passrate_str.split(', ')[1].split('/')[0])
-        perf_path = '{0}/inductor_{1}_{2}_{3}_cpu_performance.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/inductor_{1}_{2}_{3}_cpu_accuracy.csv'.format(target_path, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
         perf_df = pd.read_csv(perf_path)
         acc_df = pd.read_csv(acc_path)
         acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
         name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
-        new_df.loc['inductor'][suite_name] = passrate_str_new
+        new_df.loc[backend][suite_name] = passrate_str_new
     new_df.to_csv(target_path + '/passrate_new.csv')
 
 def update_passrate(reference):
     if reference is not None:
         if args.mode == "multiple" or args.mode == 'all':
             reference_mt_pr_data = pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
-            update_passrate_csv(reference_mt_pr_data, reference_mt)
+            update_passrate_csv(reference_mt_pr_data, reference_mt, args.ref_backend)
             target_mt_pr_data = pd.read_csv(target_mt+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_mt_pr_data, target_mt)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
         if args.mode == "single" or args.mode == 'all':
             reference_st_pr_data = pd.read_csv(reference_st+'/passrate.csv',index_col=0)
-            update_passrate_csv(reference_st_pr_data, reference_st)
+            update_passrate_csv(reference_st_pr_data, reference_st, args.ref_backend)
             target_st_pr_data = pd.read_csv(target_st+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_st_pr_data, target_st)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
     else:
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_mt_pr_data, target_mt)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
-            update_passrate_csv(target_st_pr_data, target_st)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
 
 def update_summary(excel, reference, target, passrate_file, sheet_name):
     if args.suite == 'all':
