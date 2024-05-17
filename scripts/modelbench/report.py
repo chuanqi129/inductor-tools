@@ -118,7 +118,48 @@ def caculate_geomean(df,column_name):
         return "0.0x"
     return f"{gmean(cleaned_df):.2f}x"
 
-def update_summary(excel, reference, target):
+def percentage(part, whole, decimals=2):
+    if whole == 0:
+        return 0
+    return round(100 * float(part) / float(whole), decimals)
+
+def update_passrate_csv(df, target_path, backend):
+    new_df = df.copy()
+    for suite_name in suite_list:
+        passrate_str = new_df.loc[backend][suite_name]
+        passed_num = int(passrate_str.split(', ')[1].split('/')[0])
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        perf_df = pd.read_csv(perf_path)
+        acc_df = pd.read_csv(acc_path)
+        acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
+        name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
+        perc = int(percentage(passed_num, len(name_union_df), decimals=0))
+        passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
+        new_df.loc[backend][suite_name] = passrate_str_new
+    new_df.to_csv(target_path + '/passrate_new.csv')
+
+def update_passrate(reference):
+    if reference is not None:
+        if args.mode == "multiple" or args.mode == 'all':
+            reference_mt_pr_data = pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_mt_pr_data, reference_mt, args.ref_backend)
+            target_mt_pr_data = pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
+        if args.mode == "single" or args.mode == 'all':
+            reference_st_pr_data = pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_st_pr_data, reference_st, args.ref_backend)
+            target_st_pr_data = pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
+    else:
+        if args.mode == "multiple" or args.mode == 'all':
+            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
+        if args.mode == "single" or args.mode == 'all':
+            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
+
+def update_summary(excel, reference, target, passrate_file, sheet_name):
     if args.suite == 'all':
         data = {
             'Test Scenario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
@@ -157,28 +198,28 @@ def update_summary(excel, reference, target):
     if reference is not None:
         summary=pd.DataFrame(data)
         if args.mode == "multiple" or args.mode == 'all':
-            reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+            reference_mt_pr_data=pd.read_csv(reference_mt+'/'+passrate_file,index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[2:3,4:7]=reference_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=reference
             summary.iloc[2:3,2]=reference 
-            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0) 
-            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target
         if args.mode == "single" or args.mode == 'all':
-            reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+            reference_st_pr_data=pd.read_csv(reference_st+'/'+passrate_file,index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
-            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:1,1:7]
             summary.iloc[6:7,4:7]=reference_st_gm_data.iloc[0:2,1:7]
             summary.iloc[4:5,2]=reference
             summary.iloc[6:7,2]=reference
-            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
             summary.iloc[7:8,2]=target
@@ -187,23 +228,23 @@ def update_summary(excel, reference, target):
     else:
         summary=pd.DataFrame(data_target)
         if args.mode == "multiple" or args.mode == 'all':
-            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
-            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
     for i in range(1, len(data)+1):
         sf.set_column_width(i, 18)
-    sf.to_excel(sheet_name='Summary',excel_writer=excel)
+    sf.to_excel(sheet_name=sheet_name,excel_writer=excel)
 
 def update_swinfo(excel):
     if not (os.path.exists(args.target+'/inductor_log/version.csv')):
@@ -828,9 +869,9 @@ def html_generate(html_off):
     if not html_off:
         try:
             if args.mode == 'all':
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6])
             else:
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -840,12 +881,15 @@ def html_generate(html_off):
                 failures_html = \
                     "<p>Multi-threads Failures</p>" + mt_failures + \
                     "<p>Single-thread Failures</p>" + st_failures
+                summary_new = pd.DataFrame(content[6]).to_html(classes="table",index = False)
             elif args.mode == 'multiple':
                 mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
                 failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+                summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             elif args.mode == 'single':
                 st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
                 failures_html = "<p>Single-thread Failures</p>" + st_failures
+                summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
@@ -856,6 +900,7 @@ def html_generate(html_off):
                 open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost_f, \
                 open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
                 f.write(html_head() + "<p>Summary</p>" + summary + \
+                        "<p>Summary (exclude model_fail_to_load and eager_fail_to_run)</p>" + summary_new + \
                         "<p>SW info</p>" + swinfo + \
                         failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
@@ -908,21 +953,23 @@ def generate_model_list():
         print('No new issue or improvement compared with reference')
 
 def generate_report(excel, reference, target):
-    update_summary(excel, reference, target)
+    update_passrate(reference)
+    update_summary(excel, reference, target, 'passrate.csv', 'Summary')
     update_swinfo(excel)
     if args.mode == 'multiple' or args.mode == 'all':
         update_failures(excel, target_mt, reference_mt, 'multiple')
     if args.mode =='single' or args.mode == 'all':
         update_failures(excel, target_st, reference_st, 'single')
     update_details(excel)
+    update_summary(excel, reference, target, 'passrate_new.csv', 'Summary New')
     generate_model_list()
     if args.cppwrapper_gm:
         update_cppwrapper_gm(excel,reference,target)
 
-def excel_postprocess(file):
+def excel_postprocess(file, sheet_name):
     wb=file.book
     # Summary
-    ws=wb['Summary']
+    ws=wb[sheet_name]
     if args.reference is not None:
         ws.merge_cells(start_row=2,end_row=5,start_column=1,end_column=1)
         ws.merge_cells(start_row=6,end_row=9,start_column=1,end_column=1)
@@ -954,6 +1001,7 @@ def excel_postprocess(file):
 if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
-    excel_postprocess(excel)
+    excel_postprocess(excel, 'Summary')
+    excel_postprocess(excel, 'Summary New')
     html_generate(args.html_off)     
     update_issue_commits(args.precision)
