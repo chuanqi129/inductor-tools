@@ -496,17 +496,36 @@ def process_dynamic_acc(excel, target, refer):
 def html_head():
     return '''<!DOCTYPE html>
 <html lang="en">
+<style type="text/css">
+    table
+    {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+    table td, table th
+    {
+      border: 1px solid #cad9ea;
+      color: #666;
+      height: 30px;
+    }
+    table thead th
+    {
+      background-color: #CCE8EB;
+      width: 100px;
+    }
+    table tr:nth-child(odd)
+    {
+      background: #fff;
+    }
+    table tr:nth-child(even)
+    {
+      background: #F5FAFA;
+    }
+  </style>
 <head>
 <title> Quantization Regular Model Bench Report </title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
-<link rel="stylesheet" type="text/css" href="css/animate.css">
-<link rel="stylesheet" type="text/css" href="css/select2.min.css">
-<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
-<link rel="stylesheet" type="text/css" href="css/util.css">
-<link rel="stylesheet" type="text/css" href="css/main.css">
 <meta name="robots" content="noindex, follow">
 </head>
 <body>
@@ -515,6 +534,67 @@ def html_head():
   <div class="wrap-table100">
   <div class="table100">
   <p><h3>Quantization Regular Model Bench Report </p></h3> '''
+
+def ICX_info():
+    return '''
+<table width="90%">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Manufacturer</td>
+            <td>Amazon EC2</td>
+        </tr>
+        <tr>
+            <td>Product Name</td>
+            <td>c6i.16xlarge</td>
+        </tr>
+        <tr>
+            <td>CPU Model</td>
+            <td>Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz</td>
+        </tr>
+        <tr>
+            <td>Installed Memory</td>
+            <td>128GB (1x128GB DDR4 3200 MT/s [3200 MT/s])</td>
+        </tr>
+        <tr>
+            <td>OS</td>
+            <td>Ubuntu 22.04.3 LTS</td>
+        </tr>
+        <tr>
+            <td>Kernel</td>
+            <td>6.2.0-1018-aws</td>
+        </tr>
+        <tr>
+            <td>Microcode</td>
+            <td>0xd0003d1</td>
+        </tr>
+        <tr>
+            <td>GCC</td>
+            <td>gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0</td>
+        </tr>
+        <tr>
+            <td>GLIBC</td>
+            <td>ldd (Ubuntu GLIBC 2.35-0ubuntu3.6) 2.35</td>
+        </tr>
+        <tr>
+            <td>Binutils</td>
+            <td>GNU ld (GNU Binutils for Ubuntu) 2.38</td>
+        </tr>
+        <tr>
+            <td>Python</td>
+            <td>Python 3.8.18</td>
+        </tr>
+        <tr>
+            <td>OpenSSL</td>
+            <td>OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023)</td>
+        </tr>
+    </tbody>
+</table>'''
 
 def html_tail():
     return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
@@ -537,6 +617,27 @@ def html_generate():
     summary_acc = pd.DataFrame(content[3]).to_html(classes="table",index = False)
     dynamic_perf = pd.DataFrame(content[5]).to_html(classes="table",index = False)
     dynamic_acc = pd.DataFrame(content[7]).to_html(classes="table",index = False)
+    detail_static_perf = pd.DataFrame(content[0])
+    static_perf_subset = ['ptq ratio(new/old)', 'ptq_cpp ratio(new/old)', 'qat ratio(new/old)']
+    detail_static_perf = detail_static_perf.style.hide().\
+        highlight_between(left=0,right=0.9,subset=static_perf_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1.1,right=float('inf'),subset=static_perf_subset,props='color:black;background-color:#ACFF33').to_html(classes="table",index = False)
+    detail_dynamic_perf = pd.DataFrame(content[4])
+    dynamic_perf_subset = ['static_quant(new/old)', 'dynamic_quant(new/old)']
+    detail_dynamic_perf = detail_dynamic_perf.style.hide().\
+        highlight_between(left=0,right=0.9,subset=dynamic_perf_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1.1,right=float('inf'),subset=dynamic_perf_subset,props='color:black;background-color:#ACFF33').to_html(classes="table",index = False)
+    detail_static_acc = pd.DataFrame(content[2])
+    static_acc_subset = ['ptq ratio(new/old)', 'ptq_cpp ratio(new/old)', 'qat ratio(new/old)']
+    detail_static_acc = detail_static_acc.style.hide().\
+        highlight_between(left=0,right=0.9,subset=static_acc_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1.1,right=float('inf'),subset=static_acc_subset,props='color:black;background-color:#ACFF33').to_html(classes="table",index = False)
+    detail_dynamic_acc = pd.DataFrame(content[6])
+    dynamic_acc_subset = ['static_quant(new/old)', 'dynamic_quant(new/old)']
+    detail_dynamic_acc = detail_dynamic_acc.style.hide().\
+        highlight_between(left=0,right=0.9,subset=dynamic_acc_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1.1,right=float('inf'),subset=dynamic_acc_subset,props='color:black;background-color:#ACFF33').to_html(classes="table",index = False)
+    
     swinfo= pd.DataFrame(content[8]).to_html(classes="table",index = False)
     # refer_swinfo_html = ''
     # if args.refer is not None:
@@ -547,7 +648,7 @@ def html_generate():
     dynamic_quant_perf_regression=dynamic_performance_regression.to_html(classes="table",index = False)
     dynamic_quant_acc_regression=dynamic_acc_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/quantization_model_bench.html',mode = "a") as f,open(args.target+'/inductor_log/quantization_perf_regression.html',mode = "a") as perf_f:
-        f.write(html_head()+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>new_static_acc_regression</p>"+acc_regression+"<p>new_dynamic_acc_regression</p>"+dynamic_quant_acc_regression+"<p>SW info</p>"+swinfo+html_tail())
+        f.write(html_head()+"<p>Hardware info</p>"+ICX_info()+"<p>SW info</p>"+swinfo+"<p>Static_Quant_Perf_Geomean</p>"+summary_perf+"<p>Static_Quant_ACC_Geomean</p>"+summary_acc+"<p>Dynamic_Quant_Perf_Geomean</p>"+dynamic_perf+"<p>Dynamic_Quant_ACC_Geomean</p>"+dynamic_acc+"<p>Static Quant Performance</p>"+detail_static_perf+"<p>Dynamic Quant Performance</p>"+detail_dynamic_perf+"<p>Static Quant Accuracy</p>"+detail_static_acc+"<p>Dynamic Quant Accuracy</p>"+detail_dynamic_acc+html_tail())
         perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>"+"<p>new_static_perf_regression</p>"+perf_regression+"<p>new_dynamic_perf_regression</p>"+dynamic_quant_perf_regression+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>")
     f.close()
     perf_f.close()            
