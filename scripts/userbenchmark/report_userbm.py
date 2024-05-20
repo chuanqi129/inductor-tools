@@ -41,7 +41,7 @@ def update_new_perfer_regression(df_summary, col):
     new_performance_regression = new_performance_regression.drop_duplicates()
 
 def update_swinfo(excel):
-    data = {'SW':['Pytorch', 'oneDNN', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Nightly commit':[' ', '/', '/', ' ', ' ',' ',' ',' '],'Main commit':[' ', ' ', ' ', ' ', ' ',' ',' ','/']}
+    data = {'SW':['Pytorch', 'oneDNN', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Branch':['nightly', 'main', 'main', 'nightly', 'nightly', 'nightly', 'nightly', 'nightly'],'Target commit':[' ', ' ', ' ', ' ', ' ',' ',' ','/']}
     swinfo=pd.DataFrame(data)
     try:
         version = pd.read_table(args.target+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
@@ -57,14 +57,36 @@ def update_swinfo(excel):
         torchdata_commit=version.loc[ 6, "commit"][-7:]
         dynamo_benchmarks_commit=version.loc[ 7, "commit"][-7:]
 
-        swinfo.loc[0,"Nightly commit"]=torch_commit
-        swinfo.loc[1,"Main commit"]=oneDNN_commit
-        swinfo.loc[2,"Main commit"]=torchbench_commit
-        swinfo.loc[3,"Nightly commit"]=torchaudio_commit
-        swinfo.loc[4,"Nightly commit"]=torchtext_commit
-        swinfo.loc[5,"Nightly commit"]=torchvision_commit
-        swinfo.loc[6,"Nightly commit"]=torchdata_commit
-        swinfo.loc[7,"Nightly commit"]=dynamo_benchmarks_commit
+        swinfo.loc[0,"Target commit"]=torch_commit
+        swinfo.loc[1,"Target commit"]=oneDNN_commit
+        swinfo.loc[2,"Target commit"]=torchbench_commit
+        swinfo.loc[3,"Target commit"]=torchaudio_commit
+        swinfo.loc[4,"Target commit"]=torchtext_commit
+        swinfo.loc[5,"Target commit"]=torchvision_commit
+        swinfo.loc[6,"Target commit"]=torchdata_commit
+        swinfo.loc[7,"Target commit"]=dynamo_benchmarks_commit
+        if args.refer is not None:
+            data = {'SW':['Pytorch', 'oneDNN', 'Torchbench', 'torchaudio', 'torchtext','torchvision','torchdata','dynamo_benchmarks'], 'Refer commit':[' ', ' ', ' ', ' ',' ',' ',' ',' ']}
+            refer_version=pd.DataFrame(data)
+            refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+            refer_torch_commit=refer_swinfo.loc[ 2, "commit"][-7:]
+            refer_torchbench_commit=refer_swinfo.loc[ 0, "commit"][-8:]
+            refer_oneDNN_commit=refer_swinfo.loc[ 1, "commit"][0:10]
+            refer_torchaudio_commit=refer_swinfo.loc[ 5, "commit"][-7:]
+            refer_torchtext_commit=refer_swinfo.loc[ 4, "commit"][-7:]
+            refer_torchvision_commit=refer_swinfo.loc[ 3, "commit"][-7:]
+            refer_torchdata_commit=refer_swinfo.loc[ 6, "commit"][-7:]
+            refer_dynamo_benchmarks_commit=refer_swinfo.loc[ 7, "commit"][-7:]
+
+            refer_version.loc[0,"Refer commit"]=refer_torch_commit
+            refer_version.loc[1,"Refer commit"]=refer_oneDNN_commit
+            refer_version.loc[2,"Refer commit"]=refer_torchbench_commit
+            refer_version.loc[3,"Refer commit"]=refer_torchaudio_commit
+            refer_version.loc[4,"Refer commit"]=refer_torchtext_commit
+            refer_version.loc[5,"Refer commit"]=refer_torchvision_commit
+            refer_version.loc[6,"Refer commit"]=refer_torchdata_commit
+            refer_version.loc[7,"Refer commit"]=refer_dynamo_benchmarks_commit
+            swinfo = pd.merge(swinfo, refer_version)
 
     except :
         print("version.txt not found")
@@ -118,17 +140,36 @@ def process_perf(excel, target, refer, suite):
 def html_head():
     return '''<!DOCTYPE html>
 <html lang="en">
+<style type="text/css">
+    table
+    {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+    table td, table th
+    {
+      border: 1px solid #cad9ea;
+      color: #666;
+      height: 30px;
+    }
+    table thead th
+    {
+      background-color: #CCE8EB;
+      width: 100px;
+    }
+    table tr:nth-child(odd)
+    {
+      background: #fff;
+    }
+    table tr:nth-child(even)
+    {
+      background: #F5FAFA;
+    }
+  </style>
 <head>
-<title> Userbenchmark Regular Model Bench Report </title>
+<title> Quantization Regular Model Bench Report </title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
-<link rel="stylesheet" type="text/css" href="css/animate.css">
-<link rel="stylesheet" type="text/css" href="css/select2.min.css">
-<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css">
-<link rel="stylesheet" type="text/css" href="css/util.css">
-<link rel="stylesheet" type="text/css" href="css/main.css">
 <meta name="robots" content="noindex, follow">
 </head>
 <body>
@@ -136,7 +177,68 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>Userbenchmark Regular Model Bench Report </p></h3> '''
+  <p><h3>Quantization Regular Model Bench Report </p></h3> '''
+
+def SPR_info():
+    return '''
+<table width="90%">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Manufacturer</td>
+            <td>Amazon EC2</td>
+        </tr>
+        <tr>
+            <td>Product Name</td>
+            <td>c7i.metal-24xl</td>
+        </tr>
+        <tr>
+            <td>CPU Model</td>
+            <td>Intel(R) Xeon(R) Platinum 8488C CPU @ 2.40GHz</td>
+        </tr>
+        <tr>
+            <td>Installed Memory</td>
+            <td>192GB (8x24GB DDR5 4800 MT/s [4800 MT/s])</td>
+        </tr>
+        <tr>
+            <td>OS</td>
+            <td>Ubuntu 22.04.3 LTS</td>
+        </tr>
+        <tr>
+            <td>Kernel</td>
+            <td>6.2.0-1017-aws</td>
+        </tr>
+        <tr>
+            <td>Microcode</td>
+            <td>0x2b0004d0</td>
+        </tr>
+        <tr>
+            <td>GCC</td>
+            <td>gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0</td>
+        </tr>
+        <tr>
+            <td>GLIBC</td>
+            <td>ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35</td>
+        </tr>
+        <tr>
+            <td>Binutils</td>
+            <td>GNU ld (GNU Binutils for Ubuntu) 2.38</td>
+        </tr>
+        <tr>
+            <td>Python</td>
+            <td>Python 3.8.18</td>
+        </tr>
+        <tr>
+            <td>OpenSSL</td>
+            <td>OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023)</td>
+        </tr>
+    </tbody>
+</table>'''
 
 def html_tail():
     return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
@@ -157,13 +259,13 @@ def html_generate():
     content = pd.read_excel(args.target+'/inductor_log/Userbenchmark_Regression_Check_'+args.target+'.xlsx',sheet_name=[0,1,2,3,4,5,6,7,8])
     summary_perf= pd.DataFrame(content[8]).to_html(classes="table",index = False)
     swinfo= pd.DataFrame(content[0]).to_html(classes="table",index = False)
-    refer_swinfo_html = ''
-    if args.refer is not None:
-        refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
-        refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
+    # refer_swinfo_html = ''
+    # if args.refer is not None:
+    #     refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
+    #     refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
     perf_regression= new_performance_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/userbenchmark_model_bench.html',mode = "a") as f:
-        f.write(html_head()+"<p>Summary_Perf</p>"+summary_perf+"<p>SW info</p>"+swinfo+"<p>Reference SW info (nightly)</p>"+refer_swinfo_html+"<p>new_perf_regression</p>"+perf_regression+html_tail())
+        f.write(html_head()+"<p>Hardware info</p>"+SPR_info()+"<p>SW info</p>"+swinfo+"<p>Summary_Perf</p>"+summary_perf+"<p>new_perf_regression</p>"+perf_regression+html_tail())
     f.close()        
     
 excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Userbenchmark_Regression_Check_'+args.target+'.xlsx')
