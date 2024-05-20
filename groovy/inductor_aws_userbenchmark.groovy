@@ -430,14 +430,14 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/modelbench/entrance_userbm.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/scripts/userbenchmark/entrance_userbm.sh ubuntu@${current_ip}:/home/ubuntu
             scp ${WORKSPACE}/docker/Dockerfile.userbm ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/launch_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/version_collect_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/launch_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/version_collect_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/cpu_usebm.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/cpu_usebm_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/cpu_usebm.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/cpu_usebm_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
             ssh ubuntu@${current_ip} "nohup bash entrance_userbm.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_ONEDNN_BRANCH} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
             '''
@@ -539,12 +539,12 @@ node(NODE_LABEL){
             cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx
             rm -rf refer
             mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-            cp scripts/modelbench/report_userbm.py ${WORKSPACE} && python report_userbm.py -r refer -t ${_target} --url ${BUILD_URL}
+            cp scripts/userbenchmark/report_userbm.py ${WORKSPACE} && python report_userbm.py -r refer -t ${_target} --url ${BUILD_URL}
             '''
         }else{
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && cp scripts/modelbench/report_userbm.py ${WORKSPACE}
+            cd ${WORKSPACE} && cp scripts/userbenchmark/report_userbm.py ${WORKSPACE}
             python report_userbm.py -t ${_target} --url ${BUILD_URL}
             '''
         }
