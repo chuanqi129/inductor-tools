@@ -254,29 +254,55 @@ def html_tail():
 <script src="js/main.js"></script>
 </body>'''
 
+def data2html(data):
+    perf_subset = ['throughput ratio(new/old)']
+    data = data.style.hide().\
+        highlight_between(left=0,right=0.9,subset=perf_subset,props='color:black;background-color:#FF7A33').\
+        highlight_between(left=1.1,right=float('inf'),subset=perf_subset,props='color:black;background-color:#ACFF33').to_html(classes="table",index = False)
+    return data
+
 def html_generate():
     
     content = pd.read_excel(args.target+'/inductor_log/Userbenchmark_Regression_Check_'+args.target+'.xlsx',sheet_name=[0,1,2,3,4,5,6,7,8])
     summary_perf= pd.DataFrame(content[8]).to_html(classes="table",index = False)
     swinfo= pd.DataFrame(content[0]).to_html(classes="table",index = False)
+    eager_bf16_infer = pd.DataFrame(content[1])
+    eager_fp32_infer = pd.DataFrame(content[2])
+    jit_bf16_infer = pd.DataFrame(content[3])
+    jit_fp32_infer = pd.DataFrame(content[4])
+    eager_int8_infer = pd.DataFrame(content[5])
+    eager_bf16_train = pd.DataFrame(content[6])
+    eager_fp32_train = pd.DataFrame(content[7])
+
+    eager_bf16_infer = data2html(eager_bf16_infer)
+    eager_fp32_infer = data2html(eager_fp32_infer)
+    jit_bf16_infer = data2html(jit_bf16_infer)
+    jit_fp32_infer = data2html(jit_fp32_infer)
+    eager_int8_infer = data2html(eager_int8_infer)
+    eager_bf16_train = data2html(eager_bf16_train)
+    eager_fp32_train = data2html(eager_fp32_train)
     # refer_swinfo_html = ''
     # if args.refer is not None:
     #     refer_swinfo = pd.read_table(args.refer+'/inductor_log/version.txt', sep = '\:', header = None,names=['item', 'commit'],engine='python')
     #     refer_swinfo_html = refer_swinfo.to_html(classes="table",index = False)            
     perf_regression= new_performance_regression.to_html(classes="table",index = False)
     with open(args.target+'/inductor_log/userbenchmark_model_bench.html',mode = "a") as f:
-        f.write(html_head()+"<p>Hardware info</p>"+SPR_info()+"<p>SW info</p>"+swinfo+"<p>Summary_Perf</p>"+summary_perf+"<p>new_perf_regression</p>"+perf_regression+html_tail())
+        f.write(html_head()+"<p>Hardware info</p>"+SPR_info()+"<p>SW info</p>"+swinfo+"<p>Summary_Perf</p>"+summary_perf+"<p>eager_throughtput_bf16_infer</p>"+eager_bf16_infer+\
+                "<p>eager_throughtput_fp32_infer</p>"+eager_fp32_infer+"<p>jit_llga_throughtput_amp_bf16</p>"+jit_bf16_infer+\
+                    "<p>jit_llga_throughtput_fp32</p>"+jit_fp32_infer+"<p>eager_throughtput_fx_int8</p>"+eager_int8_infer+\
+                        "<p>eager_throughtput_bf16_train</p>"+eager_bf16_train+"<p>eager_throughtput_fp32_train</p>"+eager_fp32_train+html_tail())
     f.close()        
     
 excel = StyleFrame.ExcelWriter(args.target+'/inductor_log/Userbenchmark_Regression_Check_'+args.target+'.xlsx')
 update_swinfo(excel)
 eager_throughtput_bf16_infer = process_perf(excel, args.target, args.refer, "eager_throughtput_bf16_infer")
-eager_throughtput_fp32_train = process_perf(excel, args.target, args.refer, "eager_throughtput_fp32_train")
-jit_llga_throughtput_fp32 = process_perf(excel, args.target, args.refer, "jit_llga_throughtput_fp32")
-eager_throughtput_bf16_train = process_perf(excel, args.target, args.refer, "eager_throughtput_bf16_train")
-eager_throughtput_fx_int8 = process_perf(excel, args.target, args.refer, "eager_throughtput_fx_int8")
 eager_throughtput_fp32_infer = process_perf(excel, args.target, args.refer, "eager_throughtput_fp32_infer")
 jit_llga_throughtput_amp_bf16 = process_perf(excel, args.target, args.refer, "jit_llga_throughtput_amp_bf16")
+jit_llga_throughtput_fp32 = process_perf(excel, args.target, args.refer, "jit_llga_throughtput_fp32")
+eager_throughtput_fx_int8 = process_perf(excel, args.target, args.refer, "eager_throughtput_fx_int8")
+eager_throughtput_bf16_train = process_perf(excel, args.target, args.refer, "eager_throughtput_bf16_train")
+eager_throughtput_fp32_train = process_perf(excel, args.target, args.refer, "eager_throughtput_fp32_train")
+
 usebm_ratio = {'Perf_Geomean':['eager_throughtput_bf16_infer', 'eager_throughtput_fp32_infer', 'jit_llga_throughtput_amp_bf16', 'jit_llga_throughtput_fp32', 'eager_throughtput_fx_int8', 'eager_throughtput_bf16_train', 'eager_throughtput_fp32_train'], 'Ratio (new/old)':[' ', ' ', ' ', ' ', ' ', ' ', ' ']}
 userbm_gm=pd.DataFrame(usebm_ratio)
 userbm_gm.loc[0,"Ratio (new/old)"]=eager_throughtput_bf16_infer
