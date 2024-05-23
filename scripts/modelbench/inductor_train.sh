@@ -6,8 +6,8 @@ CHANNELS=${1:-first}
 PRECISION=${2:-float32}
 LOG_DIR=${3:-inductor_log}
 EXTRA=${4}
-export TORCH_COMPILE_DEBUG=1
-export TORCH_LOGS="+schedule,+inductor,+output_code"
+# export TORCH_COMPILE_DEBUG=1
+# export TORCH_LOGS="+schedule,+inductor,+output_code"
 
 mkdir -p $LOG_DIR
 
