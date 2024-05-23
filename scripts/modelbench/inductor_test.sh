@@ -85,8 +85,8 @@ multi_threads_test() {
     else
         echo "Please check channels foramt with first / last."
     fi
-    python script.py --input_log_file ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log 2>&1 | tee ${LOG_DIR}/parsed_vectorization_multi.log
-    rm ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+    # python script.py --input_log_file ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log 2>&1 | tee ${LOG_DIR}/parsed_vectorization_multi.log
+    # rm ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
 }
 
 # single-thread
@@ -104,8 +104,8 @@ single_thread_test() {
     else
         echo "Please check channels foramt with first / last."
     fi
-    python script.py --input_log_file ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log 2>&1 | tee ${LOG_DIR}/parsed_vectorization_single.log
-    rm ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+    # python script.py --input_log_file ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log 2>&1 | tee ${LOG_DIR}/parsed_vectorization_single.log
+    # rm ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
 }
 
 
