@@ -82,8 +82,9 @@ else
 fi
 #export TORCH_COMPILE_DEBUG=1
 #export TORCH_LOGS="+schedule,+inductor,+output_code"
-export _USE_ONEDNN_GEMM=1
-export ONEDNN_VERBOSE=1
+#export _USE_ONEDNN_GEMM=1
+#export ONEDNN_VERBOSE=1
+export MKL_VERBOSE=1
 # multi-threads
 multi_threads_test() {
     CORES=$(lscpu | grep Core | awk '{print $4}')
