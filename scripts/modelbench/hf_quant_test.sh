@@ -1,4 +1,6 @@
-mkdir logs
+if [ ! -d "./logs" ]; then
+  mkdir -p "./logs"
+fi
 
 model_all=${1:-text}
 sw_stack=${2:-torch_compile_quant} # the sw stack you use, this controls what additional options to add
@@ -83,8 +85,7 @@ elif [ ${model_all} == "text" ]; then
     "
 elif  [ ${model_all} == "key" ]; then
     model_all="\
-    text-classification+distilbert-base-cased,\
-    text-classification+roberta-base,\
+    text-classification+albert-base-v1,\
     "
 fi
 

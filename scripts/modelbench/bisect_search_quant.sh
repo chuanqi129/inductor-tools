@@ -58,6 +58,46 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
         exit 0
     fi
 fi
+
+if [ "$SCENARIO" == "accuracy" ] && [ "$KIND" == "drop" ]; then
+    # Initial image build with END_COMMIT, no need rebuild
+    rm -rf transformers accelerate
+    git clone -b test https://github.com/chuanqi129/transformers && cd transformers && \
+        python setup.py bdist_wheel && pip install --force-reinstall dist/*.whl && cd ..
+    git clone -b test https://github.com/zxd1997066/accelerate.git && cd accelerate && \
+        python setup.py bdist_wheel && pip install --no-deps --force-reinstall dist/*.whl && cd ..
+    # Install requirements for each task
+    pip install -r transformers/examples/pytorch/text-classification/requirements.txt
+    git checkout ${END_COMMIT}
+    # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    expected_perf=$(bash hf_quant_test.sh key torch_compile_quant_static | grep "eval_accuracy" | awk -F'=' '{print $2}')
+    # expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    echo "Expected performance: $expected_perf " > ${LOG_DIR}/perf_drop.log
+
+    # Check START_COMMIT performance for early stop
+    rm -rf /tmp/*
+    git reset --hard HEAD && git checkout ${TORCH_BRANCH} && git checkout ${START_COMMIT} && git submodule sync && git submodule update --init --recursive
+    python setup.py clean && python setup.py develop && cd .. && \
+    rm -rf vision && git clone -b main https://github.com/pytorch/vision.git && cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd /workspace/pytorch
+    # cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
+    # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
+    current_perf=$(bash hf_quant_test.sh key torch_compile_quant_static | grep "eval_accuracy" | awk -F'=' '{print $2}')
+    # current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
+    echo "Current performance: $current_perf " >> ${LOG_DIR}/perf_drop.log
+
+    ratio=$(echo "$expected_perf $current_perf" | awk '{ printf "%.2f\n", $1/$2 }')
+    echo "=====ratio: $ratio======="
+    if (( $(echo "$ratio > $PERF_RATIO" | bc -l) )); then
+        echo "Real performance drop issue, will search guilty commit." >> ${LOG_DIR}/perf_drop.log
+    else
+        echo "Fake performance drop issue, please double check it." >> ${LOG_DIR}/perf_drop.log
+        exit 0
+    fi
+fi
+
 chmod +x bisect_run_test_quant.sh
 git reset --hard HEAD && git checkout ${TORCH_BRANCH} && git pull && git checkout ${START_COMMIT}
 git bisect start ${START_COMMIT} ${END_COMMIT}
