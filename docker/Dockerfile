@@ -27,12 +27,11 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Miniconda3-py38_23.9.0-0-Linux-x86_64.sh && \
-    chmod +x ~/miniconda.sh && \
+RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    chmod +x ~/miniforge.sh && \
     # Fix conda install issue
-    sed -i "s;#!/bin/sh;#!/bin/bash;" ~/miniconda.sh && \
-    ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
+    ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
     /opt/conda/bin/conda config --set channel_priority strict && \
     /opt/conda/bin/conda config --append channels conda-forge && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
@@ -43,7 +42,6 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
         dataclasses \
         future \
         git-lfs \
-        intel-openmp \
         ipython \
         mkl \
         mkl-include \
@@ -61,6 +59,7 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
         openssl \      
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
+    pip install intel-openmp && \
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
 
