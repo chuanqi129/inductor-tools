@@ -131,6 +131,7 @@ else
     docker cp /home/ubuntu/docker/bisect_run_test_quant.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/quant_single_run.sh $USER:/workspace/pytorch
+    docker cp /home/ubuntu/docker/hf_quant_test.sh $USER:/workspace/pytorch
     docker cp /home/ubuntu/docker/inductor_quant_acc.py $USER:/workspace/pytorch
     docker cp /home/ubuntu/imagenet $USER:/workspace/benchmark/
     # TODO: Hard code freeze on and default bs, add them as params future
