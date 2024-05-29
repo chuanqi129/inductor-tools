@@ -42,6 +42,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         dataclasses \
         future \
         git-lfs \
+        intel-openmp \
         ipython \
         mkl \
         mkl-include \
@@ -59,7 +60,6 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         openssl \      
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
-    pip install intel-openmp && \
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
 
