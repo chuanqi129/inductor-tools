@@ -409,6 +409,7 @@ node(NODE_LABEL){
         scp ${WORKSPACE}/scripts/modelbench/inductor_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/quant_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/hf_quant_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/numa_launcher.py ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_quant_acc.py ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
         ssh ubuntu@${current_ip} "nohup bash entrance_quant.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} ${_model} ${_start_commit} ${_end_commit} ${_scenario} ${_kind} ${_perf_ratio} ${_extra_param} &>/dev/null &" &
