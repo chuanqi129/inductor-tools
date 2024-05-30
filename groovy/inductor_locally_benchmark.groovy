@@ -47,7 +47,7 @@ def cleanup(){
         sh'''
             #!/usr/bin/env bash
             docker_ps=`docker ps -a -q`
-            if [ -n ${docker_ps} ];then
+            if [ -n "${docker_ps}" ];then
                 docker stop ${docker_ps}
             fi
             docker container prune -f
