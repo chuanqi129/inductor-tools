@@ -116,6 +116,7 @@ node(NODE_LABEL){
 
                         docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                         docker_img_status=`docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}` || true
+                        cd ${WORKSPACE}
                         if [ -z "${docker_img_status}" ];then
                             # build docker image, because the target images does not exist
                             DOCKER_BUILDKIT=1 docker build \
