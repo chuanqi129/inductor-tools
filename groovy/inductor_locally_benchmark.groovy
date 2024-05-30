@@ -115,7 +115,7 @@ node(NODE_LABEL){
                         DOCKER_TAG="${commit_date}-${bref_commit}"
 
                         docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                        docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
+                        docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > /dev/null 2>&1
                         status=${PIPESTATUS[0]}
                         if [ "$status" != "0" ];then
                             # build docker image, because the target images does not exist
