@@ -94,91 +94,87 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 mkdir -p ${WORKSPACE}/${target}
             '''
-        } else {
-            // Report only
-
         }
     }
 
     stage("prepare container"){
-        // TODO: if docker image already built in this week and uploaded, please pull it directly. only for regular track
-        // docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:tag
-        // echo $?
-        if (TORCH_COMMIT == "nightly") {
-            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                withCredentials([usernamePassword(credentialsId: 'syd_token_inteltf-jenk', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
-                sh'''
-                    #!/usr/bin/env bash
-                    # clone pytorch repo
-                    cd ${WORKSPACE}
-                    git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
-                    cd pytorch
-                    commit_date=`git log --format="%cs"`
-                    bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
-                    DOCKER_TAG="${commit_date}-${bref_commit}"
+        if  ("${report_only}" == "false") {
+            if (TORCH_COMMIT == "nightly") {
+                withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                    withCredentials([usernamePassword(credentialsId: 'syd_token_inteltf-jenk', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
+                    sh'''
+                        #!/usr/bin/env bash
+                        # clone pytorch repo
+                        cd ${WORKSPACE}
+                        git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
+                        cd pytorch
+                        commit_date=`git log --format="%cs"`
+                        bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
+                        DOCKER_TAG="${commit_date}-${bref_commit}"
 
-                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                    docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
-                    status=${PIPESTATUS[0]}
-                    if [ "$status" != "0" ];then
-                        # build docker image, because the target images does not exist
-                        DOCKER_BUILDKIT=1 docker build \
-                            --no-cache \
-                            --build-arg http_proxy=${http_proxy} \
-                            --build-arg https_proxy=${https_proxy} \
-                            --build-arg PT_REPO=$TORCH_REPO \
-                            --build-arg PT_COMMIT=$TORCH_COMMIT \
-                            --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
-                            --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
-                            --build-arg TORCH_TEXT_COMMIT=$TEXT \
-                            --build-arg TORCH_VISION_COMMIT=$VISION \
-                            --build-arg TORCH_DATA_COMMIT=$DATA \
-                            --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
-                            --build-arg HF_HUB_TOKEN=$HF_TOKEN \
-                            -t ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} \
-                            -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
-                        docker_build_result=${PIPESTATUS[0]}
-                        # Early exit for docker image build issue
-                        if [ "$docker_build_result" != "0" ];then
-                            echo "Docker image build failed, early exit!"
-                            exit 1
+                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                        docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
+                        status=${PIPESTATUS[0]}
+                        if [ "$status" != "0" ];then
+                            # build docker image, because the target images does not exist
+                            DOCKER_BUILDKIT=1 docker build \
+                                --no-cache \
+                                --build-arg http_proxy=${http_proxy} \
+                                --build-arg https_proxy=${https_proxy} \
+                                --build-arg PT_REPO=$TORCH_REPO \
+                                --build-arg PT_COMMIT=$TORCH_COMMIT \
+                                --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
+                                --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
+                                --build-arg TORCH_TEXT_COMMIT=$TEXT \
+                                --build-arg TORCH_VISION_COMMIT=$VISION \
+                                --build-arg TORCH_DATA_COMMIT=$DATA \
+                                --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
+                                --build-arg HF_HUB_TOKEN=$HF_TOKEN \
+                                -t ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} \
+                                -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
+                            docker_build_result=${PIPESTATUS[0]}
+                            # Early exit for docker image build issue
+                            if [ "$docker_build_result" != "0" ];then
+                                echo "Docker image build failed, early exit!"
+                                exit 1
+                            fi
+                            docker push ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
+                        else
+                            echo "[INFO] pull existed image ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}"
+                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > ${target}/docker_image_build.log 2>&1
                         fi
-                        docker push ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
-                    else
-                        echo "[INFO] pull existed image ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}"
-                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > ${target}/docker_image_build.log 2>&1
+                        echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${target}/docker_image_name.log
+                    '''
+                    }
+                }    
+            } else {
+                sh '''
+                    #!/usr/bin/env bash
+                    # build docker image
+                    DOCKER_BUILDKIT=1 docker build \
+                        --no-cache \
+                        --build-arg http_proxy=${http_proxy} \
+                        --build-arg https_proxy=${https_proxy} \
+                        --build-arg PT_REPO=$TORCH_REPO \
+                        --build-arg PT_COMMIT=$TORCH_COMMIT \
+                        --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
+                        --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
+                        --build-arg TORCH_TEXT_COMMIT=$TEXT \
+                        --build-arg TORCH_VISION_COMMIT=$VISION \
+                        --build-arg TORCH_DATA_COMMIT=$DATA \
+                        --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
+                        --build-arg HF_HUB_TOKEN=$HF_TOKEN \
+                        -t pt_inductor_tmp:${target} \
+                        -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
+                    docker_build_result=${PIPESTATUS[0]}
+                    # Early exit for docker image build issue
+                    if [ "$docker_build_result" != "0" ];then
+                        echo "Docker image build failed, early exit!"
+                        exit 1
                     fi
-                    echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${target}/docker_image_name.log
+                    echo "pt_inductor_tmp:${target}" > ${target}/docker_image_name.log
                 '''
-                }
-            }    
-        } else {
-            sh '''
-                #!/usr/bin/env bash
-                # build docker image
-                DOCKER_BUILDKIT=1 docker build \
-                    --no-cache \
-                    --build-arg http_proxy=${http_proxy} \
-                    --build-arg https_proxy=${https_proxy} \
-                    --build-arg PT_REPO=$TORCH_REPO \
-                    --build-arg PT_COMMIT=$TORCH_COMMIT \
-                    --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
-                    --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
-                    --build-arg TORCH_TEXT_COMMIT=$TEXT \
-                    --build-arg TORCH_VISION_COMMIT=$VISION \
-                    --build-arg TORCH_DATA_COMMIT=$DATA \
-                    --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
-                    --build-arg HF_HUB_TOKEN=$HF_TOKEN \
-                    -t pt_inductor_tmp:${target} \
-                    -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
-                docker_build_result=${PIPESTATUS[0]}
-                # Early exit for docker image build issue
-                if [ "$docker_build_result" != "0" ];then
-                    echo "Docker image build failed, early exit!"
-                    exit 1
-                fi
-                echo "pt_inductor_tmp:${target}" > ${target}/docker_image_name.log
-            '''
+            }
         }
         if (fileExists("${WORKSPACE}/${target}/docker_image_build.log")) {
             archiveArtifacts  "${target}/docker_image*"
@@ -186,30 +182,32 @@ node(NODE_LABEL){
     }
 
     stage("benchmark") {
-        sh '''
-            #!/usr/bin/env bash
-            docker_image_name=`cat ${target}/docker_image_name.log`
-            docker run -tid --name $USER \
-                --privileged \
-                --env https_proxy=${https_proxy} \
-                --env http_proxy=${http_proxy} \
-                --net host --shm-size 1G \
-                -v ~/.cache:/root/.cache \
-                -v ${WORKSPACE}/${target}:/workspace/pytorch/${target} \
-                ${docker_image_name}
-            docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
-            docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
-            docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash version_collect.sh ${target} $DYNAMO_BENCH"
+        if  ("${report_only}" == "false") {
+            sh '''
+                #!/usr/bin/env bash
+                docker_image_name=`cat ${target}/docker_image_name.log`
+                docker run -tid --name $USER \
+                    --privileged \
+                    --env https_proxy=${https_proxy} \
+                    --env http_proxy=${http_proxy} \
+                    --net host --shm-size 1G \
+                    -v ~/.cache:/root/.cache \
+                    -v ${WORKSPACE}/${target}:/workspace/pytorch/${target} \
+                    ${docker_image_name}
+                docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
+                docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
+                docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
+                docker exec -i $USER bash -c "bash version_collect.sh ${target} $DYNAMO_BENCH"
 
-            if [ $test_mode == "inference" ]; then
-                docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape $target $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
-            elif [ $test_mode == "training_full" ]; then
-                docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape $target $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
-            elif [ $test_mode == "training" ]; then
-                docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision $target $extra_param"
-            fi
-        '''
+                if [ $test_mode == "inference" ]; then
+                    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape $target $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
+                elif [ $test_mode == "training_full" ]; then
+                    docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape $target $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
+                elif [ $test_mode == "training" ]; then
+                    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision $target $extra_param"
+                fi
+            '''
+        }
     }
 
     // Add raw log artifact stage in advance to avoid crash in report generate stage
