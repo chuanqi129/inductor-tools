@@ -143,7 +143,7 @@ if ('IMAGE_BUILD_NODE' in params) {
 }
 echo "IMAGE_BUILD_NODE: $IMAGE_BUILD_NODE"
 
-BASE_IMAGE= 'ubuntu:20.04'
+BASE_IMAGE= 'ubuntu:22.04'
 if ('BASE_IMAGE' in params) {
     echo "BASE_IMAGE in params"
     if (params.BASE_IMAGE != '') {
@@ -290,6 +290,7 @@ echo "dashboard_title: $dashboard_title"
 env._terminate_ins = "$terminate_instance"
 env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
+env._bench_machine = "Local"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
@@ -598,7 +599,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(${env._bench_machine})_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -607,7 +608,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(AWS)_${env._target}",
+                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(${env._bench_machine})_${env._target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -619,7 +620,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(AWS)_${env._target}",
+                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(${env._bench_machine})_${env._target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -628,7 +629,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor Training Benchmark (AWS)_${env._target}",
+                    subject: "Failure occurs in Torchinductor Training Benchmark (${env._bench_machine})_${env._target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
