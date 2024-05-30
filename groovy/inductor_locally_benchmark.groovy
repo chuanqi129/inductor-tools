@@ -101,7 +101,6 @@ node(NODE_LABEL){
         if  ("${report_only}" == "false") {
             if (TORCH_COMMIT == "nightly") {
                 withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                    withCredentials([usernamePassword(credentialsId: 'syd_token_inteltf-jenk', usernameVariable: 'TG_USERNAME', passwordVariable: 'TG_PASSWORD')]){
                     sh'''
                         #!/usr/bin/env bash
                         # clone pytorch repo
@@ -145,7 +144,6 @@ node(NODE_LABEL){
                         fi
                         echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${target}/docker_image_name.log
                     '''
-                    }
                 }    
             } else {
                 sh '''
