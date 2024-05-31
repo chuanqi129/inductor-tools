@@ -227,7 +227,7 @@ node(NODE_LABEL){
             fi
             cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
             mkdir ${WORKSPACE}/${target}
-            cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
+            mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
     }
@@ -333,7 +333,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
             '''
         }
         if ("${test_mode}" == "training")
@@ -342,7 +342,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
             '''
         }
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
