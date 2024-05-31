@@ -41,6 +41,7 @@ env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
+env.LOG_DIR = 'inductor_log'
 
 def cleanup(){
     try {
@@ -95,7 +96,7 @@ node(NODE_LABEL){
             checkout scm
             sh'''
                 #!/usr/bin/env bash
-                mkdir -p ${WORKSPACE}/${target}
+                mkdir -p ${WORKSPACE}/${LOG_DIR}
             '''
         }
     }
@@ -133,7 +134,7 @@ node(NODE_LABEL){
                                 --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
                                 --build-arg HF_HUB_TOKEN=$HF_TOKEN \
                                 -t ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} \
-                                -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
+                                -f docker/Dockerfile --target image . > ${LOG_DIR}/docker_image_build.log 2>&1
                             docker_build_result=${PIPESTATUS[0]}
                             # Early exit for docker image build issue
                             if [ "$docker_build_result" != "0" ];then
@@ -143,9 +144,9 @@ node(NODE_LABEL){
                             docker push ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
                         else
                             echo "[INFO] pull existed image ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}"
-                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > ${target}/docker_image_build.log 2>&1
+                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > ${LOG_DIR}/docker_image_build.log 2>&1
                         fi
-                        echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${target}/docker_image_name.log
+                        echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${LOG_DIR}/docker_image_name.log
                     '''
                 }    
             } else {
@@ -166,19 +167,19 @@ node(NODE_LABEL){
                         --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
                         --build-arg HF_HUB_TOKEN=$HF_TOKEN \
                         -t pt_inductor_tmp:${target} \
-                        -f docker/Dockerfile --target image . > ${target}/docker_image_build.log 2>&1
+                        -f docker/Dockerfile --target image . > ${LOG_DIR}/docker_image_build.log 2>&1
                     docker_build_result=${PIPESTATUS[0]}
                     # Early exit for docker image build issue
                     if [ "$docker_build_result" != "0" ];then
                         echo "Docker image build failed, early exit!"
                         exit 1
                     fi
-                    echo "pt_inductor_tmp:${target}" > ${target}/docker_image_name.log
+                    echo "pt_inductor_tmp:${target}" > ${LOG_DIR}/docker_image_name.log
                 '''
             }
         }
-        if (fileExists("${WORKSPACE}/${target}/docker_image_build.log")) {
-            archiveArtifacts  "${target}/docker_image*"
+        if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_build.log")) {
+            archiveArtifacts  "${LOG_DIR}/docker_image*"
         }
     }
 
@@ -186,19 +187,19 @@ node(NODE_LABEL){
         if  ("${report_only}" == "false") {
             sh '''
                 #!/usr/bin/env bash
-                docker_image_name=`cat ${target}/docker_image_name.log`
+                docker_image_name=`cat ${LOG_DIR}/docker_image_name.log`
                 docker run -tid --name $USER \
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
                     --net host --shm-size 1G \
                     -v ~/.cache:/root/.cache \
-                    -v ${WORKSPACE}/${target}:/workspace/pytorch/${target} \
+                    -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                     ${docker_image_name}
                 docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
-                docker exec -i $USER bash -c "bash version_collect.sh ${target} $DYNAMO_BENCH"
+                docker exec -i $USER bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 if [ $test_mode == "inference" ]; then
                     docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape $target $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
@@ -207,7 +208,7 @@ node(NODE_LABEL){
                 elif [ $test_mode == "training" ]; then
                     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision $target $extra_param"
                 fi
-                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${target}"
+                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
     }
@@ -219,7 +220,12 @@ node(NODE_LABEL){
             if [ -d ${WORKSPACE}/raw_log ];then
                 rm -rf ${WORKSPACE}/raw_log
             fi
-            cp -r  ${WORKSPACE}/${target} ${WORKSPACE}/raw_log
+            if [ -d ${WORKSPACE}/${target} ];then
+                rm -rf ${WORKSPACE}/${target}
+                mkdir ${WORKSPACE}/${target}
+            fi
+            cp -r ${WORKSPACE}/${target} ${WORKSPACE}/raw_log
+            cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
     }
@@ -318,6 +324,7 @@ node(NODE_LABEL){
         sh '''
             #!/usr/bin/env bash
             rm -rf ${WORKSPACE}/raw_log
+            rm -rf ${WORKSPACE}/${target}
         '''
         if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
@@ -354,7 +361,7 @@ node(NODE_LABEL){
         }
         if ("${test_mode}" == "inference")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
@@ -375,7 +382,7 @@ node(NODE_LABEL){
         }//inference
         if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
         {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
+            if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_training_bench.html") == true){
                 emailext(
                     subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
