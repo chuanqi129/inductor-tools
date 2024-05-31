@@ -215,6 +215,9 @@ node(NODE_LABEL){
     stage("archive raw test results"){
         sh '''
             #!/usr/bin/env bash
+            if [ -d ${WORKSPACE}/raw_log ];then
+                rm -rf ${WORKSPACE}/raw_log
+            fi
             cp -r  ${WORKSPACE}/${target} ${WORKSPACE}/raw_log
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
@@ -223,7 +226,10 @@ node(NODE_LABEL){
     stage("stop docker") {
         sh'''
             #!/usr/bin/env bash
-            docker stop $(docker ps -a -q)
+            docker_ps=`docker ps -a -q`
+            if [ -n "${docker_ps}" ];then
+                docker stop ${docker_ps}
+            fi
         '''
     }
 
