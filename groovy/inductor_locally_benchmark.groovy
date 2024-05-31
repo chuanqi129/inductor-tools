@@ -222,9 +222,9 @@ node(NODE_LABEL){
             fi
             if [ -d ${WORKSPACE}/${target} ];then
                 rm -rf ${WORKSPACE}/${target}
-                mkdir ${WORKSPACE}/${target}
             fi
             cp -r ${WORKSPACE}/${target} ${WORKSPACE}/raw_log
+            mkdir ${WORKSPACE}/${target}
             cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
         '''
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
