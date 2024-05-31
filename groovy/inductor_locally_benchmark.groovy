@@ -223,7 +223,7 @@ node(NODE_LABEL){
             if [ -d ${WORKSPACE}/${target} ];then
                 rm -rf ${WORKSPACE}/${target}
             fi
-            cp -r ${WORKSPACE}/${target} ${WORKSPACE}/raw_log
+            cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
             mkdir ${WORKSPACE}/${target}
             cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
         '''
