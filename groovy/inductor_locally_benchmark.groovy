@@ -207,6 +207,7 @@ node(NODE_LABEL){
                 elif [ $test_mode == "training" ]; then
                     docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision $target $extra_param"
                 fi
+                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${target}"
             '''
         }
     }
