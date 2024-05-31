@@ -98,6 +98,8 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 mkdir -p ${WORKSPACE}/${LOG_DIR}
             '''
+        } else {
+            checkout scm
         }
     }
 
