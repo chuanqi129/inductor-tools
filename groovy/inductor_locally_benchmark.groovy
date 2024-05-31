@@ -320,13 +320,18 @@ node(NODE_LABEL){
     }    
 
     stage('archiveArtifacts') {
+        // Remove raw log fistly in case inducto_log will be artifact more than 2 times
+        sh '''
+            #!/usr/bin/env bash
+            rm -rf ${WORKSPACE}/raw_log
+        '''
         if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
             sh '''
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./ && rm -rf ${target}
+            cd ${WORKSPACE} && rm -rf ${target}
             '''
         }
         if ("${test_mode}" == "training")
@@ -335,15 +340,9 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./ && rm -rf ${target}
+            cd ${WORKSPACE} && rm -rf ${target}
             '''
-        } 
-        // Remove raw log fistly in case inducto_log will be artifact more than 2 times
-        sh '''
-            #!/usr/bin/env bash
-            rm -rf ${WORKSPACE}/raw_log
-            rm -rf ${WORKSPACE}/${target}
-        '''
+        }
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
