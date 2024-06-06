@@ -103,93 +103,62 @@ node(NODE_LABEL){
         }
     }
 
+    stage("trigger inductor images job"){
+        if  ("${report_only}" == "false") {
+            sh'''
+                #!/usr/bin/env bash
+                # clone pytorch repo
+                cd ${WORKSPACE}
+                git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
+                cd pytorch
+                commit_date=`git log --format="%cs"`
+                bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
+                DOCKER_TAG="${commit_date}_${bref_commit}"
+                if [ "${TORCH_COMMIT}" == "nightly" ];then
+                    echo "nightly_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
+                    
+                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                    docker_img_status=`docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:nightly_${DOCKER_TAG}` || true
+                    if [ -z "${docker_img_status}" ];then
+                else
+                    echo "tmp_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
+                fi
+            '''
+        }
+        def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
+        def image_build_job = build job: 'inductor_images', propagate: false, parameters: [             
+            [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
+            [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${VISION}"],
+            [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TEXT}"],
+            [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${DATA}"],
+            [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${AUDIO}"],
+            [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
+            [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
+            [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+            [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
+        ]
+        if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
+            archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
+        }
+    }
+
     stage("prepare container"){
         if  ("${report_only}" == "false") {
-            if (TORCH_COMMIT == "nightly") {
-                withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                    sh'''
-                        #!/usr/bin/env bash
-                        # clone pytorch repo
-                        cd ${WORKSPACE}
-                        git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
-                        cd pytorch
-                        commit_date=`git log --format="%cs"`
-                        bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
-                        DOCKER_TAG="${commit_date}-${bref_commit}"
-
-                        docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                        docker_img_status=`docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}` || true
-                        cd ${WORKSPACE}
-                        if [ -z "${docker_img_status}" ];then
-                            # build docker image, because the target images does not exist
-                            DOCKER_BUILDKIT=1 docker build \
-                                --no-cache \
-                                --build-arg http_proxy=${http_proxy} \
-                                --build-arg https_proxy=${https_proxy} \
-                                --build-arg PT_REPO=$TORCH_REPO \
-                                --build-arg PT_COMMIT=$TORCH_COMMIT \
-                                --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
-                                --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
-                                --build-arg TORCH_TEXT_COMMIT=$TEXT \
-                                --build-arg TORCH_VISION_COMMIT=$VISION \
-                                --build-arg TORCH_DATA_COMMIT=$DATA \
-                                --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
-                                --build-arg HF_HUB_TOKEN=$HF_TOKEN \
-                                -t ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} \
-                                -f docker/Dockerfile --target image . > ${LOG_DIR}/docker_image_build.log 2>&1
-                            docker_build_result=${PIPESTATUS[0]}
-                            # Early exit for docker image build issue
-                            if [ "$docker_build_result" != "0" ];then
-                                echo "Docker image build failed, early exit!"
-                                exit 1
-                            fi
-                            docker push ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}
-                        else
-                            echo "[INFO] pull existed image ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}"
-                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG} > ${LOG_DIR}/docker_image_build.log 2>&1
-                        fi
-                        echo "${DOCKER_IMAGE_NAMESPACE}:${DOCKER_TAG}" > ${LOG_DIR}/docker_image_name.log
-                    '''
-                }    
-            } else {
-                sh '''
+            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                sh'''
                     #!/usr/bin/env bash
-                    # build docker image
-                    DOCKER_BUILDKIT=1 docker build \
-                        --no-cache \
-                        --build-arg http_proxy=${http_proxy} \
-                        --build-arg https_proxy=${https_proxy} \
-                        --build-arg PT_REPO=$TORCH_REPO \
-                        --build-arg PT_COMMIT=$TORCH_COMMIT \
-                        --build-arg BENCH_COMMIT=$DYNAMO_BENCH \
-                        --build-arg TORCH_AUDIO_COMMIT=$AUDIO \
-                        --build-arg TORCH_TEXT_COMMIT=$TEXT \
-                        --build-arg TORCH_VISION_COMMIT=$VISION \
-                        --build-arg TORCH_DATA_COMMIT=$DATA \
-                        --build-arg TORCH_BENCH_COMMIT=$TORCH_BENCH \
-                        --build-arg HF_HUB_TOKEN=$HF_TOKEN \
-                        -t pt_inductor_tmp:${target} \
-                        -f docker/Dockerfile --target image . > ${LOG_DIR}/docker_image_build.log 2>&1
-                    docker_build_result=${PIPESTATUS[0]}
-                    # Early exit for docker image build issue
-                    if [ "$docker_build_result" != "0" ];then
-                        echo "Docker image build failed, early exit!"
-                        exit 1
-                    fi
-                    echo "pt_inductor_tmp:${target}" > ${LOG_DIR}/docker_image_name.log
+                    docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                    docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
                 '''
             }
-        }
-        if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_build.log")) {
-            archiveArtifacts  "${LOG_DIR}/docker_image*"
-        }
     }
 
     stage("benchmark") {
         if  ("${report_only}" == "false") {
             sh '''
                 #!/usr/bin/env bash
-                docker_image_name=`cat ${LOG_DIR}/docker_image_name.log`
+                docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
                 docker run -tid --name $USER \
                     --privileged \
                     --env https_proxy=${https_proxy} \
@@ -198,7 +167,7 @@ node(NODE_LABEL){
                     --net host --shm-size 1G \
                     -v ~/.cache:/root/.cache \
                     -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
-                    ${docker_image_name}
+                    ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
                 docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
