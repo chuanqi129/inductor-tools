@@ -115,9 +115,9 @@ node(NODE_LABEL){
                 bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
                 DOCKER_TAG="${commit_date}_${bref_commit}"
                 if [ "${TORCH_COMMIT}" == "nightly" ];then
-                    echo "nightly_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
+                    echo "nightly_${DOCKER_TAG}" > ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log
                 else
-                    echo "tmp_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
+                    echo "tmp_${DOCKER_TAG}" > ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log
                 fi
             '''
             def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
