@@ -116,10 +116,6 @@ node(NODE_LABEL){
                 DOCKER_TAG="${commit_date}_${bref_commit}"
                 if [ "${TORCH_COMMIT}" == "nightly" ];then
                     echo "nightly_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
-                    
-                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
-                    docker_img_status=`docker manifest inspect ${DOCKER_IMAGE_NAMESPACE}:nightly_${DOCKER_TAG}` || true
-                    if [ -z "${docker_img_status}" ];then
                 else
                     echo "tmp_${DOCKER_TAG}" > ${LOG_DIR}/docker_image_tag.log
                 fi
