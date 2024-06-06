@@ -194,6 +194,7 @@ node(NODE_LABEL){
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
+                    --env HF_HUB_TOKEN=$HF_TOKEN \
                     --net host --shm-size 1G \
                     -v ~/.cache:/root/.cache \
                     -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
