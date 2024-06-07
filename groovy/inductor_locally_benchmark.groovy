@@ -109,15 +109,15 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 # clone pytorch repo
                 cd ${WORKSPACE}
-                git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
-                cd pytorch
-                commit_date=`git log --format="%cs"`
-                bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
-                DOCKER_TAG="${commit_date}_${bref_commit}"
                 if [ "${TORCH_COMMIT}" == "nightly" ];then
+                    git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
+                    cd pytorch
+                    commit_date=`git log --format="%cs"`
+                    bref_commit=`git log --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
+                    DOCKER_TAG="${commit_date}_${bref_commit}"
                     echo "nightly_${DOCKER_TAG}" > ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log
                 else
-                    echo "tmp_${DOCKER_TAG}" > ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log
+                    echo "tmp_${TORCH_COMMIT}" > ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log
                 fi
             '''
             if ("${build_image}" == "true") {
