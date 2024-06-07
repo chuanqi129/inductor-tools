@@ -97,7 +97,6 @@ node(us_node){
                     cd ${WORKSPACE}
                     git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
                     cd pytorch
-                    git checkout ${TORCH_COMMIT}
                     commit_date=`git log -n 1 --format="%cs"`
                     bref_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
                     DOCKER_TAG="${commit_date}_${bref_commit}"
@@ -107,6 +106,7 @@ node(us_node){
                     cd ${WORKSPACE}
                     git clone ${TORCH_REPO}
                     cd pytorch
+                    git checkout ${TORCH_COMMIT}
                     commit_date=`git log -n 1 --format="%cs"`
                     bref_commit=`git rev-parse --short HEAD`
                     DOCKER_TAG="${commit_date}_${bref_commit}"
