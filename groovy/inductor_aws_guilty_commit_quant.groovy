@@ -401,16 +401,16 @@ node(NODE_LABEL){
         ssh ubuntu@${current_ip} "bash docker_prepare.sh"
         
         scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/scripts/modelbench/entrance_quant.sh ubuntu@${current_ip}:/home/ubuntu
-        scp ${WORKSPACE}/scripts/modelbench/launch_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/entrance_quant.sh ubuntu@${current_ip}:/home/ubuntu
+        scp ${WORKSPACE}/scripts/modelbench/quant/launch_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/bisect_search_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/bisect_run_test_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/bisect_search_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/bisect_run_test_quant.sh ubuntu@${current_ip}:/home/ubuntu/docker
         scp ${WORKSPACE}/scripts/modelbench/inductor_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/quant_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/hf_quant_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/numa_launcher.py ubuntu@${current_ip}:/home/ubuntu/docker
-        scp ${WORKSPACE}/scripts/modelbench/inductor_quant_acc.py ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/quant_single_run.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/hf_quant_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/numa_launcher.py ubuntu@${current_ip}:/home/ubuntu/docker
+        scp ${WORKSPACE}/scripts/modelbench/quant/inductor_quant_acc.py ubuntu@${current_ip}:/home/ubuntu/docker
         ssh ubuntu@${current_ip} "bash pkill.sh"
         ssh ubuntu@${current_ip} "nohup bash entrance_quant.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} ${_model} ${_start_commit} ${_end_commit} ${_scenario} ${_kind} ${_perf_ratio} ${_extra_param} &>/dev/null &" &
         '''
