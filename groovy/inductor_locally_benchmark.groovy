@@ -128,7 +128,9 @@ node(NODE_LABEL){
         if  ("${report_only}" == "false") {
             cleanup()
             pruneOldImage()
-            checkout scm
+            retry(3){
+                checkout scm
+            }
             unstash 'docker_image_tag'
             sh'''
                 #!/usr/bin/env bash
