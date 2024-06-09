@@ -539,7 +539,7 @@ node(NODE_LABEL){
             cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx
             rm -rf refer
             mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-            cp scripts/modelbench/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
+            cp scripts/modelbench/quant/report_quant_perf.py ${WORKSPACE} && python report_quant_perf.py -r refer -t ${_target} --url ${BUILD_URL}      
             '''
         }
     }    
