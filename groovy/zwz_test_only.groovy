@@ -29,7 +29,7 @@ def cleanup(){
     }
 }
 
-node("inductor_gnr_801095") {
+node(NODE_LABEL) {
     cleanup()
     retry(3){
         checkout([
