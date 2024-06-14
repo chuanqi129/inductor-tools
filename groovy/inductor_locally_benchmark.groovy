@@ -42,6 +42,13 @@ env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
+if (env.NODE_LABEL == "0") {
+    if (env.precision == "float32") {
+        env.NODE_LABEL = "inductor-icx-local"
+    } else if (env.precision == 'amp') {
+        env.NODE_LABEL = "inductor-gnr-local"
+    }
+}
 
 def cleanup(){
     try {
@@ -95,23 +102,21 @@ node(us_node){
                 if [ "${TORCH_COMMIT}" == "nightly" ];then
                     # clone pytorch repo
                     cd ${WORKSPACE}
-                    git clone -b ${TORCH_COMMIT} --depth 1 ${TORCH_REPO}
+                    git clone -b ${TORCH_COMMIT} ${TORCH_REPO}
                     cd pytorch
-                    commit_date=`git log -n 1 --format="%cs"`
-                    bref_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1 | cut -c 1-7`
-                    DOCKER_TAG="${commit_date}_${bref_commit}"
-                    echo "nightly_${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
+                    main_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1`
+                    git checkout ${main_commit}
                 else
                     # clone pytorch repo
                     cd ${WORKSPACE}
                     git clone ${TORCH_REPO}
                     cd pytorch
                     git checkout ${TORCH_COMMIT}
-                    commit_date=`git log -n 1 --format="%cs"`
-                    bref_commit=`git rev-parse --short HEAD`
-                    DOCKER_TAG="${commit_date}_${bref_commit}"
-                    echo "tmp_${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
                 fi
+                commit_date=`git log -n 1 --format="%cs"`
+                bref_commit=`git rev-parse --short HEAD`
+                DOCKER_TAG="${commit_date}_${bref_commit}"
+                echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
             '''
             if (fileExists("${WORKSPACE}/docker_image_tag.log")) {
                 stash includes: 'docker_image_tag.log', name: 'docker_image_tag'
