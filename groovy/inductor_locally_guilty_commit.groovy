@@ -134,9 +134,9 @@ node(NODE_LABEL){
                 -v ~/.cache:/root/.cache \
                 -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                 ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-            docker cp /home/ubuntu/docker/bisect_search.sh $USER:/workspace/pytorch
-            docker cp /home/ubuntu/docker/bisect_run_test.sh $USER:/workspace/pytorch
-            docker cp /home/ubuntu/docker/inductor_single_run.sh $USER:/workspace/pytorch
+            docker cp scripts/modelbench/bisect_search.sh $USER:/workspace/pytorch
+            docker cp scripts/modelbench/bisect_run_test.sh $USER:/workspace/pytorch
+            docker cp scripts/modelbench/inductor_single_run.sh $USER:/workspace/pytorch
             # TODO: Hard code freeze on and default bs, add them as params future
             docker exec -i $USER bash -c "bash bisect_search.sh \
                 START_COMMIT=$TORCH_START_COMMIT \
