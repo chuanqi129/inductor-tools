@@ -134,6 +134,7 @@ node(NODE_LABEL){
             cleanup()
             pruneOldImage()
             retry(3){
+                sleep(60)
                 checkout([
                     $class: 'GitSCM',
                     branches: scm.branches,
@@ -150,6 +151,7 @@ node(NODE_LABEL){
             '''
         } else {
             retry(3){
+                sleep(60)
                 checkout([
                     $class: 'GitSCM',
                     branches: scm.branches,
