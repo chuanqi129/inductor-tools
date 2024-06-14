@@ -134,7 +134,13 @@ node(NODE_LABEL){
             cleanup()
             pruneOldImage()
             retry(3){
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
             }
             unstash 'docker_image_tag'
             sh'''
@@ -143,7 +149,15 @@ node(NODE_LABEL){
                 mv docker_image_tag.log ${WORKSPACE}/${LOG_DIR}
             '''
         } else {
-            checkout scm
+            retry(3){
+                checkout([
+                    $class: 'GitSCM',
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+            }
         }
     }
 
