@@ -259,17 +259,11 @@ if( 'MODELS' in params && params.MODELS != '' ) {
 }
 echo "MODELS: $MODELS"
 
-env._terminate_ins = "$terminate_instance"
-env._instance_id = "$instance_ids"
-env._instance_name = "$instance_name"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
 env._extra_param = "$extra_param"
-env._precision = "$precision"
-env._shape = "$shape"
 env._target = new Date().format('yyyy_MM_dd')
-env._gh_token = "$gh_token"
 env._dash_board = "$dash_board"
 env._report_only = "$report_only"
 env._dashboard_title = "$dashboard_title"
