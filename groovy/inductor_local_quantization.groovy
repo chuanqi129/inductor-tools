@@ -261,7 +261,6 @@ echo "MODELS: $MODELS"
 
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
-env._backend = "$backend"
 env._extra_param = "$extra_param"
 env._target = new Date().format('yyyy_MM_dd')
 env._dash_board = "$dash_board"
