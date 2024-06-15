@@ -448,7 +448,7 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/quant/hf_quant_test.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/quant/inductor_dynamic_quant.sh $USER:/workspace/pytorch
                 docker cp scripts/modelbench/quant/numa_launcher.py $USER:/workspace/pytorch
-                docker exec -i $USER bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
+                docker exec -i $USER bash -c "bash version_collect_quant.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 prepare_imagenet(){
                     wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
