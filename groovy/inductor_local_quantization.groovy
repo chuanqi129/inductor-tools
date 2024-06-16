@@ -480,7 +480,8 @@ node(NODE_LABEL){
     }
     // Add raw log artifact stage in advance to avoid crash in report generate stage
     stage("archive raw test results"){
-        sh '''
+        if  ("${report_only}" == "false") {
+            sh '''
             #!/usr/bin/env bash
             if [ -d ${WORKSPACE}/raw_log ];then
                 rm -rf ${WORKSPACE}/raw_log
@@ -492,6 +493,7 @@ node(NODE_LABEL){
             mkdir ${WORKSPACE}/${target}
             mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
         '''
+        }
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
     }
     
@@ -517,7 +519,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             cd ${WORKSPACE}
             cp scripts/modelbench/quant/report_quant_perf.py ${WORKSPACE}
-            python report_quant_perf.py -r refer -t ${target} --url ${BUILD_URL}
+            python3 report_quant_perf.py -r refer -t ${target} --url ${BUILD_URL}
             rm -rf refer  
             '''
         }
