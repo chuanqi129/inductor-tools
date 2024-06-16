@@ -519,7 +519,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             cd ${WORKSPACE}
             cp scripts/modelbench/quant/report_quant_perf.py ${WORKSPACE}
-            conda env list
+            source activate base
             python3 report_quant_perf.py -r refer -t ${target} --url ${BUILD_URL}
             rm -rf refer  
             '''
