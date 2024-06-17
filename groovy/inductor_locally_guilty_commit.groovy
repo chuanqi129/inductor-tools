@@ -185,7 +185,7 @@ node(NODE_LABEL){
             maillist="${default_mail}"
         }
 
-        if (fileExists("${WORKSPACE}/${target}/inductor_log/guilty_commit.log") == true){
+        if (fileExists("${WORKSPACE}/inductor_log/guilty_commit.log") == true){
             emailext(
                 subject: "Torchinductor-${env.backend}-${env.suite}-${env.model}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-${env.threads}-${env.scenario}-${env.kind}-guilty_commit_Report(${env.bench_machine})_${env.target}",
                 mimeType: "text/html",
