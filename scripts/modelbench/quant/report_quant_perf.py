@@ -329,6 +329,8 @@ def read_dynamic_log(log_path):
     model = []
     accuracy = []
     performance = []
+    perf_data = 0
+    accuracy_data = 0
     for root, dirs, files in os.walk(log_path):
         for f in files:
             file_path=os.path.join(log_path, f)
@@ -342,8 +344,9 @@ def read_dynamic_log(log_path):
                         # performance.append(float(line.split(' ')[-1].strip("\n")))
                         
                     if 'eval_accuracy' in line:
-                        accuracy.append(float(line.split(' ')[-1].strip("\n")))
+                        accuracy_data = line.split(' ')[-1].strip("\n")
                 performance.append(float(perf_data))
+                accuracy.append(float(accuracy_data))
     quant = {'model':model, 'eval_samples_per_second':performance, 'eval_accuracy':accuracy}
     quant = pd.DataFrame(quant)
     quant.sort_values(by=['model'], key=lambda col: col.str.lower(),inplace=True)
