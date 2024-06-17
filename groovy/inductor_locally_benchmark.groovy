@@ -46,7 +46,7 @@ if (env.NODE_LABEL == "0") {
     if (env.precision == "float32") {
         env.NODE_LABEL = "inductor-icx-local"
     } else if (env.precision == 'amp') {
-        env.NODE_LABEL = "inductor-gnr-local"
+        env.NODE_LABEL = "inductor-gnr-local-tas"
     }
 }
 
