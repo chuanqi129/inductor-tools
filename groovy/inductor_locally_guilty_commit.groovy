@@ -93,21 +93,21 @@ node(NODE_LABEL){
         unstash 'docker_image_tag'
         sh'''
             #!/usr/bin/env bash
-            mkdir -p ${WORKSPACE}/${LOG_DIR}
-            mv docker_image_tag.log ${WORKSPACE}/${LOG_DIR}
+            mkdir -p ${WORKSPACE}/${target}/${LOG_DIR}
+            mv docker_image_tag.log ${WORKSPACE}/${target}/${LOG_DIR}
         '''
     }
 
     stage("trigger inductor images job"){
-        def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
+        def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${target}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
         def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
             [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
             [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_START_COMMIT}"],
             [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
             [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
         ]
-        if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
-            archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
+        if (fileExists("${WORKSPACE}/${target}/${LOG_DIR}/docker_image_tag.log")) {
+            archiveArtifacts  "${target}/${LOG_DIR}/docker_image_tag.log"
         }
     }
 
@@ -115,7 +115,7 @@ node(NODE_LABEL){
         withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
             sh'''
                 #!/usr/bin/env bash
-                docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                docker_image_tag=`cat ${target}/${LOG_DIR}/docker_image_tag.log`
                 docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
             '''
         }
@@ -124,7 +124,7 @@ node(NODE_LABEL){
     stage("benchmark") {
         sh '''
             #!/usr/bin/env bash
-            docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+            docker_image_tag=`cat ${target}/${LOG_DIR}/docker_image_tag.log`
             docker run -tid --name $USER \
                 --privileged \
                 --env https_proxy=${https_proxy} \
@@ -132,7 +132,7 @@ node(NODE_LABEL){
                 --env HF_HUB_TOKEN=$HF_TOKEN \
                 --net host --shm-size 1G \
                 -v ~/.cache:/root/.cache \
-                -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
+                -v ${WORKSPACE}/${target}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                 ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
             docker cp scripts/modelbench/bisect_search.sh $USER:/workspace/pytorch
             docker cp scripts/modelbench/bisect_run_test.sh $USER:/workspace/pytorch
@@ -158,7 +158,7 @@ node(NODE_LABEL){
                 BACKEND=$backend \
                 PERF_RATIO=$perf_ratio \
                 EXTRA=$extra_param" \
-                > ${WORKSPACE}/${LOG_DIR}/docker_exec_detailed.log
+                > ${WORKSPACE}/${target}/${LOG_DIR}/docker_exec_detailed.log
 
             docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
         '''
