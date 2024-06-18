@@ -166,13 +166,16 @@ node(NODE_LABEL){
     stage("trigger inductor images job"){
         if  ("${report_only}" == "false") {
             if ("${build_image}" == "true") {
-                def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
-                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
-                    [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
-                    [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
-                    [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
-                    [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
-                ]
+                retry(3){
+                    sleep(60)
+                    def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
+                    def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
+                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
+                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+                        [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
+                    ]
+                }
             }
             if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
                 archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
