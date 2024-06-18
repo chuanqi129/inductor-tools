@@ -1,6 +1,15 @@
 node(NODE_LABEL){
     deleteDir()
-    checkout scm
+    retry(3){
+        sleep(60)
+        checkout([
+            $class: 'GitSCM',
+            branches: scm.branches,
+            doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+            extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+            userRemoteConfigs: scm.userRemoteConfigs
+        ])
+    }
     stage("Copy Artifacts"){
         copyArtifacts(
             projectName: "${target_job}",
