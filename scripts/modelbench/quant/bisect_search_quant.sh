@@ -26,6 +26,13 @@ export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
 echo "===============Start searching guilty commit for ${SUITE} ${MODEL} ${MODE} ${PRECISION} ${SHAPE} ${WRAPPER} ${SCENARIO} ${KIND}================="
 cd /workspace/pytorch
 expected_perf=0
+rm -rf transformers accelerate
+git clone -b test https://github.com/chuanqi129/transformers && cd transformers && \
+    python setup.py bdist_wheel && pip install --force-reinstall dist/*.whl && cd ..
+git clone -b test https://github.com/zxd1997066/accelerate.git && cd accelerate && \
+    python setup.py bdist_wheel && pip install --no-deps --force-reinstall dist/*.whl && cd ..
+# Install requirements for each task
+pip install -r transformers/examples/pytorch/text-classification/requirements.txt
 # For perfroamcen drop issue, get the expected performance based on end/good commit
 if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     # Initial image build with END_COMMIT, no need rebuild
@@ -61,13 +68,6 @@ fi
 
 if [ "$SCENARIO" == "accuracy" ] && [ "$KIND" == "drop" ]; then
     # Initial image build with END_COMMIT, no need rebuild
-    rm -rf transformers accelerate
-    git clone -b test https://github.com/chuanqi129/transformers && cd transformers && \
-        python setup.py bdist_wheel && pip install --force-reinstall dist/*.whl && cd ..
-    git clone -b test https://github.com/zxd1997066/accelerate.git && cd accelerate && \
-        python setup.py bdist_wheel && pip install --no-deps --force-reinstall dist/*.whl && cd ..
-    # Install requirements for each task
-    pip install -r transformers/examples/pytorch/text-classification/requirements.txt
     git checkout ${END_COMMIT}
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
     expected_perf=$(bash hf_quant_test.sh key torch_compile_quant_static | grep "eval_accuracy" | awk -F'=' '{print $2}')
