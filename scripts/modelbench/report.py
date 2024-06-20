@@ -230,23 +230,15 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            if args.suite == 'all':
-                summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
-                summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7]
-            else:
-                summary.iloc[0,4]=target_mt_pr_data.iloc[0,1]
-                summary.iloc[1,4]=target_mt_gm_data.iloc[0,1]
+            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
+            summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            if args.suite == 'all':
-                summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
-                summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
-            else:
-                summary.iloc[2,4]=target_st_pr_data.iloc[0,1]
-                summary.iloc[3,4]=target_st_gm_data.iloc[0,1]
+            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
+            summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
@@ -879,7 +871,10 @@ def html_generate(html_off):
             if args.mode == 'all':
                 content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6])
             else:
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
+                if new_failures.empty:
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                else:
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -891,13 +886,21 @@ def html_generate(html_off):
                     "<p>Single-thread Failures</p>" + st_failures
                 summary_new = pd.DataFrame(content[6]).to_html(classes="table",index = False)
             elif args.mode == 'multiple':
-                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-                failures_html = "<p>Multi-threads Failures</p>" + mt_failures
-                summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
+                if new_failures.empty:
+                    failures_html = "<p>Multi-threads Failures</p>" + "None"
+                    summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                else:
+                    mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                    failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+                    summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             elif args.mode == 'single':
-                st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-                failures_html = "<p>Single-thread Failures</p>" + st_failures
-                summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
+                if new_failures.empty:
+                    failures_html = "<p>Single-thread Failures</p>" + "None"
+                    summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                else:
+                    st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                    failures_html = "<p>Single-thread Failures</p>" + st_failures
+                    summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
