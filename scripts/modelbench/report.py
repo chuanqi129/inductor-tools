@@ -230,15 +230,23 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         if args.mode == "multiple" or args.mode == 'all':
             target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
-            summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
+            if args.suite == 'all':
+                summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
+                summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7]
+            else:
+                summary.iloc[0,4]=target_mt_pr_data.iloc[0,1]
+                summary.iloc[1,4]=target_mt_gm_data.iloc[0,1]
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
             target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
-            summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
+            if args.suite == 'all':
+                summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
+                summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
+            else:
+                summary.iloc[2,4]=target_st_pr_data.iloc[0,1]
+                summary.iloc[3,4]=target_st_gm_data.iloc[0,1]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
