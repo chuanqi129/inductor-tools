@@ -3,13 +3,8 @@ env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
-if (env.NODE_LABEL == "0") {
-    if (env.precision == "float32") {
-        env.NODE_LABEL = "inductor-icx-local-tas"
-    } else if (env.precision == 'amp') {
-        env.NODE_LABEL = "inductor-gnr-local-tas"
-    }
-}
+env.NODE_LABEL = "inductor-icx-local-tas"
+
 
 debug = 'False'
 if ('debug' in params) {
