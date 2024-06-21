@@ -273,7 +273,7 @@ node(NODE_LABEL){
         stage("Email"){
             if (fileExists("${WORKSPACE}/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "[report-compare]-${env._target_job}-${env._refer_job}",
+                    subject: "[report-compare]-${env._target_job}-${env._refer_job}-${env._test_mode}-${env._precision}-${env.shape}-${env.wrapper}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
