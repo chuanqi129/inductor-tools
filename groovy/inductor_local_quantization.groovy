@@ -3,7 +3,7 @@ env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
-env.NODE_LABEL = "inductor-icx-local-tas"
+env.NODE_LABEL = "inductor-icx-local"
 
 
 debug = 'False'
