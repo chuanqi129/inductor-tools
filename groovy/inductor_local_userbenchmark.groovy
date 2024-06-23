@@ -258,7 +258,6 @@ env._test_mode = "$test_mode"
 env._backend = "$backend"
 env._extra_param = "$extra_param"
 env._target = new Date().format('yyyy_MM_dd')
-env._gh_token = "$gh_token"
 env._report_only = "$report_only"
 
 env._TORCH_REPO = "$TORCH_REPO"
