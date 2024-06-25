@@ -21,10 +21,10 @@ prepare_test() {
     rm -rf /tmp/*
     git reset --hard HEAD && git submodule sync && git submodule update --init --recursive
     python setup.py clean && python setup.py develop && cd .. && \
-    rm -rf vision && git clone -b main https://github.com/pytorch/vision.git && cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    rm -rf data && git clone -b main https://github.com/pytorch/data.git && cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    rm -rf text && git clone -b main https://github.com/pytorch/text.git && cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
+    cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}
     cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
 }
