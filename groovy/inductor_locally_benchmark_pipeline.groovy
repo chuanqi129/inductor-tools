@@ -1,10 +1,34 @@
+import hudson.model.Computer
+import hudson.model.Label
+
 def str_list = ['target', 'baseline']
 env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
+if (env.precision == "float32") {
+    env.labelName = "inductor-icx-local-tas"
+} else if (env.precision == 'amp') {
+    env.labelName = "inductor-gnr-local-tas"
+}
 
-def getJobParameters(String test_str) {
+def getAvailableNode(String labelName) {
+    Label label = Jenkins.instance.getLabel(labelName)
+    
+    // Get computers by label
+    Collection<Computer> computers = label.getNodes().collect { it.toComputer() }
+    
+    String availableComputer = null
+    for (Computer computer : computers) {
+      if (computer.isOnline() && computer.isIdle()) {
+        availableComputer = computer.name
+        break
+      }
+    }
+    return availableComputer
+}
+
+def getJobParameters(String test_str, String availableComputer) {
     def job_parameters = [
         string(name: 'TORCH_REPO', value: target_TORCH_REPO),
         string(name: 'TORCH_COMMIT', value: target_TORCH_COMMIT),
@@ -19,6 +43,7 @@ def getJobParameters(String test_str) {
         string(name: 'WRAPPER', value: WRAPPER),
         string(name: 'HF_TOKEN', value: HF_TOKEN),
         string(name: 'extra_param', value: extra_param),
+        string(name: 'NODE_LABEL', value: availableComputer),
     ]
     if (test_str == "baseline") {
         println("[INFO]: baseline pytorch repo and commit: ")
@@ -50,10 +75,22 @@ node(NODE_LABEL){
 
     stage('Trigger aws benchmark Job'){
         def job_list = [:]
+        def availableComputer = null
+        while(true) {
+            availableComputer = getAvailableNode(labelName)
+            if (availableComputer != null) {
+                println("Found available node with label '${labelName}': ${availableComputer}")
+                break
+            } else {
+                println("No available nodes found with label '${labelName}'")
+                sleep(600)
+            }
+        }
+
         for (sub_str in str_list) {
             def test_str = sub_str
             job_list[test_str] = {
-                def job_parameters = getJobParameters(test_str)
+                def job_parameters = getJobParameters(test_str, availableComputer)
                 def benchmark_job = build propagate: false,
                     job: benchmark_job, parameters: job_parameters
                 
