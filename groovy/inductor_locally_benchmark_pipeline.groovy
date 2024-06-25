@@ -28,7 +28,7 @@ def getJobParameters(String test_str) {
     return job_parameters
 }
 
-node(NODE_LABEL){
+node(report_node){
     deleteDir()
     retry(3){
         sleep(60)
