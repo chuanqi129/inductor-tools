@@ -228,18 +228,30 @@ node(NODE_LABEL){
 
     // Add raw log artifact stage in advance to avoid crash in report generate stage
     stage("archive raw test results"){
-        sh '''
-            #!/usr/bin/env bash
-            if [ -d ${WORKSPACE}/raw_log ];then
-                rm -rf ${WORKSPACE}/raw_log
-            fi
-            if [ -d ${WORKSPACE}/${target} ];then
-                rm -rf ${WORKSPACE}/${target}
-            fi
-            cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
-            mkdir ${WORKSPACE}/${target}
-            mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
-        '''
+        if  ("${report_only}" == "false") {
+            sh '''
+                #!/usr/bin/env bash
+                if [ -d ${WORKSPACE}/raw_log ];then
+                    rm -rf ${WORKSPACE}/raw_log
+                fi
+                if [ -d ${WORKSPACE}/${target} ];then
+                    rm -rf ${WORKSPACE}/${target}
+                fi
+                cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
+                mkdir ${WORKSPACE}/${target}
+                mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
+            '''
+        } else {
+            sh '''
+                #!/usr/bin/env bash
+                if [ -d ${WORKSPACE}/${target} ];then
+                    rm -rf ${WORKSPACE}/${target}
+                fi
+                cp -r ${WORKSPACE}/raw_log ${WORKSPACE}/${LOG_DIR}
+                mkdir ${WORKSPACE}/${target}
+                mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
+            '''
+        }
         archiveArtifacts artifacts: "**/raw_log/**", fingerprint: true
     }
 
@@ -266,6 +278,9 @@ node(NODE_LABEL){
                 sh '''
                     #!/usr/bin/env bash
                     cd ${WORKSPACE}
+                    if [ "${precision}" == "amp_fp16" ];then
+                        export precision='amp'
+                    fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
                         -r refer \
@@ -287,6 +302,9 @@ node(NODE_LABEL){
                 sh '''
                     #!/usr/bin/env bash
                     cd ${WORKSPACE}
+                    if [ "${precision}" == "amp_fp16" ];then
+                        export precision='amp'
+                    fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
                         -t ${target} \
