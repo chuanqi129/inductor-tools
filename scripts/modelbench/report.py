@@ -65,6 +65,7 @@ new_performance_improvement=pd.DataFrame()
 new_performance_improvement_model_list=pd.DataFrame()
 new_fixed_failures=pd.DataFrame()
 new_fixed_failures_model_list=pd.DataFrame()
+target_thread_failures=pd.DataFrame()
 
 # cppwrapper gm values
 multi_threads_gm={}
@@ -437,6 +438,7 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_fixed_failures
     global new_failures_model_list
     global new_fixed_failures_model_list
+    global target_thread_failures
     target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=args.backend)
     # new failures compare with reference logs
     if args.reference is not None:
@@ -879,7 +881,7 @@ def html_generate(html_off):
             if args.mode == 'all':
                 content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6])
             else:
-                if new_failures.empty:
+                if target_thread_failures.empty:
                     content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
                 else:
                     content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
@@ -894,7 +896,7 @@ def html_generate(html_off):
                     "<p>Single-thread Failures</p>" + st_failures
                 summary_new = pd.DataFrame(content[6]).to_html(classes="table",index = False)
             elif args.mode == 'multiple':
-                if new_failures.empty:
+                if target_thread_failures.empty:
                     failures_html = "<p>Multi-threads Failures</p>" + "None"
                     summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
                 else:
@@ -902,7 +904,7 @@ def html_generate(html_off):
                     failures_html = "<p>Multi-threads Failures</p>" + mt_failures
                     summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             elif args.mode == 'single':
-                if new_failures.empty:
+                if target_thread_failures.empty:
                     failures_html = "<p>Single-thread Failures</p>" + "None"
                     summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
                 else:
