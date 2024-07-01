@@ -87,6 +87,8 @@ else
     SUITE="--suites=${SUITE}"
 fi
 
+export TORCH_COMPILE_DEBUG=1
+export TORCH_LOGS="+schedule,+inductor,+output_code"
 # multi-threads
 multi_threads_test() {
     # Stock Pytorch launcher will set OMP_NUM_THREADS
