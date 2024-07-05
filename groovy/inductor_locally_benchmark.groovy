@@ -61,14 +61,12 @@ def cleanup(){
                 fi
                 docker container prune -f
                 docker system prune -f
-            '''
-            docker.image(env.BASE_IMAGE).inside(" \
-                -u root \
-                -v ${WORKSPACE}:/root/workspace \
-                --privileged \
-            "){
-            sh '''
-                chmod -R 777 /root/workspace    
+
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
             '''
             }
         }
