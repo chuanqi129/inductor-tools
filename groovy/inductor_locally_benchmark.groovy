@@ -40,7 +40,7 @@ if ( env.dash_board == "true" ) {
 env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
-env.BASE_IMAGE= 'ubuntu:22.04'
+env.BASE_IMAGE= 'ccr-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'inductor_log'
 if (env.NODE_LABEL == "0") {
     if (env.precision == "float32") {
@@ -52,24 +52,25 @@ if (env.NODE_LABEL == "0") {
 
 def cleanup(){
     try {
-        sh'''
-            #!/usr/bin/env bash
-            docker_ps=`docker ps -a -q`
-            if [ -n "${docker_ps}" ];then
-                docker stop ${docker_ps}
-            fi
-            docker container prune -f
-            docker system prune -f
-            docker pull ${BASE_IMAGE}
-        '''
-        docker.image(env.BASE_IMAGE).inside(" \
-            -u root \
-            -v ${WORKSPACE}:/root/workspace \
-            --privileged \
-        "){
-        sh '''
-            chmod -R 777 /root/workspace    
-        '''
+        retry(3){
+            sh'''
+                #!/usr/bin/env bash
+                docker_ps=`docker ps -a -q`
+                if [ -n "${docker_ps}" ];then
+                    docker stop ${docker_ps}
+                fi
+                docker container prune -f
+                docker system prune -f
+            '''
+            docker.image(env.BASE_IMAGE).inside(" \
+                -u root \
+                -v ${WORKSPACE}:/root/workspace \
+                --privileged \
+            "){
+            sh '''
+                chmod -R 777 /root/workspace    
+            '''
+            }
         }
         deleteDir()
     } catch(e) {
