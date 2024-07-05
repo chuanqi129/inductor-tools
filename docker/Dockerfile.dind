@@ -66,7 +66,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
     rm -f /opt/conda/lib/libstdc++.so.6
 
 RUN ln -fs /bin/bash /bin/sh && \
-wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5A-base64.crt && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5A-base64.crt && \
     wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5B-base64.crt && \
     wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelSHA256RootCA-base64.crt && \
     mv Intel* /usr/local/share/ca-certificates/ && \
