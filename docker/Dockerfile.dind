@@ -1,6 +1,6 @@
 # Docker in Docker (dind)
 # syntax=docker/dockerfile:1
-FROM jrei/systemd-ubuntu:22.04 
+FROM cruizba/ubuntu-dind:latest
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
