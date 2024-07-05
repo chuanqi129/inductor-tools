@@ -198,7 +198,7 @@ node(NODE_LABEL){
             sh '''
                 #!/usr/bin/env bash
                 docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-                docker run -tid --name $USER \
+                docker run -tid --name inductor_test \
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
@@ -207,19 +207,19 @@ node(NODE_LABEL){
                     -v ~/.cache:/root/.cache \
                     -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                     ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-                docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
-                docker exec -i $USER bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
+                docker cp scripts/modelbench/inductor_test.sh inductor_test:/workspace/pytorch
+                docker cp scripts/modelbench/inductor_train.sh inductor_test:/workspace/pytorch
+                docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
+                docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 if [ $test_mode == "inference" ]; then
-                    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
                 elif [ $test_mode == "training_full" ]; then
-                    docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
                 elif [ $test_mode == "training" ]; then
-                    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} $extra_param"
                 fi
-                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
+                docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
     }
