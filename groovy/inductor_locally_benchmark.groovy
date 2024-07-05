@@ -62,6 +62,7 @@ def cleanup(){
                 docker container prune -f
                 docker system prune -f
 
+                docker pull ${BASE_IMAGE}
                 docker run -t \
                     -u root \
                     -v ${WORKSPACE}:/root/workspace \
