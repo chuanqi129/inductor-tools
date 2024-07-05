@@ -68,7 +68,6 @@ def cleanup(){
                     --privileged \
                     ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
             '''
-            }
         }
         deleteDir()
     } catch(e) {
