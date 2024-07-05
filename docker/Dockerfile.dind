@@ -63,6 +63,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         weasyprint && \
     pip install datacompy scipy styleframe bs4 PyGithub && \
     /opt/conda/bin/conda clean -ya && \
+    ln -fs /bin/bash /bin/sh && \
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
 
