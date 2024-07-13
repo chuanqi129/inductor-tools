@@ -7,14 +7,16 @@ models=alexnet,shufflenet_v2_x1_0,mobilenet_v3_large,vgg16,densenet121,mnasnet1_
 #models=alexnet
 rm -rf .userbenchmark
 mkdir inductor_quant/
+export TORCH_COMPILE_DEBUG=1
+export TORCH_LOGS="+schedule,+inductor,+output_code"
  
 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/ptq
-TORCHINDUCTOR_FREEZING=1 TORCHINDUCTOR_CPP_WRAPPER=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --cpp_wrapper --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
-mv .userbenchmark/cpu inductor_quant/cpp
-TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --is_qat --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
-mv .userbenchmark/cpu inductor_quant/qat
-TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
-mv .userbenchmark/cpu inductor_quant/general_inductor
+# TORCHINDUCTOR_FREEZING=1 TORCHINDUCTOR_CPP_WRAPPER=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --cpp_wrapper --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+# mv .userbenchmark/cpu inductor_quant/cpp
+# TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --is_qat --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+# mv .userbenchmark/cpu inductor_quant/qat
+# TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+# mv .userbenchmark/cpu inductor_quant/general_inductor
 
 mv inductor_quant ../pytorch/$LOG_DIR/
