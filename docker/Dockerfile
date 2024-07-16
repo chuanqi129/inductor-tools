@@ -33,7 +33,6 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
     ~/miniforge.sh -b -p /opt/conda && \
     rm ~/miniforge.sh && \
     /opt/conda/bin/conda config --set channel_priority strict && \
-    /opt/conda/bin/conda config --append channels intel && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
         cffi \
