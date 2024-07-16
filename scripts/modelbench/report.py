@@ -310,7 +310,7 @@ def parse_acc_failure(file,failed_model):
                     if model != failed_model:
                         continue
                     found =  True
-                if found ==  True and ("Error: " in line or "[ERROR]" in line or "TIMEOUT" in line or "FAIL" in line):
+                if found ==  True and ("Error: " in line or "[ERROR]" in line or "TIMEOUT" in line or "FAIL" in line or "fail" in line):
                     line=line.replace(',',' ',20)
                     result.append(model+", "+ line)
                     break
