@@ -360,7 +360,15 @@ def failures_reason_parse(model, acc_or_perf, mode):
 
 def get_failures(target_path, thread_mode, backend_pattern):
     all_model_df = pd.DataFrame()
-    failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
+    failure_msg_list = [
+        'fail_to_run',
+        'infra_error',
+        'fail_accuracy',
+        'eager_fail_to_run',
+        'model_fail_to_load',
+        'eager_two_runs_differ',
+        'timeout',
+        '0.0000']
     for suite_name in suite_list:
         perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
         acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
