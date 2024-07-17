@@ -95,9 +95,9 @@ if [[ ${mem_allowed_list} =~ '-' ]];then
     NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
     NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
     CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
-    end_core=$(expr $CORES - 1)
-    cpu_allowed_list="0-${end_core}"
-    mem_allowed_list="0"
+    end_core=$(expr ${start_core} + ${CORES} - 1)
+    cpu_allowed_list="${start_core}-${end_core}"
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
 fi
 
 # multi-threads
