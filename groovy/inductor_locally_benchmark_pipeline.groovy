@@ -2,6 +2,7 @@ import hudson.model.Computer
 import hudson.model.Label
 
 def str_list = ['target', 'baseline']
+def maxRetries = 3
 env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
@@ -59,7 +60,7 @@ def getJobParameters(String test_str, String availableComputer) {
 
 node("inductor_image"){
     deleteDir()
-    retry(3){
+    retry(maxRetries){
         sleep(60)
         checkout([
             $class: 'GitSCM',
@@ -116,11 +117,53 @@ node("inductor_image"){
         )
         throw e
     }
+
+    try{
+        stage("Build target images") {
+            retry(maxRetries){
+                sh'''
+                    #!/usr/bin/env bash
+                    set -ex
+
+                    cd ${WORKSPACE}/target_pytorch
+                    commit_date=`git log -n 1 --format="%cs"`
+                    bref_commit=`git rev-parse --short HEAD`
+                    DOCKER_TAG="${commit_date}_${bref_commit}"
+                    echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag_target.log
+                '''
+                sleep(60)
+                def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_target.log''').toString().trim().replaceAll("\n","")
+                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${target_TORCH_REPO}"],
+                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${target_TORCH_COMMIT}"],
+                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+                ]
+
+                buildStatus = image_build_job.getResult()
+                if (buildStatus == hudson.model.Result.FAILURE) {
+                    throw new Exception("Target docker image build job failed")
+                }
+            }
+        }
+    } catch (Exception e) {
+        sh'''
+            #!/usr/bin/env bash
+            set -ex
+        '''
+        emailext(
+            subject: "Inductor TAS pipeline Pre-Check failed",
+            mimeType: "text/html",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="torch_clone.log"}'
+        )
+        throw e
+    }
 }
 
 node(report_node){
     deleteDir()
-    retry(3){
+    retry(maxRetries){
         sleep(60)
         checkout([
             $class: 'GitSCM',
@@ -168,6 +211,10 @@ node(report_node){
         } // for
         parallel job_list
     } // stage 
+
+    // TODO
+    // get target and baseline results, and add rebuild button
+    // Create rebuild account.
     
     stage('Compare results') {
         if ((target_job_selector == 'None') || 

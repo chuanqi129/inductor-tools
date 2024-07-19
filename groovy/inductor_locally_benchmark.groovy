@@ -175,6 +175,11 @@ node(NODE_LABEL){
                         [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
                         [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
                     ]
+                    sh'''
+                        #!/usr/bin/env bash
+                        docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
+                    '''
                 }
             }
             if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
