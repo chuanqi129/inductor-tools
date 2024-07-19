@@ -8,8 +8,12 @@ env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 if (env.precision == "float32") {
     env.labelName = "inductor-icx-local-tas"
-} else if (env.precision == 'amp') {
-    env.labelName = "inductor-gnr-local-tas"
+} else if (env.precision == 'amp-sh') {
+    env.precision == 'amp'
+    env.labelName = "inductor-gnr-local-tas-sh"
+} else if (env.precision == 'amp-us') {
+    env.precision == 'amp'
+    env.labelName = "inductor-gnr-local-tas-us"
 }
 
 def getAvailableNode(String labelName) {
