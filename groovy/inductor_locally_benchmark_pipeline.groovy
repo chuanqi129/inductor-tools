@@ -80,7 +80,8 @@ node("inductor_image"){
                 #!/usr/bin/env bash
                 set -ex
 
-                git clone ${target_TORCH_REPO} target_pytorch 2>&1 | tee ${WORKSPACE}/torch_clone.log
+                echo "Build URL: ${BUILD_URL}" | tee ${WORKSPACE}/torch_clone.log
+                git clone ${target_TORCH_REPO} target_pytorch 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 echo "[INFO] Target torch repo and commit is correct." | tee -a ${WORKSPACE}/torch_clone.log
