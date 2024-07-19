@@ -80,16 +80,18 @@ node("inductor_image"){
                 #!/usr/bin/env bash
                 set -ex
 
-                echo "Build URL: ${BUILD_URL}" | tee ${WORKSPACE}/torch_clone.log
-                git clone ${target_TORCH_REPO} target_pytorch 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                echo "Build URL: ${BUILD_URL}.<br>" | tee ${WORKSPACE}/torch_clone.log
+                cd ${WORKSPACE}
+                git clone ${target_TORCH_REPO} target_pytorch
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                echo "[INFO] Target torch repo and commit is correct." | tee -a ${WORKSPACE}/torch_clone.log
+                echo "<br>[INFO] Target torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
 
-                git clone ${baseline_TORCH_REPO} baseline_pytorch 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                cd ${WORKSPACE}
+                git clone ${baseline_TORCH_REPO} baseline_pytorch
                 cd ${WORKSPACE}/baseline_pytorch
                 git checkout ${baseline_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                echo "[INFO] Baseline torch repo and commit is correct." | tee -a ${WORKSPACE}/torch_clone.log
+                echo "<br>[INFO] Baseline torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
             '''
         }
     } catch (Exception e) {
