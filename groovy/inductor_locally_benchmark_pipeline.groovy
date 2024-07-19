@@ -53,6 +53,52 @@ def getJobParameters(String test_str, String availableComputer) {
     return job_parameters
 }
 
+node("inductor_image"){
+    deleteDir()
+    retry(3){
+        sleep(60)
+        checkout([
+            $class: 'GitSCM',
+            branches: scm.branches,
+            doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+            extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+            userRemoteConfigs: scm.userRemoteConfigs
+        ])
+    }
+
+    try{
+        stage("Pre-check repo and commit") {
+            if ((target_TORCH_REPO == baseline_TORCH_REPO) && 
+                (target_TORCH_COMMIT == baseline_TORCH_COMMIT)) {
+                println("same repo and commit")
+            }
+            sh'''
+                #!/usr/bin/env bash
+                set -ex
+
+                git clone ${target_TORCH_REPO} target_pytorch 2&>1 | tee ${WORKSPACE}/torch_clone.log
+                cd ${WORKSPACE}/target_pytorch
+                git checkout ${target_TORCH_COMMIT} 2&>1 | tee -a ${WORKSPACE}/torch_clone.log
+                echo "[INFO] Target torch repo and commit is correct." | tee -a ${WORKSPACE}/torch_clone.log
+
+                git clone ${baseline_TORCH_REPO} baseline_pytorch 2&>1 | tee -a ${WORKSPACE}/torch_clone.log
+                cd ${WORKSPACE}/baseline_pytorch
+                git checkout ${baseline_TORCH_COMMIT} 2&>1 | tee -a ${WORKSPACE}/torch_clone.log
+                echo "[INFO] Baseline torch repo and commit is correct." | tee -a ${WORKSPACE}/torch_clone.log
+            '''
+        }
+    } catch (Exception e) {
+        emailext(
+            subject: "Inductor TAS pipeline Pre-Check failed",
+            mimeType: "text/html",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="torch_clone.log"}'
+        )
+        throw e
+    }
+}
+
 node(report_node){
     deleteDir()
     retry(3){
