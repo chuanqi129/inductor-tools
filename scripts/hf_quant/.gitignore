@@ -1,0 +1,4 @@
+__pycache__/
+accelerate/
+logs/
+transformers/
