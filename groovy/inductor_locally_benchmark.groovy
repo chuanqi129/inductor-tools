@@ -114,12 +114,20 @@ node(us_node){
                         cd pytorch
                         main_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1`
                         git checkout ${main_commit} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                        result=${PIPESTATUS[0]}
                     else
                         # clone pytorch repo
                         cd ${WORKSPACE}
                         git clone ${TORCH_REPO}
                         cd pytorch
                         git checkout ${TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                        result=${PIPESTATUS[0]}
+                    fi
+                    if [ "${result}" = "0" ]; then
+                        echo "<br>[INFO] Torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    else
+                        echo "<br>[ERROR] Torch repo and commit is wrong!<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                        exit 1
                     fi
                     commit_date=`git log -n 1 --format="%cs"`
                     bref_commit=`git rev-parse --short HEAD`
