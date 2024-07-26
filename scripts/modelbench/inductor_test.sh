@@ -51,6 +51,12 @@ if [[ ${TEST_MODE} == "training_full" ]]; then
     sed -i "/SKIP_TRAIN = {/a\    \"hf_GPT2_large\"," benchmarks/dynamo/torchbench.py
 fi
 
+DT_extra=''
+if [[ "$DT" == "amp_fp16" ]]; then
+    DT=amp
+    DT_extra="--amp-dtype float16 "
+fi
+
 Flag_extra="$EXTRA "
 if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
@@ -109,11 +115,11 @@ multi_threads_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id ${mem_allowed_list}" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id ${mem_allowed_list}" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id ${mem_allowed_list}" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id ${mem_allowed_list}" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra} ${DT_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
@@ -126,11 +132,11 @@ single_thread_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list ${start_core} --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list ${start_core} --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list ${start_core} --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list ${start_core} --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
