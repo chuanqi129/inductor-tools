@@ -8,12 +8,15 @@ env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 if (env.precision == "float32") {
     env.labelName = "inductor-icx-local-tas"
-} else if (env.precision == 'amp-sh') {
+} else if (env.precision == 'amp-gnr-sh') {
     env.precision = 'amp'
     env.labelName = "inductor-gnr-local-tas-sh"
-} else if (env.precision == 'amp-us') {
+} else if (env.precision == 'amp-gnr-us') {
     env.precision = 'amp'
     env.labelName = "inductor-gnr-local-tas-us"
+} else if (env.precision == 'amp-spr') {
+    env.precision = 'amp'
+    env.labelName = "inductor-spr-local-tas"
 }
 
 def getAvailableNode(String labelName) {
