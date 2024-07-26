@@ -81,7 +81,7 @@ node("inductor_image"){
                 #!/usr/bin/env bash
                 set -ex
 
-                echo "Build URL: ${BUILD_URL}.<br>" | tee ${WORKSPACE}/torch_clone.log
+                echo "Job URL: ${BUILD_URL}/console .<br>" | tee ${WORKSPACE}/torch_clone.log
                 cd ${WORKSPACE}
                 git clone ${target_TORCH_REPO} target_pytorch
                 cd ${WORKSPACE}/target_pytorch
@@ -118,46 +118,26 @@ node("inductor_image"){
         throw e
     }
 
-    try{
-        stage("Build target images") {
-            retry(maxRetries){
-                sh'''
-                    #!/usr/bin/env bash
-                    set -ex
-
-                    cd ${WORKSPACE}/target_pytorch
-                    commit_date=`git log -n 1 --format="%cs"`
-                    bref_commit=`git rev-parse --short HEAD`
-                    DOCKER_TAG="${commit_date}_${bref_commit}"
-                    echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag_target.log
-                '''
-                sleep(60)
-                def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_target.log''').toString().trim().replaceAll("\n","")
-                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
-                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${target_TORCH_REPO}"],
-                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${target_TORCH_COMMIT}"],
-                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
-                ]
-
-                buildStatus = image_build_job.getResult()
-                if (buildStatus == hudson.model.Result.FAILURE) {
-                    throw new Exception("Target docker image build job failed")
-                }
-            }
-        }
-    } catch (Exception e) {
+    stage("Cache torch commit") {
         sh'''
             #!/usr/bin/env bash
             set -ex
+
+            cd ${WORKSPACE}/target_pytorch
+            commit_date=`git log -n 1 --format="%cs"`
+            bref_commit=`git rev-parse --short HEAD`
+            DOCKER_TAG="${commit_date}_${bref_commit}"
+            echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag_target.log
+
+            cd ${WORKSPACE}/baseline_pytorch
+            commit_date=`git log -n 1 --format="%cs"`
+            bref_commit=`git rev-parse --short HEAD`
+            DOCKER_TAG="${commit_date}_${bref_commit}"
+            echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag_baseline.log
         '''
-        emailext(
-            subject: "Inductor TAS pipeline Pre-Check failed",
-            mimeType: "text/html",
-            from: "pytorch_inductor_val@intel.com",
-            to: default_mail,
-            body: '${FILE, path="torch_clone.log"}'
-        )
-        throw e
+        stash includes: 'docker_image_tag_target.log', name: 'docker_image_tag_target'
+        stash includes: 'docker_image_tag_baseline.log', name: 'docker_image_tag_baseline'
+        archiveArtifacts  "docker_image_tag*.log"
     }
 }
 
@@ -174,11 +154,82 @@ node(report_node){
         ])
     }
 
-    stage("Pre-check repo and commit") {
-        if ((target_TORCH_REPO == baseline_TORCH_REPO) && 
-            (target_TORCH_COMMIT == baseline_TORCH_COMMIT)) {
-            println("same repo and commit")
+    try{
+        stage("Build target images") {
+            retry(maxRetries){
+                unstash 'docker_image_tag_target'
+                sleep(60)
+                def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_target.log''').toString().trim().replaceAll("\n","")
+                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${target_TORCH_REPO}"],
+                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${target_TORCH_COMMIT}"],
+                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+                ]
+
+                def buildStatus = image_build_job.getResult()
+                def cur_job_url = image_build_job.getAbsoluteUrl()
+                if (buildStatus == hudson.model.Result.FAILURE) {
+                    sh'''
+                        echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/target_image_build.log
+                    '''
+                    throw new Exception("Target docker image build job failed")
+                }
+            }
         }
+    } catch (Exception e) {
+        sh'''
+            #!/usr/bin/env bash
+            set -ex
+            echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/target_image_build.log
+        '''
+        emailext(
+            subject: "Inductor TAS pipeline Pre-Check failed",
+            mimeType: "text/html",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="target_image_build.log"}'
+        )
+        archiveArtifacts "target_image_build.log"
+        throw e
+    }
+
+    try{
+        stage("Build baseline images") {
+            retry(maxRetries){
+                unstash 'docker_image_tag_baseline'
+                sleep(60)
+                def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_baseline.log''').toString().trim().replaceAll("\n","")
+                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${baseline_TORCH_REPO}"],
+                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${baseline_TORCH_COMMIT}"],
+                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+                ]
+
+                def buildStatus = image_build_job.getResult()
+                def cur_job_url = image_build_job.getAbsoluteUrl()
+                if (buildStatus == hudson.model.Result.FAILURE) {
+                    sh'''
+                        echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/baseline_image_build.log
+                    '''
+                    throw new Exception("Target docker image build job failed")
+                }
+            }
+        }
+    } catch (Exception e) {
+        sh'''
+            #!/usr/bin/env bash
+            set -ex
+            echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/baseline_image_build.log
+        '''
+        emailext(
+            subject: "Inductor TAS pipeline Pre-Check failed",
+            mimeType: "text/html",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="baseline_image_build.log"}'
+        )
+        archiveArtifacts "baseline_image_build.log"
+        throw e
     }
 
     stage('Trigger aws benchmark Job'){
@@ -195,6 +246,10 @@ node(report_node){
             }
         }
 
+        sh'''
+            touch ${WORKSPACE}/inductor_pipeline_summary.csv
+            echo "job_status,test_str,job_link" > ${WORKSPACE}/inductor_pipeline_summary.csv
+        '''
         for (sub_str in str_list) {
             def test_str = sub_str
             job_list[test_str] = {
@@ -207,15 +262,38 @@ node(report_node){
                 } else {
                     env.baseline_job_selector = benchmark_job.getNumber()
                 }
+
+                cur_job_status = benchmark_job.getCurrentResult()
+                cur_job_url = guilty_commit_job.getAbsoluteUrl()
+                '''
+                    echo "${cur_job_status},${test_str},${cur_job_url}" > ${WORKSPACE}/inductor_pipeline_summary.csv
+                '''
             } // job_list
         } // for
         parallel job_list
-    } // stage 
+        archiveArtifacts artifacts: "inductor_pipeline_summary.csv", fingerprint true
+    } // stage
 
-    // TODO
-    // get target and baseline results, and add rebuild button
-    // Create rebuild account.
-    
+    stage('Email') {
+        def title_string = "TAS-Pipeline-${backend}-${precision}-${shape}-${wrapper}"
+        withEnv(["job_link=${job_link}","title_string=${title_string}"]){
+        sh'''
+            python -c "import pandas as pd; pd.read_csv('inductor_pipeline_summary.csv').to_html('table.html', index=False, render_links=True)"
+            cp html/0_css.html inductor_pipeline_summary.html
+            echo "<h2><a href='${BUILD_URL}/console'>${title_string}</a></h2>" >> inductor_pipeline_summary.html
+            cat table.html >> inductor_pipeline_summary.html
+        '''
+        }
+        archiveArtifacts artifacts: "inductor_pipeline_summary.html", fingerprint: true
+        emailext(
+            mimeType: "text/html",
+            subject: title_string + "-summary_report",
+            from: "pytorch_inductor_val@intel.com",
+            to: default_mail,
+            body: '${FILE, path="inductor_pipeline_summary.html"}'
+        )
+    } 
+   
     stage('Compare results') {
         if ((target_job_selector == 'None') || 
             (baseline_job_selector == 'None')) {
