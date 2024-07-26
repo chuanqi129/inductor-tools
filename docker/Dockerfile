@@ -27,6 +27,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
+COPY condarc /root/.condarc
 RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
     chmod +x ~/miniforge.sh && \
     # Fix conda install issue
@@ -98,6 +99,7 @@ ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
 RUN git clone https://github.com/pytorch/benchmark.git && \
     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
+    if [ -f 'torchbenchmark/models/sam_fast/requirements.txt' ]; then sed -i '/github/d' torchbenchmark/models/sam_fast/requirements.txt; fi && \
     python install.py --continue_on_fail && cd .. && \
     echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
         export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
