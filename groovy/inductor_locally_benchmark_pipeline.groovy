@@ -81,16 +81,16 @@ node("inductor_image"){
                 #!/usr/bin/env bash
                 set -ex
 
-                echo "Job URL: ${BUILD_URL}/console .<br>" | tee ${WORKSPACE}/torch_clone.log
+                echo "Job URL: ${BUILD_URL}/console .<br><br>" | tee ${WORKSPACE}/torch_clone.log
                 cd ${WORKSPACE}
                 git clone ${target_TORCH_REPO} target_pytorch
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 result=${PIPESTATUS[0]}
                 if [ "${result}" = "0" ]; then
-                    echo "<br>[INFO] Target torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    echo "<br><br>[INFO] Target torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
-                    echo "<br>[ERROR] Target torch repo and commit is wrong!<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    echo "<br><br>[ERROR] Target torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                     exit 1
                 fi
 
@@ -100,9 +100,9 @@ node("inductor_image"){
                 git checkout ${baseline_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 result=${PIPESTATUS[0]}
                 if [ "${result}" = "0" ]; then
-                    echo "<br>[INFO] Baseline torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    echo "<br><br>[INFO] Baseline torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
-                    echo "<br>[ERROR] Baseline torch repo and commit is wrong!<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    echo "<br><br>[ERROR] Baseline torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                     exit 1
                 fi
             '''
