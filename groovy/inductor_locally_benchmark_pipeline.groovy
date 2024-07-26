@@ -37,7 +37,7 @@ def getJobParameters(String test_str, String availableComputer) {
         string(name: 'TORCH_REPO', value: target_TORCH_REPO),
         string(name: 'TORCH_COMMIT', value: target_TORCH_COMMIT),
         string(name: 'default_mail', value: default_mail),
-        string(name: 'backend', value: backend),
+        string(name: 'backend', value: target_backend),
         string(name: 'precision', value: precision),
         string(name: 'test_mode', value: test_mode),
         string(name: 'suite', value: suite),
@@ -53,6 +53,7 @@ def getJobParameters(String test_str, String availableComputer) {
         println("[INFO]: baseline pytorch repo and commit: ")
         job_parameters[0] = string(name: 'TORCH_REPO', value: baseline_TORCH_REPO)
         job_parameters[1] = string(name: 'TORCH_COMMIT', value: baseline_TORCH_COMMIT)
+        job_parameters[3] = string(name: 'backend', value: baseline_backend)
     }
     return job_parameters
 }
