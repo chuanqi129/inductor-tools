@@ -295,6 +295,7 @@ node(NODE_LABEL){
                         --wrapper ${WRAPPER} \
                         --torch_repo ${TORCH_REPO} \
                         --backend ${backend} \
+                        --ref_backend ${backend} \
                         ${dashboard_args}
                     rm -rf refer
                 '''
