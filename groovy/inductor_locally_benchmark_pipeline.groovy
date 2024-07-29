@@ -271,7 +271,7 @@ node(report_node){
             } // job_list
         } // for
         parallel job_list
-        archiveArtifacts artifacts: "inductor_pipeline_summary.csv", fingerprint true
+        archiveArtifacts artifacts: "inductor_pipeline_summary.csv", fingerprint: true
     } // stage
 
     stage('Email') {
