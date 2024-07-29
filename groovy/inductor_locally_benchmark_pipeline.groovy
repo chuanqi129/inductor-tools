@@ -271,8 +271,11 @@ node(report_node){
             } // job_list
         } // for
         parallel job_list
-        archiveArtifacts artifacts: "inductor_pipeline_summary.csv", fingerprint: true
     } // stage
+    
+    stage("Archive artifacts") {
+        archiveArtifacts artifacts: "inductor_pipeline_summary.csv", fingerprint: true
+    }
 
     stage('Email') {
         def title_string = "TAS-Pipeline-${backend}-${precision}-${shape}-${wrapper}"
