@@ -264,7 +264,7 @@ node(report_node){
                 }
 
                 cur_job_status = benchmark_job.getCurrentResult()
-                cur_job_url = guilty_commit_job.getAbsoluteUrl()
+                cur_job_url = benchmark_job.getAbsoluteUrl()
                 '''
                     echo "${cur_job_status},${test_str},${cur_job_url}" > ${WORKSPACE}/inductor_pipeline_summary.csv
                 '''
