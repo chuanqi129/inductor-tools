@@ -8,12 +8,15 @@ env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 if (env.precision == "float32") {
     env.labelName = "inductor-icx-local-tas"
-} else if (env.precision == 'amp-sh') {
+} else if (env.precision == 'amp-gnr-sh') {
     env.precision = 'amp'
     env.labelName = "inductor-gnr-local-tas-sh"
-} else if (env.precision == 'amp-us') {
+} else if (env.precision == 'amp-gnr-us') {
     env.precision = 'amp'
     env.labelName = "inductor-gnr-local-tas-us"
+} else if (env.precision == 'amp-spr') {
+    env.precision = 'amp'
+    env.labelName = "inductor-spr-local-tas"
 }
 
 def getAvailableNode(String labelName) {
@@ -37,7 +40,7 @@ def getJobParameters(String test_str, String availableComputer) {
         string(name: 'TORCH_REPO', value: target_TORCH_REPO),
         string(name: 'TORCH_COMMIT', value: target_TORCH_COMMIT),
         string(name: 'default_mail', value: default_mail),
-        string(name: 'backend', value: backend),
+        string(name: 'backend', value: target_backend),
         string(name: 'precision', value: precision),
         string(name: 'test_mode', value: test_mode),
         string(name: 'suite', value: suite),
@@ -53,6 +56,7 @@ def getJobParameters(String test_str, String availableComputer) {
         println("[INFO]: baseline pytorch repo and commit: ")
         job_parameters[0] = string(name: 'TORCH_REPO', value: baseline_TORCH_REPO)
         job_parameters[1] = string(name: 'TORCH_COMMIT', value: baseline_TORCH_COMMIT)
+        job_parameters[3] = string(name: 'backend', value: baseline_backend)
     }
     return job_parameters
 }
