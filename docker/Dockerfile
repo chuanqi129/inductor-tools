@@ -27,7 +27,6 @@ ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
 ARG PYTHON_VERSION=3.8
-COPY condarc /root/.condarc
 RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
     chmod +x ~/miniforge.sh && \
     # Fix conda install issue
