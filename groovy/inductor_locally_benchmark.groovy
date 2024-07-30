@@ -40,7 +40,7 @@ if ( env.dash_board == "true" ) {
 env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
 env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
-env.BASE_IMAGE= 'ubuntu:22.04'
+env.BASE_IMAGE= 'ccr-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'inductor_log'
 env.DYNAMO_BENCH = env.TORCH_COMMIT
 if (env.NODE_LABEL == "0") {
@@ -53,24 +53,23 @@ if (env.NODE_LABEL == "0") {
 
 def cleanup(){
     try {
-        sh'''
-            #!/usr/bin/env bash
-            docker_ps=`docker ps -a -q`
-            if [ -n "${docker_ps}" ];then
-                docker stop ${docker_ps}
-            fi
-            docker container prune -f
-            docker system prune -f
-            docker pull ${BASE_IMAGE}
-        '''
-        docker.image(env.BASE_IMAGE).inside(" \
-            -u root \
-            -v ${WORKSPACE}:/root/workspace \
-            --privileged \
-        "){
-        sh '''
-            chmod -R 777 /root/workspace    
-        '''
+        retry(3){
+            sh'''
+                #!/usr/bin/env bash
+                docker_ps=`docker ps -a -q`
+                if [ -n "${docker_ps}" ];then
+                    docker stop ${docker_ps}
+                fi
+                docker container prune -f
+                docker system prune -f
+
+                docker pull ${BASE_IMAGE}
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
+            '''
         }
         deleteDir()
     } catch(e) {
@@ -201,7 +200,7 @@ node(NODE_LABEL){
             sh '''
                 #!/usr/bin/env bash
                 docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-                docker run -tid --name $USER \
+                docker run -tid --name inductor_test \
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
@@ -210,19 +209,19 @@ node(NODE_LABEL){
                     -v ~/.cache:/root/.cache \
                     -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                     ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-                docker cp scripts/modelbench/inductor_test.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/inductor_train.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/version_collect.sh $USER:/workspace/pytorch
-                docker exec -i $USER bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
+                docker cp scripts/modelbench/inductor_test.sh inductor_test:/workspace/pytorch
+                docker cp scripts/modelbench/inductor_train.sh inductor_test:/workspace/pytorch
+                docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
+                docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 if [ $test_mode == "inference" ]; then
-                    docker exec -i $USER bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite $extra_param"
                 elif [ $test_mode == "training_full" ]; then
-                    docker exec -i $USER bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite $extra_param"
                 elif [ $test_mode == "training" ]; then
-                    docker exec -i $USER bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} $extra_param"
+                    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} $extra_param"
                 fi
-                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
+                docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
     }

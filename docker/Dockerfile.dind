@@ -1,0 +1,75 @@
+# syntax=docker/dockerfile:1
+FROM cruizba/ubuntu-dind:latest
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libtcmalloc-minimal4 \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        numactl \
+        pybind11-dev \
+        wget \
+        vim \
+        openjdk-11-jre-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN /usr/sbin/update-ccache-symlinks
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
+
+ARG PYTHON_VERSION=3.8
+RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    chmod +x ~/miniforge.sh && \
+    # Fix conda install issue
+    ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
+    /opt/conda/bin/conda config --set channel_priority strict && \
+    /opt/conda/bin/conda config --append channels intel && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake>=3.13.0 \
+        dataclasses \
+        future \
+        git-lfs \
+        intel-openmp \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \      
+        weasyprint && \
+    pip install datacompy scipy styleframe bs4 PyGithub && \
+    /opt/conda/bin/conda clean -ya && \    
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
+
+RUN ln -fs /bin/bash /bin/sh && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5A-base64.crt && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5B-base64.crt && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelSHA256RootCA-base64.crt && \
+    mv Intel* /usr/local/share/ca-certificates/ && \
+    update-ca-certificates
+
+WORKDIR /root/workspace
