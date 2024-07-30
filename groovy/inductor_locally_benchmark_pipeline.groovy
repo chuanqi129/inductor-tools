@@ -279,7 +279,7 @@ node(report_node){
 
     stage('Email') {
         def title_string = "TAS-Pipeline-${backend}-${precision}-${shape}-${wrapper}"
-        withEnv(["job_link=${job_link}","title_string=${title_string}"]){
+        withEnv(["title_string=${title_string}"]){
         sh'''
             python -c "import pandas as pd; pd.read_csv('inductor_pipeline_summary.csv').to_html('table.html', index=False, render_links=True)"
             cp html/0_css.html inductor_pipeline_summary.html
