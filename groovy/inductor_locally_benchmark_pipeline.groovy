@@ -3,7 +3,7 @@ import hudson.model.Label
 
 def str_list = ['target', 'baseline']
 def maxRetries = 3
-env.benchmark_job = 'inductor_locally_benchmark_zwz'
+env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
