@@ -258,16 +258,18 @@ node(report_node){
                     job: benchmark_job, parameters: job_parameters
                 
                 if (test_str == "target") {
-                    env.target_job_selector = benchmark_job.getNumber()
+                    def target_job_selector = benchmark_job.getNumber()
                 } else {
-                    env.baseline_job_selector = benchmark_job.getNumber()
+                    def baseline_job_selector = benchmark_job.getNumber()
                 }
 
-                cur_job_status = benchmark_job.getCurrentResult()
-                cur_job_url = benchmark_job.getAbsoluteUrl()
-                '''
+                def cur_job_status = benchmark_job.getCurrentResult()
+                def cur_job_url = benchmark_job.getAbsoluteUrl()
+                withEnv(["cur_job_status=${cur_job_status}", "test_str=${test_str}", "cur_job_url=${cur_job_url}"]){
+                sh'''
                     echo "${cur_job_status},${test_str},${cur_job_url}" >> ${WORKSPACE}/inductor_pipeline_summary.csv
                 '''
+                }
             } // job_list
         } // for
         parallel job_list
