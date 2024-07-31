@@ -867,11 +867,11 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>{args.backend} Regular Model Bench Report </p></h3> '''
+  <p><h3>{args.backend} Regular Model Bench Report </p></h3>
+  <p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>'''
 
 def html_tail():
-    return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
-    <p>find perf regression or improvement from attachment report, Thanks</p>
+    return f'''<p>find perf regression or improvement from attachment report, Thanks</p>
   </div>
   </div>
   </div>
