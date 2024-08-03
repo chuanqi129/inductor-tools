@@ -99,13 +99,7 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
     if [ -f 'torchbenchmark/models/sam_fast/requirements.txt' ]; then sed -i '/github/d' torchbenchmark/models/sam_fast/requirements.txt; fi && \
-    python install.py --continue_on_fail && cd .. && \
-    echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
-        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}; \
-    else \
-        pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
-    fi && \
+    python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
     pip install --upgrade numpy
 ARG BENCH_COMMIT=${PT_COMMIT}
