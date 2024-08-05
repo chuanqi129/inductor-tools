@@ -151,7 +151,6 @@ node(NODE_LABEL){
                 KIND=$kind \
                 THREADS=$THREADS \
                 CHANNELS=$CHANNELS \
-                FREEZE=on \
                 BS=0 \
                 LOG_DIR=$LOG_DIR \
                 HF_TOKEN=$HF_TOKEN \

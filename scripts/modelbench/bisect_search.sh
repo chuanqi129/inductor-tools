@@ -13,7 +13,6 @@ WRAPPER="default"
 KIND="crash"
 THREADS="multiple"
 CHANNELS="first"
-FREEZE="on"
 BS="0"
 LOG_DIR="inductor_log"
 HF_TOKEN=""
@@ -45,7 +44,7 @@ expected_perf=0
 if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "improve" ]); then
     # Initial image build with END_COMMIT, no need rebuild
     git checkout ${END_COMMIT}
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $BACKEND | tail -n 1 | awk -F, '{print $5}')
     expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Expected performance: $expected_perf s" > ${LOG_DIR}/perf_drop.log
 
@@ -58,7 +57,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
     cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT} && cd /workspace/pytorch
-    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
+    detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $BACKEND | tail -n 1 | awk -F, '{print $5}')
     current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf s" >> ${LOG_DIR}/perf_drop.log
 
@@ -78,7 +77,7 @@ fi
 chmod +x bisect_run_test.sh
 git reset --hard HEAD &&  git fetch origin -a && git checkout ${START_COMMIT}
 git bisect start ${START_COMMIT} ${END_COMMIT}
-git bisect run ./bisect_run_test.sh $SUITE $MODEL $MODE $PRECISION $SHAPE $WRAPPER $SCENARIO $KIND $THREADS $CHANNELS $FREEZE 0 $expected_perf $BACKEND $PERF_RATIO $EXTRA 2>&1 | tee ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${THREADS}-${SCENARIO}-${KIND}_guilty_commit.log
+git bisect run ./bisect_run_test.sh $SUITE $MODEL $MODE $PRECISION $SHAPE $WRAPPER $SCENARIO $KIND $THREADS $CHANNELS 0 $expected_perf $BACKEND $PERF_RATIO $EXTRA 2>&1 | tee ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${THREADS}-${SCENARIO}-${KIND}_guilty_commit.log
 git bisect reset
 cat ${LOG_DIR}/${SUITE}-${MODEL}-${MODE}-${PRECISION}-${SHAPE}-${WRAPPER}-${THREADS}-${SCENARIO}-${KIND}_guilty_commit.log | grep "is the first bad commit" | awk '{ print $1 }' > ${LOG_DIR}/guilty_commit.log
 echo "Start commit: ${START_COMMIT}" >> ${LOG_DIR}/guilty_commit.log
