@@ -308,7 +308,11 @@ node(NODE_LABEL){
                 if [ -d ${WORKSPACE}/${target} ];then
                     rm -rf ${WORKSPACE}/${target}
                 fi
-                cp -r ${WORKSPACE}/raw_log ${WORKSPACE}/${LOG_DIR}
+                if [ -d ${WORKSPACE}/raw_log ];then
+                    cp -r ${WORKSPACE}/raw_log ${WORKSPACE}/${LOG_DIR}
+                fi
+                rm ${WORKSPACE}/${LOG_DIR}/*.xlsx
+                rm ${WORKSPACE}/${LOG_DIR}/*.html
                 mkdir ${WORKSPACE}/${target}
                 mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
             '''
