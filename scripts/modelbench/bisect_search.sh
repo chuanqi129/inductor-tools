@@ -44,7 +44,8 @@ expected_perf=0
 if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "improve" ]); then
     # AWS: Initial image build with END_COMMIT, no need rebuild, because AWS will always build new image every time
     # Local: Initial image build with START_COMMIT, local need to rebuild with END_COMMIT.
-    git checkout ${END_COMMIT} && git submodule sync && git submodule update --init --recursive
+    rm -rf /tmp/*
+    git reset --hard HEAD && git checkout ${END_COMMIT} && git submodule sync && git submodule update --init --recursive
     python setup.py clean && python setup.py develop && cd .. && \
     cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
