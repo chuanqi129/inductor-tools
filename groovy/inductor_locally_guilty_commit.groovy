@@ -62,7 +62,7 @@ node(us_node) {
             cd ${WORKSPACE}
             git clone ${TORCH_REPO}
             cd pytorch
-            git checkout ${TORCH_END_COMMIT}
+            git checkout ${TORCH_START_COMMIT}
             commit_date=`git log -n 1 --format="%cs"`
             bref_commit=`git rev-parse --short HEAD`
             DOCKER_TAG="${commit_date}_${bref_commit}"
