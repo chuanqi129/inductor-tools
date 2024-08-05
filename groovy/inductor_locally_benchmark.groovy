@@ -462,7 +462,7 @@ node(NODE_LABEL){
                     attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    body: "\${FILE,path=\"${env.LOG_DIR}/inductor_model_bench.html\"}"
                 )
             }else{
                 emailext(
@@ -483,7 +483,7 @@ node(NODE_LABEL){
                     attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+                    body: "\${FILE,path=\"${env.LOG_DIR}/inductor_model_bench.html\"}"
                 )
             }else{
                 emailext(
