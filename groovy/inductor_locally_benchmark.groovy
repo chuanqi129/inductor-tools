@@ -57,6 +57,11 @@ if ("${debug}" == "true"){
     maillist="${default_mail}"
 }
 
+env.report_prefix = "[Regular Weekly]"
+if (env.JOB_NAME == "inductor_locally_benchmark") {
+    env.report_prefix = "[TAS]"
+}
+
 def cleanup(){
     try {
         retry(3){
@@ -445,7 +450,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -454,7 +459,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Failure occurs in Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -466,7 +471,7 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     attachmentsPattern: "**/inductor_log/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
@@ -475,7 +480,7 @@ node(NODE_LABEL){
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor Training Benchmark (${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Failure occurs in Torchinductor Training Benchmark (${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
