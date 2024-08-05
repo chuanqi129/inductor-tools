@@ -309,11 +309,12 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/${target}
                 fi
                 if [ -d ${WORKSPACE}/raw_log ];then
-                    cp -r ${WORKSPACE}/raw_log ${WORKSPACE}/${LOG_DIR}
+                    rm -rf ${WORKSPACE}/raw_log
                 fi
                 rm ${WORKSPACE}/${LOG_DIR}/*.xlsx
                 rm ${WORKSPACE}/${LOG_DIR}/*.html
                 mkdir ${WORKSPACE}/${target}
+                cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
                 mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
             '''
         }
@@ -420,7 +421,9 @@ node(NODE_LABEL){
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
         sh '''
             #!/usr/bin/env bash
-            rm -rf ${WORKSPACE}/raw_log
+            if [ -d ${WORKSPACE}/raw_log ];then
+                rm -rf ${WORKSPACE}/raw_log
+            fi
         '''
         if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
