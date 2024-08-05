@@ -312,8 +312,8 @@ node(NODE_LABEL){
                     rm -rf ${WORKSPACE}/raw_log
                 fi
                 cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
-                rm ${WORKSPACE}/${LOG_DIR}/*.xlsx
-                rm ${WORKSPACE}/${LOG_DIR}/*.html
+                rm -f ${WORKSPACE}/${LOG_DIR}/*.xlsx
+                rm -f ${WORKSPACE}/${LOG_DIR}/*.html
                 mkdir ${WORKSPACE}/${target}
                 mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
             '''
