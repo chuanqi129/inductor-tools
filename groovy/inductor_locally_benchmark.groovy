@@ -311,10 +311,10 @@ node(NODE_LABEL){
                 if [ -d ${WORKSPACE}/raw_log ];then
                     rm -rf ${WORKSPACE}/raw_log
                 fi
+                cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
                 rm ${WORKSPACE}/${LOG_DIR}/*.xlsx
                 rm ${WORKSPACE}/${LOG_DIR}/*.html
                 mkdir ${WORKSPACE}/${target}
-                cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
                 mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
             '''
         }
@@ -401,8 +401,8 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE}
                 mkdir -p refer
-                cp -r inductor_log refer
-                rm -rf inductor_log
+                cp -r ${LOG_DIR} refer
+                rm -rf ${LOG_DIR}
                 cp scripts/modelbench/report_train.py ${WORKSPACE}
                 python report_train.py -r refer -t ${target} && rm -rf refer
                 '''
@@ -431,7 +431,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/${LOG_DIR}/ ./&& rm -rf ${target}
             '''
         }
         if ("${test_mode}" == "training")
@@ -440,10 +440,10 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/${LOG_DIR}/ ./&& rm -rf ${target}
             '''
         }
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/${LOG_DIR}/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
         }
@@ -459,10 +459,10 @@ node(NODE_LABEL){
                 emailext(
                     subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    body: '${FILE,path="${LOG_DIR}/inductor_model_bench.html"}'
                 )
             }else{
                 emailext(
@@ -480,10 +480,10 @@ node(NODE_LABEL){
                 emailext(
                     subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+                    body: '${FILE,path="${LOG_DIR}/inductor_model_training_bench.html"}'
                 )
             }else{
                 emailext(
