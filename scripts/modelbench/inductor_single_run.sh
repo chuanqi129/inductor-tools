@@ -15,12 +15,6 @@ WRAPPER=${9:-default} # default / cpp
 BS=${10:-0}
 BACKEND=${11:-inductor}
 
-Mode_extra="--inference "
-if [[ $MODE == "training" ]]; then
-    echo "Testing with training mode."
-    Mode_extra="--training "
-fi
-
 Shape_extra=""
 if [[ $SHAPE == "dynamic" ]]; then
     echo "Testing with dynamic shapes."
@@ -50,22 +44,24 @@ if [[ "$DT" == "amp_fp16" ]]; then
 fi
 
 Flag_extra=""
+cd /workspace/pytorch/benchmarks/dynamo
 if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
     # Workaround for test with runner.py
-    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' benchmarks/dynamo/runner.py
+    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
-    Flag_extra+="--freezing --export-aot-inductor "
+    Flag_extra+="--freezing $(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
 elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
-    Flag_extra+="--freezing --${BACKEND} "
+    Flag_extra+="--freezing $(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
 elif [[ $BACKEND == "inductor_max_autotune" ]]; then
     echo "Setting freezing for inductor with max autotune by default."
     export TORCHINDUCTOR_FREEZING=1
-    Flag_extra+="--freezing --inductor --inductor-compile-mode max-autotune "
+    Flag_extra+="--freezing $(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
 fi
+cd /workspace/pytorch
 
 cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
 start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
@@ -83,13 +79,13 @@ fi
 multi_threads_test() {
     export OMP_NUM_THREADS=$CORES
     end_core=$(expr $CORES - 1)    
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Flag_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
     cat /tmp/inductor_single_test_mt.csv && rm /tmp/inductor_single_test_mt.csv
 }
 
 single_thread_test() {
     export OMP_NUM_THREADS=1
-    numactl -C ${start_core}-${start_core} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu -n50 --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Mode_extra} ${Flag_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_st.csv && \
+    numactl -C ${start_core}-${start_core} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Flag_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_st.csv && \
     cat /tmp/inductor_single_test_st.csv && rm /tmp/inductor_single_test_st.csv
 }
 
