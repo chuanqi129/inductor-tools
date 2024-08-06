@@ -62,7 +62,11 @@ node(us_node) {
             cd ${WORKSPACE}
             git clone ${TORCH_REPO}
             cd pytorch
-            git checkout ${TORCH_END_COMMIT}
+            # Local will re-use docker image which it's built before
+            # Local guilty commit will use START_COMMIT to build image, which will contain END_COMMIT
+            # If we are using END_COMMIT, the old END_COMMIT docker image pytorch repo did not contain new START_COMMIT
+            # Will report fatal: reference is not a tree: START_COMMIT
+            git checkout ${TORCH_START_COMMIT}
             commit_date=`git log -n 1 --format="%cs"`
             bref_commit=`git rev-parse --short HEAD`
             DOCKER_TAG="${commit_date}_${bref_commit}"
@@ -151,7 +155,6 @@ node(NODE_LABEL){
                 KIND=$kind \
                 THREADS=$THREADS \
                 CHANNELS=$CHANNELS \
-                FREEZE=on \
                 BS=0 \
                 LOG_DIR=$LOG_DIR \
                 HF_TOKEN=$HF_TOKEN \
