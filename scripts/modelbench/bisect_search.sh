@@ -46,12 +46,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
     # Local: Initial image build with START_COMMIT, local need to rebuild with END_COMMIT.
     rm -rf /tmp/*
     git reset --hard HEAD && git checkout ${END_COMMIT} && git submodule sync && git submodule update --init --recursive
-    python setup.py clean && python setup.py develop && cd .. && \
-    cd vision && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt` && pip uninstall torchvision -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    cd data && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`  && pip uninstall torchdata -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    cd text && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt` && pip uninstall torchtext -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT} && cd /workspace/pytorch
+    python setup.py clean && python setup.py develop 
     detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $BACKEND | tail -n 1 | awk -F, '{print $5}')
     expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Expected performance: $expected_perf s" > ${LOG_DIR}/perf_drop.log
