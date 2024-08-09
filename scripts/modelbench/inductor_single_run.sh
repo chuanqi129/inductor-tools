@@ -50,8 +50,13 @@ if [[ $BACKEND == "aot_inductor" ]]; then
 fi
 
 echo "Testing with ${BACKEND}."
-export TORCHINDUCTOR_FREEZING=1
-Backend_extra="--freezing $(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
+Backend_extra="$(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
+
+Flag_extra=""
+if [[ ${MODE} == "inference" ]]; then
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+fi
 
 cd /workspace/pytorch
 
@@ -71,13 +76,13 @@ fi
 multi_threads_test() {
     export OMP_NUM_THREADS=$CORES
     end_core=$(expr $CORES - 1)    
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Flag_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
     cat /tmp/inductor_single_test_mt.csv && rm /tmp/inductor_single_test_mt.csv
 }
 
 single_thread_test() {
     export OMP_NUM_THREADS=1
-    numactl -C ${start_core}-${start_core} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_st.csv && \
+    numactl -C ${start_core}-${start_core} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --batch-size 1 --threads 1 --only "${MODEL}" ${Channels_extra} ${Shape_extra} ${Flag_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_st.csv && \
     cat /tmp/inductor_single_test_st.csv && rm /tmp/inductor_single_test_st.csv
 }
 
