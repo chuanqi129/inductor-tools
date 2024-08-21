@@ -129,7 +129,8 @@ node(NODE_LABEL){
         sh '''
             #!/usr/bin/env bash
             docker_image_tag=`cat ${target}/${LOG_DIR}/docker_image_tag.log`
-            docker run -tid --name $USER \
+            container_name=pytorch
+            docker run -tid --name ${container_name} \
                 --privileged \
                 --env https_proxy=${https_proxy} \
                 --env http_proxy=${http_proxy} \
@@ -138,11 +139,11 @@ node(NODE_LABEL){
                 -v ~/.cache:/root/.cache \
                 -v ${WORKSPACE}/${target}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                 ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-            docker cp scripts/modelbench/bisect_search.sh $USER:/workspace/pytorch
-            docker cp scripts/modelbench/bisect_run_test.sh $USER:/workspace/pytorch
-            docker cp scripts/modelbench/inductor_single_run.sh $USER:/workspace/pytorch
+            docker cp scripts/modelbench/bisect_search.sh ${container_name}:/workspace/pytorch
+            docker cp scripts/modelbench/bisect_run_test.sh ${container_name}:/workspace/pytorch
+            docker cp scripts/modelbench/inductor_single_run.sh ${container_name}:/workspace/pytorch
             # TODO: Hard code freeze on and default bs, add them as params future
-            docker exec -i $USER bash -c "bash bisect_search.sh \
+            docker exec -i ${container_name} bash -c "bash bisect_search.sh \
                 START_COMMIT=$TORCH_START_COMMIT \
                 END_COMMIT=$TORCH_END_COMMIT \
                 SUITE=$suite \
@@ -163,7 +164,7 @@ node(NODE_LABEL){
                 EXTRA=$extra_param" \
                 > ${WORKSPACE}/${target}/${LOG_DIR}/docker_exec_detailed.log
 
-            docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
+            docker exec -i ${container_name} bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
         '''
     }
 
