@@ -26,7 +26,7 @@ RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.11
 RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Miniconda3-py38_23.9.0-0-Linux-x86_64.sh && \
     chmod +x ~/miniconda.sh && \
     # Fix conda install issue
@@ -109,7 +109,8 @@ RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git 
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 && \
     python install.py --continue_on_fail && \
     # Need update numpy version to avoid some models crash
-    pip install --upgrade numpy
+    # numpy 2.0 ValueError: numpy.dtype size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
+    pip install numpy==1.26.4
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \

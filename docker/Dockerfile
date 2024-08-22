@@ -26,7 +26,7 @@ RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.11
 RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
     chmod +x ~/miniforge.sh && \
     # Fix conda install issue
