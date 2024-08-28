@@ -8,6 +8,8 @@ if (env.NODE_LABEL == "0") {
         env.NODE_LABEL = "inductor-icx-local"
     } else if (env.precision == 'amp') {
         env.NODE_LABEL = "inductor-gnr-local"
+    }else if (env.precision == 'amp_fp16') {
+        env.NODE_LABEL = "inductor-gnr-local"
     }
 }
 
