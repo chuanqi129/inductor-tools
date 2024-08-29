@@ -73,6 +73,11 @@ elif [[ $BACKEND == "inductor_max_autotune" ]]; then
     echo "Setting freezing for inductor with max autotune by default."
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+elif [[ $BACKEND == "triton_cpu" ]]; then
+    echo "Testing with Triton CPU backend"
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+    export BACKEND="inductor"
 fi
 
 Shape_extra=""
