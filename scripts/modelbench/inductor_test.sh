@@ -77,9 +77,33 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     echo "Testing with Triton CPU backend"
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+
+    # build triton-cpu
     export TRITON_CPU_BACKEND=1
     export BACKEND="inductor"
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/torchbench.py
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/huggingface.py
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/timm_models.py
+    pip install ninja cmake wheel
     pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
+
+    # Python <= 3.8 has issue:
+    # AttributeError: module 'importlib.resources' has no attribute 'files'
+    full_version=$(python --version 2>&1 | cut -d' ' -f2)
+    major_version=$(echo $full_version | cut -d'.' -f1)
+    minor_version=$(echo $full_version | cut -d'.' -f2)
+    if [ "$major_version" -eq 3 ] && [ "$minor_version" -eq 8 ]; then
+        echo "Python 3.8 is installed."
+        sed -i 's/importlib.resources/importlib_resources/g' "/opt/conda/lib/python3.8/site-packages/triton/backends/cpu/driver.py"
+    fi
+
+    # build sleef
+    export TRITON_CPU_USE_SLEEF="/workspace/pytorch/sleef/build/lib/"
+    git clone --depth 1 https://github.com/shibatch/sleef.git
+    cd sleef && mkdir build
+    cmake -S . -B build
+    cmake --build build -j --clean-first
+    cd /workspace/pytorch
 fi
 
 Shape_extra=""
