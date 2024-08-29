@@ -77,7 +77,9 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     echo "Testing with Triton CPU backend"
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+    export TRITON_CPU_BACKEND=1
     export BACKEND="inductor"
+    pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
 fi
 
 Shape_extra=""
