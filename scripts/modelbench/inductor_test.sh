@@ -84,8 +84,12 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/torchbench.py
     sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/huggingface.py
     sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/timm_models.py
+    #pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
+    cd /workspace
+    git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
+    cd triton
     pip install ninja cmake wheel
-    pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
+    pip install -e python
 
     # Python <= 3.8 has issue:
     # AttributeError: module 'importlib.resources' has no attribute 'files'
@@ -99,6 +103,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
 
     # build sleef
     export TRITON_CPU_USE_SLEEF="/workspace/pytorch/sleef/build/lib/"
+    cd /workspace/pytorch
     git clone --depth 1 https://github.com/shibatch/sleef.git
     cd sleef && mkdir build
     cmake -S . -B build
