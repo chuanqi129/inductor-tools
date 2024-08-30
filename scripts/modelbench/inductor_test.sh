@@ -111,7 +111,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     cmake -S . -B build
     cmake --build build -j --clean-first
     cd /workspace/pytorch
-    export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
+    export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 fi
 
 Shape_extra=""
