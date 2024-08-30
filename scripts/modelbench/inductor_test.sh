@@ -79,6 +79,8 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     Flag_extra+="--freezing "
 
     # build triton-cpu
+    # LD_PRELOAD will cause triton-cpu built failure.
+    unset LD_PRELOAD
     export TRITON_CPU_BACKEND=1
     export BACKEND="inductor"
     sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/torchbench.py
@@ -87,7 +89,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     #pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
     cd /workspace
     git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
-    cd triton
+    cd triton-cpu
     pip install ninja cmake wheel
     pip install -e python
 
@@ -109,6 +111,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     cmake -S . -B build
     cmake --build build -j --clean-first
     cd /workspace/pytorch
+    export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 fi
 
 Shape_extra=""
