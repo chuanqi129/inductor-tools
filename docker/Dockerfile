@@ -7,7 +7,7 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         ccache \
-        cmake=3.26 \
+        cmake \
         curl \
         ffmpeg \
         git \
@@ -36,7 +36,6 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         astunparse \
         cffi \
         cython \
-        cmake>=3.13.0 \
         dataclasses \
         future \
         git-lfs \
