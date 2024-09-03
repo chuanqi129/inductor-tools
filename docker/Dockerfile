@@ -7,7 +7,6 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         ccache \
-        cmake \
         curl \
         ffmpeg \
         git \
