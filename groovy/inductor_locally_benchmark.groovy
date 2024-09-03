@@ -348,7 +348,7 @@ node(NODE_LABEL){
                         export precision='amp'
                     fi
                     if [ "${backend}" == "triton_cpu" ];then
-                        export triton_cpu='inductor'
+                        export backend='inductor'
                     fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
@@ -376,7 +376,7 @@ node(NODE_LABEL){
                         export precision='amp'
                     fi
                     if [ "${backend}" == "triton_cpu" ];then
-                        export triton_cpu='inductor'
+                        export backend='inductor'
                     fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
