@@ -91,6 +91,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
     cd triton-cpu
     pip install ninja cmake wheel
+    git submodule sync && git submodule update --init --recursive
     pip install -e python
 
     # Python <= 3.8 has issue:
