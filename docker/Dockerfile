@@ -37,6 +37,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         cffi \
         cython \
         cmake=3.26 \
+        mamba=1.5.8 \
         dataclasses \
         future \
         git-lfs \
