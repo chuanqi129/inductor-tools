@@ -39,7 +39,8 @@ RUN curl -fsSL -v -k -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Mi
         astunparse \
         cffi \
         cython \
-        cmake>=3.13.0 \
+        cmake=3.26 \
+        mamba=1.5.8 \
         dataclasses \
         future \
         git-lfs \
