@@ -43,7 +43,7 @@ if [[ "$DT" == "amp_fp16" ]]; then
     DT_extra="--amp-dtype float16 "
 fi
 
-cd /workspace/pytorch/benchmarks/dynamo
+cd /benchmarks/dynamo
 if [[ $BACKEND == "aot_inductor" ]]; then
     # Workaround for test with runner.py
     sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py    
@@ -58,7 +58,7 @@ if [[ ${MODE} == "inference" ]]; then
     Flag_extra+="--freezing "
 fi
 
-cd /workspace/pytorch
+cd ../..
 
 cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
 start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
