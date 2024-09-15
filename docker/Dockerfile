@@ -42,8 +42,8 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         future \
         git-lfs \
         ipython \
-        mkl \
-        mkl-include \
+        mkl=2021.4.0 \
+        mkl-include=2021.4.0 \
         ninja \
         numpy \
         requests \
