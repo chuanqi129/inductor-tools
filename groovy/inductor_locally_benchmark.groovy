@@ -163,7 +163,7 @@ node(NODE_LABEL){
         // TODO: implement report_only logic
         if  ("${report_only}" == "false") {
             cleanup()
-            pruneOldImage()
+            // pruneOldImage()
             retry(3){
                 sleep(60)
                 checkout([
