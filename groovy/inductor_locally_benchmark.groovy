@@ -137,7 +137,8 @@ node(us_node){
                     commit_date=`git log -n 1 --format="%cs"`
                     bref_commit=`git rev-parse --short HEAD`
                     DOCKER_TAG="${commit_date}_${bref_commit}"
-                    echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
+                    #echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
+                    echo "2024-09-07_3bebc09be9_mkl2021" > ${WORKSPACE}/docker_image_tag.log
                 '''
                 if (fileExists("${WORKSPACE}/docker_image_tag.log")) {
                     stash includes: 'docker_image_tag.log', name: 'docker_image_tag'
