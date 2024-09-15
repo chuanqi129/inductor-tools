@@ -6,6 +6,14 @@ if ('REMOTE' in params) {
     }
 }
 
+WA = 'False'
+if ('WA' in params) {
+    echo "WA in params"
+    if (params.WA != '') {
+        WA = params.WA
+    }
+}
+
 REMOTE_NODE_LABEL = 'AWS_SSO_REMOTE'
 if ('REMOTE_NODE_LABEL' in params) {
     echo "REMOTE_NODE_LABEL in params"
@@ -104,7 +112,7 @@ node(REFRESH_NODE_LABEL){
             {        
                 sh '''
                 #!/usr/bin/env bash
-                cd scripts/aws && bash refresh.sh ${_REFRESH_AWS} ${_FF} ${_GD} $USERNAME $PASSWORD $REMOTE
+                cd scripts/aws && bash refresh.sh ${_REFRESH_AWS} ${_FF} ${_GD} $USERNAME $PASSWORD $REMOTE $WA
                 '''
             }
             if ("$REMOTE" == "True") {

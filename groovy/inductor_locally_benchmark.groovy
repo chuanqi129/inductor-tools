@@ -57,6 +57,11 @@ if ("${debug}" == "true"){
     maillist="${default_mail}"
 }
 
+env.report_prefix = "[Regular Weekly]"
+if (env.JOB_NAME == "inductor_locally_benchmark") {
+    env.report_prefix = "[TAS]"
+}
+
 def cleanup(){
     try {
         retry(3){
@@ -303,7 +308,12 @@ node(NODE_LABEL){
                 if [ -d ${WORKSPACE}/${target} ];then
                     rm -rf ${WORKSPACE}/${target}
                 fi
-                cp -r ${WORKSPACE}/raw_log ${WORKSPACE}/${LOG_DIR}
+                if [ -d ${WORKSPACE}/raw_log ];then
+                    rm -rf ${WORKSPACE}/raw_log
+                fi
+                cp -r ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/raw_log
+                rm -f ${WORKSPACE}/${LOG_DIR}/*.xlsx
+                rm -f ${WORKSPACE}/${LOG_DIR}/*.html
                 mkdir ${WORKSPACE}/${target}
                 mv ${WORKSPACE}/${LOG_DIR} ${WORKSPACE}/${target}/
             '''
@@ -391,8 +401,8 @@ node(NODE_LABEL){
                 #!/usr/bin/env bash
                 cd ${WORKSPACE}
                 mkdir -p refer
-                cp -r inductor_log refer
-                rm -rf inductor_log
+                cp -r ${LOG_DIR} refer
+                rm -rf ${LOG_DIR}
                 cp scripts/modelbench/report_train.py ${WORKSPACE}
                 python report_train.py -r refer -t ${target} && rm -rf refer
                 '''
@@ -411,7 +421,9 @@ node(NODE_LABEL){
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
         sh '''
             #!/usr/bin/env bash
-            rm -rf ${WORKSPACE}/raw_log
+            if [ -d ${WORKSPACE}/raw_log ];then
+                rm -rf ${WORKSPACE}/raw_log
+            fi
         '''
         if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
         {
@@ -419,7 +431,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/${LOG_DIR}/ ./&& rm -rf ${target}
             '''
         }
         if ("${test_mode}" == "training")
@@ -428,10 +440,10 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p $HOME/inductor_dashboard/Train
             cp -r  ${WORKSPACE}/${target} $HOME/inductor_dashboard/Train
-            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/inductor_log/ ./&& rm -rf ${target}
+            cd ${WORKSPACE} && mv ${WORKSPACE}/${target}/${LOG_DIR}/ ./&& rm -rf ${target}
             '''
         }
-        archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
+        archiveArtifacts artifacts: "**/${LOG_DIR}/**", fingerprint: true
         if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
             archiveArtifacts  "guilty_commit_search*"
         }
@@ -445,16 +457,16 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
+                    body: "\${FILE,path=\"${env.LOG_DIR}/inductor_model_bench.html\"}"
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Failure occurs in Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
@@ -466,16 +478,16 @@ node(NODE_LABEL){
         {
             if (fileExists("${WORKSPACE}/${LOG_DIR}/inductor_model_training_bench.html") == true){
                 emailext(
-                    subject: "Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Torchinductor-${env.backend}-${env.test_mode}-${env.precision}-${env.shape}-${env.WRAPPER}-Report(${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
+                    attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
+                    body: "\${FILE,path=\"${env.LOG_DIR}/inductor_model_bench.html\"}"
                 )
             }else{
                 emailext(
-                    subject: "Failure occurs in Torchinductor Training Benchmark (${env.bench_machine})_${env.target}",
+                    subject: "${env.report_prefix}-Failure occurs in Torchinductor Training Benchmark (${env.bench_machine})_${env.target}",
                     mimeType: "text/html",
                     from: "pytorch_inductor_val@intel.com",
                     to: maillist,
