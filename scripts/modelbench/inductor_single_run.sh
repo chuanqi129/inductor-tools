@@ -43,7 +43,7 @@ if [[ "$DT" == "amp_fp16" ]]; then
     DT_extra="--amp-dtype float16 "
 fi
 
-cd /benchmarks/dynamo
+cd ./benchmarks/dynamo
 if [[ $BACKEND == "aot_inductor" ]]; then
     # Workaround for test with runner.py
     sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py    
