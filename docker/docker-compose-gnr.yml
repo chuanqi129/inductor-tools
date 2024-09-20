@@ -1,0 +1,29 @@
+# how to use
+# export JENKINS_NUMA_PATH=/home/pytorch/jenkins_numa
+# docker-compose up -d
+version: '3.8'
+
+services:
+  docker-in-docker-numa0:
+    image: ccr-registry.caas.intel.com/pytorch/pt_inductor:dind
+    container_name: docker-in-docker-numa0
+    privileged: true
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+      - no_proxy=${no_proxy}
+    cpuset: "0-119"
+    volumes:
+      - ${JENKINS_NUMA_PATH}/numa0:/root/workspace
+
+  docker-in-docker-numa1:
+    image: ccr-registry.caas.intel.com/pytorch/pt_inductor:dind
+    container_name: docker-in-docker-numa1
+    privileged: true
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${https_proxy}
+      - no_proxy=${no_proxy}
+    cpuset: "120-239"
+    volumes:
+      - ${JENKINS_NUMA_PATH}/numa1:/root/workspace
