@@ -18,10 +18,10 @@ BACKEND=${8:-inductor}
 # Test Mode
 TEST_MODE=${9:-inference}
 SUITE=${10:-all}
-# Easy to enbale new test
-EXTRA=${11}
 # Extra ENV used for test
-TEST_ENV=${12:-""}
+TEST_ENV=${11:-""}
+# Easy to enbale new test
+EXTRA=${12}
 
 mkdir -p $LOG_DIR
 

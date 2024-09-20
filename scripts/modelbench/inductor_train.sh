@@ -5,9 +5,10 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 CHANNELS=${1:-first}
 PRECISION=${2:-float32}
 LOG_DIR=${3:-inductor_log}
-EXTRA=${4}
 # Extra ENV used for test
-TEST_ENV=${5:-""}
+TEST_ENV=${4:-""}
+EXTRA=${5}
+
 
 mkdir -p $LOG_DIR
 

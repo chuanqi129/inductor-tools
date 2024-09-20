@@ -276,11 +276,11 @@ node(NODE_LABEL){
                 docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 if [ $test_mode == "inference" ]; then
-                    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite $extra_param ${test_ENV}"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite ${test_ENV} $extra_param "
                 elif [ $test_mode == "training_full" ]; then
-                    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite $extra_param ${test_ENV}"
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite ${test_ENV} $extra_param"
                 elif [ $test_mode == "training" ]; then
-                    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} $extra_param ${test_ENV}"
+                    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} ${test_ENV} $extra_param"
                 fi
                 docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
