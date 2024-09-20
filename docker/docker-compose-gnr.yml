@@ -1,6 +1,13 @@
-# how to use
+# How to use
+# 1. CentOS
+# sudo yum install docker-compose-plugin
 # export JENKINS_NUMA_PATH=/home/pytorch/jenkins_numa
-# docker-compose up -d
+# docker compose -f docker-compose-gnr.yml up -d
+# 
+# 2. Ubuntu
+# sudo apt-get install docker-compose-plugin  
+# export JENKINS_NUMA_PATH=/home/pytorch/jenkins_numa
+# docker-compose -f docker-compose-gnr.yml up -d
 version: '3.8'
 
 services:
