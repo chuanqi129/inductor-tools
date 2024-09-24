@@ -96,6 +96,7 @@ else
 fi
 
 if [[ "${TEST_ENV}" != "" ]]; then
+    echo "${TEST_ENV}"
     export "${TEST_ENV}"
 fi
 
