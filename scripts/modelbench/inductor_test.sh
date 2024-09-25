@@ -97,7 +97,10 @@ fi
 
 if [[ "${TEST_ENV}" != "" ]]; then
     echo "${TEST_ENV}"
-    export "${TEST_ENV}"
+    IFS=',' read -ra ADDR <<< "$TEST_ENV"
+    for i in "${ADDR[@]}"; do
+        export "$i"
+    done
 else
     echo "no TEST_ENV"
 fi

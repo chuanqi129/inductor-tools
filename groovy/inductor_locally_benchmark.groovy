@@ -43,6 +43,7 @@ env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ccr-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'inductor_log'
 env.DYNAMO_BENCH = env.TORCH_COMMIT
+env.test_ENV = env.test_ENV.replaceAll(" ", "")
 if (env.NODE_LABEL == "0") {
     if (env.precision == "float32") {
         env.NODE_LABEL = "inductor-icx-local-tas"
