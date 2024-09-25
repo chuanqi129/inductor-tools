@@ -99,7 +99,7 @@ if [[ "${TEST_ENV}" != "" ]]; then
     echo "${TEST_ENV}"
     export "${TEST_ENV}"
 else
-    ehco "no TEST_ENV"
+    echo "no TEST_ENV"
 fi
 
 cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
