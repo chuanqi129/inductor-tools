@@ -5,7 +5,10 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 CHANNELS=${1:-first}
 PRECISION=${2:-float32}
 LOG_DIR=${3:-inductor_log}
-EXTRA=${4}
+# Extra ENV used for test
+TEST_ENV=${4:-""}
+EXTRA=${5}
+
 
 mkdir -p $LOG_DIR
 
@@ -27,6 +30,16 @@ timm_model_list=($(echo "${timm}" | sed 's/,/ /g'))
 CORES=$(lscpu | grep Core | awk '{print $4}')
 export OMP_NUM_THREADS=$CORES
 timestamp=$(date +%Y%m%d_%H%M%S)
+
+if [[ "${TEST_ENV}" != "" ]]; then
+    echo "${TEST_ENV}"
+    IFS=',' read -ra ADDR <<< "$TEST_ENV"
+    for i in "${ADDR[@]}"; do
+        export "$i"
+    done
+else
+    echo "no TEST_ENV"
+fi
 
 for torchbench_model in ${torchbench_model_list[@]}; do
     # Commands for torchbench for device=cpu, dtype=float32 for training and for performance testing

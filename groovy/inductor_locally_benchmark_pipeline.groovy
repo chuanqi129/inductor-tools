@@ -49,6 +49,7 @@ def getJobParameters(String test_str, String availableComputer) {
         string(name: 'THREADS', value: THREADS),
         string(name: 'CHANNELS', value: CHANNELS),
         string(name: 'WRAPPER', value: WRAPPER),
+        string(name: 'test_ENV', value: test_ENV),
         string(name: 'HF_TOKEN', value: HF_TOKEN),
         string(name: 'extra_param', value: extra_param),
         string(name: 'NODE_LABEL', value: availableComputer),
