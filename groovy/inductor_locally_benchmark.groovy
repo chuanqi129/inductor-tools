@@ -72,7 +72,7 @@ def cleanup(){
                 if [ -n "${docker_ps}" ];then
                     docker stop ${docker_ps}
                 fi
-                #docker container prune -f
+                docker container prune -f
                 docker system prune -f
 
                 docker pull ${BASE_IMAGE}
@@ -164,7 +164,7 @@ node(NODE_LABEL){
         // TODO: implement report_only logic
         if  ("${report_only}" == "false") {
             cleanup()
-            // pruneOldImage()
+            pruneOldImage()
             retry(3){
                 sleep(60)
                 checkout([
