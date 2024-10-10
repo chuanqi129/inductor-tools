@@ -725,7 +725,7 @@ def update_issue_commits(precision):
 | GCC  | gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 |
 | GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35 |
 | Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
-| Python  | Python 3.8.18 |
+| Python  | Python 3.9.19 |
 | OpenSSL  | OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023) |
 '''
     hw_info = ""
