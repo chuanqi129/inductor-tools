@@ -231,7 +231,7 @@ def SPR_info():
         </tr>
         <tr>
             <td>Python</td>
-            <td>Python 3.9.19</td>
+            <td>Python 3.10.15</td>
         </tr>
         <tr>
             <td>OpenSSL</td>
