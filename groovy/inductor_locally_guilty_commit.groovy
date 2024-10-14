@@ -1,6 +1,6 @@
 env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
-env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
+env.DOCKER_IMAGE_NAMESPACE = 'gar-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
 if (env.NODE_LABEL == "0") {

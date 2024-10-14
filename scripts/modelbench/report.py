@@ -938,15 +938,15 @@ def html_generate(html_off):
                         "<h3><font color='#00dd00'>Improvement</font></h3>" + \
                         "<p>new_perf_improvement</p>" + perf_improvement + \
                         "<p>new_fixed_failures</p>" + fixed_failures + \
-                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
+                        f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
                 perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 perf_boost_f.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 fixed_failure_f.write(f"<p>new_fixed_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
             f.close()
             perf_f.close()
             failure_f.close()
