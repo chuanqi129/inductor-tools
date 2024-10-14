@@ -110,7 +110,7 @@ fi
 multi_threads_test() {
     # Stock Pytorch launcher will set OMP_NUM_THREADS
     # CORES=$(lscpu | grep Core | awk '{print $4}')
-    # export OMP_NUM_THREADS=$CORES
+    export OMP_NUM_THREADS=${CORES}
     timestamp=$(date +%Y%m%d_%H%M%S)
     if [[ $CHANNELS == "first" ]]; then
         # channels first
