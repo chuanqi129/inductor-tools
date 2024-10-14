@@ -25,6 +25,15 @@ if ('dashboard_title' in params) {
 }
 echo "dashboard_title: $dashboard_title"
 
+env.test_ENV = ''
+if ('test_ENV' in params) {
+    echo "test_ENV in params"
+    if (params.test_ENV != '') {
+        env.test_ENV = params.test_ENV
+    }
+}
+echo "test_ENV: $test_ENV"
+
 if (env.test_mode == "training_full") {
     env.infer_or_train = "training"
 } else {
