@@ -18,8 +18,10 @@ BACKEND=${8:-inductor}
 # Test Mode
 TEST_MODE=${9:-inference}
 SUITE=${10:-all}
+# Extra ENV used for test
+TEST_ENV=${11:-""}
 # Easy to enbale new test
-EXTRA=${11}
+EXTRA=${12}
 
 mkdir -p $LOG_DIR
 
@@ -91,6 +93,16 @@ if [[ $SUITE == "all" ]]; then
     SUITE=""
 else
     SUITE="--suites=${SUITE}"
+fi
+
+if [[ "${TEST_ENV}" != "" ]]; then
+    echo "${TEST_ENV}"
+    IFS=',' read -ra ADDR <<< "$TEST_ENV"
+    for i in "${ADDR[@]}"; do
+        export "$i"
+    done
+else
+    echo "no TEST_ENV"
 fi
 
 cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
