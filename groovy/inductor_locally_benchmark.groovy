@@ -25,6 +25,15 @@ if ('dashboard_title' in params) {
 }
 echo "dashboard_title: $dashboard_title"
 
+env.test_ENV = ''
+if ('test_ENV' in params) {
+    echo "test_ENV in params"
+    if (params.test_ENV != '') {
+        env.test_ENV = params.test_ENV
+    }
+}
+echo "test_ENV: $test_ENV"
+
 if (env.test_mode == "training_full") {
     env.infer_or_train = "training"
 } else {
@@ -39,8 +48,8 @@ if ( env.dash_board == "true" ) {
 
 env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
-env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
-env.BASE_IMAGE= 'ccr-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
+env.DOCKER_IMAGE_NAMESPACE = 'gar-registry.caas.intel.com/pytorch/pt_inductor'
+env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'inductor_log'
 env.DYNAMO_BENCH = env.TORCH_COMMIT
 env.test_ENV = env.test_ENV.replaceAll(" ", "")
@@ -202,7 +211,7 @@ node(NODE_LABEL){
                     retry(3){
                         sleep(60)
                         def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
-                        def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                        def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
                             [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
                             [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
                             [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],

@@ -31,8 +31,8 @@ rm -rf ${PRECISION}_${SHAPE}_${WRAPPER}_latest_report.html
 wget -O ${PRECISION}_${SHAPE}_${WRAPPER}_latest_report.html $REPORT_URL
 
 # prepare
-docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:$IMAGE_TAG
-docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home2/yudongsi/.cache:/root/.cache ccr-registry.caas.intel.com/pytorch/pt_inductor:$IMAGE_TAG
+docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:$IMAGE_TAG
+docker run -tid --name $USER --privileged --env https_proxy=${https_proxy} --env http_proxy=${http_proxy} --net host --shm-size 1G -v /home2/yudongsi/.cache:/root/.cache gar-registry.caas.intel.com/pytorch/pt_inductor:$IMAGE_TAG
 wget -O inductor_single_run.sh https://raw.githubusercontent.com/chuanqi129/inductor-tools/yudong/aws_auto/scripts/modelbench/inductor_single_run.sh
 docker cp inductor_single_run.sh $USER:/workspace/pytorch
 docker cp ${PRECISION}_${SHAPE}_${WRAPPER}_latest_report.html $USER:/workspace/pytorch
