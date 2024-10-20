@@ -9,7 +9,7 @@ mkdir userbenchmark_aws/
 
 #inference
 echo running cpu userbenchmark........
-cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --launcher --launcher-args="--throughput-mode" --metrics throughputs'''
+cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --metrics throughputs'''
 cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
 start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
 mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
