@@ -13,7 +13,7 @@ cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --launcher
 
 #PTQ
 export TORCHINDUCTOR_FREEZING=1
-${cmd_prefix} --torchdynamo inductor --is_pt2e --freeze_prepack_weights
+${cmd_prefix} --torchdynamo inductor --quantization pt2e
 mv .userbenchmark/cpu PT2E
 mv PT2E userbenchmark_aws/
 
