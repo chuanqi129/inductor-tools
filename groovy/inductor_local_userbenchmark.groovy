@@ -434,21 +434,21 @@ node(NODE_LABEL){
                 -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                 ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
             
-            docker cp scripts/userbenchmark/version_collect_userbm.sh $USER:/workspace/pytorch
-            docker cp scripts/userbenchmark/cpu_usebm.sh $USER:/workspace/pytorch
-            docker cp scripts/userbenchmark/cpu_usebm_infer.sh $USER:/workspace/pytorch
-            docker cp scripts/userbenchmark/cpu_usebm_train.sh $USER:/workspace/pytorch
-            docker exec -i $USER bash -c "bash version_collect_userbm.sh ${LOG_DIR} $DYNAMO_BENCH"
+            docker cp scripts/userbenchmark/version_collect_userbm.sh inductor_test:/workspace/pytorch
+            docker cp scripts/userbenchmark/cpu_usebm.sh inductor_test:/workspace/pytorch
+            docker cp scripts/userbenchmark/cpu_usebm_infer.sh inductor_test:/workspace/pytorch
+            docker cp scripts/userbenchmark/cpu_usebm_train.sh inductor_test:/workspace/pytorch
+            docker exec -i inductor_test bash -c "bash version_collect_userbm.sh ${LOG_DIR} $DYNAMO_BENCH"
 
             if [ $test_mode == "user_benchmark_infer" ]; then
-                docker exec -i $USER bash -c "bash cpu_usebm_infer.sh"
+                docker exec -i inductor_test bash -c "bash cpu_usebm_infer.sh"
             elif [ $test_mode == "user_benchmark_train" ]; then
-                docker exec -i $USER bash -c "bash cpu_usebm_train.sh"
+                docker exec -i inductor_test bash -c "bash cpu_usebm_train.sh"
             elif [ $test_mode == "user_benchmark" ]; then
-                docker exec -i $USER bash -c "bash cpu_usebm.sh"
+                docker exec -i inductor_test bash -c "bash cpu_usebm.sh"
             fi
 
-            docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
+            docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
     }
