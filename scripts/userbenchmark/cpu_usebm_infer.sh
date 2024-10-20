@@ -10,10 +10,21 @@ mkdir userbenchmark_aws/
 #inference
 echo running cpu userbenchmark........
 cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --launcher --launcher-args="--throughput-mode" --metrics throughputs'''
-
+cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
+start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
+mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
+CORES_PER_SOCKET=$(lscpu | grep Core | awk '{print $4}')
+NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
+NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
+CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
+end_core=$(expr ${start_core} + ${CORES} - 1)
+cpu_allowed_list="${start_core}-${end_core}"
+if [[ ${mem_allowed_list} =~ '-' ]];then
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
+fi
 #PTQ
 export TORCHINDUCTOR_FREEZING=1
-${cmd_prefix} --torchdynamo inductor --quantization pt2e
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torchdynamo inductor --quantization pt2e
 mv .userbenchmark/cpu PT2E
 mv PT2E userbenchmark_aws/
 
