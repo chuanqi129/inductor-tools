@@ -6,7 +6,8 @@ LOG_DIR=${1:-inductor_log}
 cd ../benchmark
 mkdir -p $LOG_DIR
 mkdir userbenchmark_aws/
-
+git clone https://github.com/pytorch/ao.git --depth=1 && cd ao && \
+    pip install -e . && cd ..
 #inference
 echo running cpu userbenchmark........
 cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --metrics throughputs'''
