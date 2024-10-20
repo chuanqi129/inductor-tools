@@ -424,7 +424,7 @@ node(NODE_LABEL){
             sh '''
             #!/usr/bin/env bash
             docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-            docker run -tid --name $USER \
+            docker run -tid --name inductor_test \
                 --privileged \
                 --env https_proxy=${https_proxy} \
                 --env http_proxy=${http_proxy} \
