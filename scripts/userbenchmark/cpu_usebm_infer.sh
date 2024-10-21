@@ -69,5 +69,5 @@ mv PT2E userbenchmark_aws/
 # mv .userbenchmark/cpu eager_throughtput_bf16_train
 # mv eager_throughtput_bf16_train userbenchmark_aws/
 
-mv userbenchmark_aws ../pytorch/$LOG_DIR/
+cp -r userbenchmark_aws ../pytorch/$LOG_DIR/
 
