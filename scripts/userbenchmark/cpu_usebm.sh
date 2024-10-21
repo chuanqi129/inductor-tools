@@ -9,8 +9,19 @@ mkdir userbenchmark_aws/
 
 #inference
 echo running cpu userbenchmark........
-cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --launcher --launcher-args="--throughput-mode" --metrics throughputs'''
-
+cmd_prefix='''python run_benchmark.py cpu --test eval --channels-last --metrics throughputs'''
+cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
+start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
+mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
+CORES_PER_SOCKET=$(lscpu | grep Core | awk '{print $4}')
+NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
+NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
+CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
+end_core=$(expr ${start_core} + ${CORES} - 1)
+cpu_allowed_list="${start_core}-${end_core}"
+if [[ ${mem_allowed_list} =~ '-' ]];then
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
+fi
 # FP32 eager
 ${cmd_prefix}
 mv .userbenchmark/cpu eager_throughtput_fp32_infer
@@ -51,5 +62,5 @@ ${cmd_prefix} --precision amp_bf16
 mv .userbenchmark/cpu eager_throughtput_bf16_train
 mv eager_throughtput_bf16_train userbenchmark_aws/
 
-mv userbenchmark_aws ../pytorch/$LOG_DIR/
+cp -r userbenchmark_aws ../pytorch/$LOG_DIR/
 
