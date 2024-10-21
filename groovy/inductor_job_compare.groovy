@@ -240,10 +240,10 @@ node(NODE_LABEL){
             env.ref_backend = ref_params.get('backend')
             
             def default_backend = "inductor"
-            if (env.backend == "null") {
+            if (env.backend == "null" || env.backend == "triton_cpu") {
                 env.backend = default_backend
             }
-            if (env.ref_backend == "null") {
+            if (env.ref_backend == "null" || env.ref_backend == "triton_cpu") {
                 env.ref_backend = default_backend
             }
             sh '''

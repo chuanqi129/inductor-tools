@@ -164,7 +164,7 @@ node(NODE_LABEL){
         // TODO: implement report_only logic
         if  ("${report_only}" == "false") {
             cleanup()
-            pruneOldImage()
+            // pruneOldImage()
             retry(3){
                 sleep(60)
                 checkout([
@@ -348,6 +348,9 @@ node(NODE_LABEL){
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
                     fi
+                    if [ "${backend}" == "triton_cpu" ];then
+                        export backend='inductor'
+                    fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
                         -r refer \
@@ -372,6 +375,9 @@ node(NODE_LABEL){
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
+                    fi
+                    if [ "${backend}" == "triton_cpu" ];then
+                        export backend='inductor'
                     fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
                     python report.py \
