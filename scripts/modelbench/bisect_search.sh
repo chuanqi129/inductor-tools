@@ -59,6 +59,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
     rm -rf audio && git clone -b main https://github.com/pytorch/audio.git && cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     rm -rf transformers && git clone -b main https://github.com/huggingface/transformers.git && cd transformers && git checkout `cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip uninstall transformers -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt` && pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT} && cd /workspace/pytorch
+    pip install numpy==1.26.4
     detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE $BACKEND | tail -n 1 | awk -F, '{print $5}')
     current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf s" >> ${LOG_DIR}/perf_drop.log
