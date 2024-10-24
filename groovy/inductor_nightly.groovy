@@ -309,7 +309,7 @@ def get_time(){
 env._VERSION = get_time()
 println(env._VERSION)
 
-env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
+env.DOCKER_IMAGE_NAMESPACE = 'gar-registry.caas.intel.com/pytorch/pt_inductor'
 env.ICX24_HF_CACHE = '/home/torch/huggingface'
 env.SPR04_HF_CACHE = '/home2/yudongsi/spr-04/huggingface'
 env._ICX_NODE = "$ICX_NODE_LABEL"
@@ -584,7 +584,7 @@ stage('Benchmark') {
                         docker rmi -f $old_image
                     fi
                     docker system prune -f
-                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                    docker login gar-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                     docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     ''' 
                 }    
@@ -690,7 +690,7 @@ stage('Benchmark') {
                         docker rmi -f $old_image
                     fi
                     docker system prune -f
-                    docker login ccr-registry.caas.intel.com -u $USERNAME -p $PASSWORD
+                    docker login gar-registry.caas.intel.com -u $USERNAME -p $PASSWORD
                     docker pull ${DOCKER_IMAGE_NAMESPACE}:${_image_tag}
                     '''
                 }

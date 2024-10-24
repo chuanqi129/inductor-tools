@@ -165,7 +165,7 @@ node(report_node){
                 unstash 'docker_image_tag_target'
                 sleep(60)
                 def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_target.log''').toString().trim().replaceAll("\n","")
-                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
                         [$class: 'StringParameterValue', name: 'PT_REPO', value: "${target_TORCH_REPO}"],
                         [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${target_TORCH_COMMIT}"],
                         [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
@@ -204,7 +204,7 @@ node(report_node){
                 unstash 'docker_image_tag_baseline'
                 sleep(60)
                 def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_baseline.log''').toString().trim().replaceAll("\n","")
-                def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+                def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
                         [$class: 'StringParameterValue', name: 'PT_REPO', value: "${baseline_TORCH_REPO}"],
                         [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${baseline_TORCH_COMMIT}"],
                         [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
