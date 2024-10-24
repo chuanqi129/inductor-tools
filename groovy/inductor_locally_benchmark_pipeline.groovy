@@ -15,6 +15,12 @@ if (env.precision == "float32") {
 } else if (env.precision == 'amp-gnr-us') {
     env.precision = 'amp'
     env.labelName = "inductor-gnr-local-tas-us"
+} else if (env.precision == 'amp-fp16-gnr-sh') {
+    env.precision = 'amp_fp16'
+    env.labelName = "inductor-gnr-local-tas-sh"
+} else if (env.precision == 'amp-fp16-gnr-us') {
+    env.precision = 'amp_fp16'
+    env.labelName = "inductor-gnr-local-tas-us"
 } else if (env.precision == 'amp-spr') {
     env.precision = 'amp'
     env.labelName = "inductor-spr-local-tas"
