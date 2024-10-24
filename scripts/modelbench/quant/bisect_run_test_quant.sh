@@ -63,7 +63,7 @@ run_crash_test() {
     # python inductor_quant_acc.py 2>&1 | tee ./crash.log
     # bash hf_quant_test.sh key torch_compile_quant_static 2>&1 | tee ./crash.log
     cd ../benchmark
-    TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m $MODEL --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs 2>&1 | tee ./crash.log
+    TORCHINDUCTOR_CPP_WRAPPER=1 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m $MODEL --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
         # acc_status=`tail -n 1 ./crash.log | grep int8 | wc -l`
 	# acc_status=`cat ./crash.log | grep "eval_accuracy" | wc -l`
