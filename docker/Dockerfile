@@ -26,7 +26,7 @@ RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
 FROM dev-base AS conda
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.10
 RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
     chmod +x ~/miniforge.sh && \
     # Fix conda install issue
@@ -108,7 +108,8 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
         pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi && \
     # Need update numpy version to avoid some models crash
-    pip install --upgrade numpy
+    # numpy 2.0 ValueError: numpy.dtype size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
+    pip install numpy==1.26.4
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
