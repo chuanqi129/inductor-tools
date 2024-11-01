@@ -1,6 +1,6 @@
 env.bench_machine = "Local"
 env.target = new Date().format('yyyy_MM_dd')
-env.DOCKER_IMAGE_NAMESPACE = 'ccr-registry.caas.intel.com/pytorch/pt_inductor'
+env.DOCKER_IMAGE_NAMESPACE = 'gar-registry.caas.intel.com/pytorch/pt_inductor'
 env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
 if (env.NODE_LABEL == "0") {
@@ -15,24 +15,23 @@ if (env.NODE_LABEL == "0") {
 
 def cleanup(){
     try {
-        sh'''
-            #!/usr/bin/env bash
-            docker_ps=`docker ps -a -q`
-            if [ -n "${docker_ps}" ];then
-                docker stop ${docker_ps}
-            fi
-            docker container prune -f
-            docker system prune -f
-            docker pull ${BASE_IMAGE}
-        '''
-        docker.image(env.BASE_IMAGE).inside(" \
-            -u root \
-            -v ${WORKSPACE}:/root/workspace \
-            --privileged \
-        "){
-        sh '''
-            chmod -R 777 /root/workspace    
-        '''
+        retry(3){
+            sh'''
+                #!/usr/bin/env bash
+                docker_ps=`docker ps -a -q`
+                if [ -n "${docker_ps}" ];then
+                    docker stop ${docker_ps}
+                fi
+                docker container prune -f
+                docker system prune -f
+
+                docker pull ${BASE_IMAGE}
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
+            '''
         }
         deleteDir()
     } catch(e) {
@@ -106,7 +105,7 @@ node(NODE_LABEL){
 
     stage("trigger inductor images job"){
         def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${target}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
-        def image_build_job = build job: 'inductor_images_local', propagate: false, parameters: [             
+        def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
             [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
             [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_START_COMMIT}"],
             [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
