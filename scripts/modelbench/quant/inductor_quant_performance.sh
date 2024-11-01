@@ -13,8 +13,10 @@ mkdir inductor_quant/
  
 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/ptq
+rm -rf /tmp/*
 TORCHINDUCTOR_FREEZING=1 TORCHINDUCTOR_CPP_WRAPPER=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --cpp_wrapper --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/cpp
+rm -rf /tmp/*
 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --is_qat --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/qat
 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
