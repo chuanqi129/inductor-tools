@@ -3,8 +3,8 @@ export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:aut
 LOG_DIR=${1:-inductor_log}
 cd ../benchmark
 mkdir -p $LOG_DIR
-models=alexnet,shufflenet_v2_x1_0,mobilenet_v3_large,vgg16,densenet121,mnasnet1_0,squeezenet1_1,mobilenet_v2,resnet50,resnet152,resnet18,resnext50_32x4d
-#models=alexnet,shufflenet_v2_x1_0,mobilenet_v3_large,vgg16,mnasnet1_0,squeezenet1_1,mobilenet_v2,resnet50,resnet152,resnet18,resnext50_32x4d
+# models=alexnet,shufflenet_v2_x1_0,mobilenet_v3_large,vgg16,densenet121,mnasnet1_0,squeezenet1_1,mobilenet_v2,resnet50,resnet152,resnet18,resnext50_32x4d
+models=alexnet,shufflenet_v2_x1_0,mobilenet_v3_large,vgg16,mnasnet1_0,squeezenet1_1,mobilenet_v2,resnet50,resnet152,resnet18,resnext50_32x4d
 #models=alexnet
 rm -rf .userbenchmark
 mkdir inductor_quant/
