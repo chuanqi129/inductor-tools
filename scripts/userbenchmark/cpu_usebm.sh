@@ -25,27 +25,27 @@ if [[ ${mem_allowed_list} =~ '-' ]];then
     mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
 fi
 # FP32 eager
-numactl -C 0-39 -m 0 ${cmd_prefix}
+taskset -c 0-39 ${cmd_prefix}
 mv .userbenchmark/cpu eager_throughtput_fp32_infer
 mv eager_throughtput_fp32_infer userbenchmark_aws/
 
 # BF16 eager
-numactl -C 0-39 -m 0 ${cmd_prefix} --precision amp_bf16
+taskset -c 0-39 ${cmd_prefix} --precision amp_bf16
 mv .userbenchmark/cpu eager_throughtput_bf16_infer
 mv eager_throughtput_bf16_infer userbenchmark_aws/
 
 # fx_int8 eager
-numactl -C 0-39 -m 0 ${cmd_prefix} --precision fx_int8
+taskset -c 0-39 ${cmd_prefix} --precision fx_int8
 mv .userbenchmark/cpu eager_throughtput_fx_int8
 mv eager_throughtput_fx_int8 userbenchmark_aws/
 
 # FP32 jit with llga:
-numactl -C 0-39 -m 0 ${cmd_prefix} --backend torchscript --fuser fuser3
+taskset -c 0-39 ${cmd_prefix} --backend torchscript --fuser fuser3
 mv .userbenchmark/cpu jit_llga_throughtput_fp32
 mv jit_llga_throughtput_fp32 userbenchmark_aws/
 
 # bf16 jit with llga:
-numactl -C 0-39 -m 0 ${cmd_prefix} --precision amp_bf16 --backend torchscript --fuser fuser3
+taskset -c 0-39 ${cmd_prefix} --precision amp_bf16 --backend torchscript --fuser fuser3
 mv .userbenchmark/cpu jit_llga_throughtput_amp_bf16
 mv jit_llga_throughtput_amp_bf16 userbenchmark_aws/
 
@@ -55,12 +55,12 @@ cmd_prefix='''python run_benchmark.py cpu -m BERT_pytorch,Background_Matting,Lea
 #cmd_prefix='''python run_benchmark.py cpu --test train --channels-last --launcher --launcher-args="--throughput-mode" --metrics throughputs'''
 
 # FP32 eager
-numactl -C 0-39 -m 0 ${cmd_prefix}
+taskset -c 0-39 ${cmd_prefix}
 mv .userbenchmark/cpu eager_throughtput_fp32_train
 mv eager_throughtput_fp32_train userbenchmark_aws/
 
 # BF16 eager
-numactl -C 0-39 -m 0 ${cmd_prefix} --precision amp_bf16
+taskset -c 0-39 ${cmd_prefix} --precision amp_bf16
 mv .userbenchmark/cpu eager_throughtput_bf16_train
 mv eager_throughtput_bf16_train userbenchmark_aws/
 
