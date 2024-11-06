@@ -107,7 +107,7 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
         pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi && \
     # Need update numpy version to avoid some models crash
-    pip install --upgrade numpy
+    pip install numpy==1.26.4
 ARG BENCH_COMMIT=${PT_COMMIT}
 WORKDIR /workspace/pytorch
 RUN git checkout ${BENCH_COMMIT} benchmarks && \
