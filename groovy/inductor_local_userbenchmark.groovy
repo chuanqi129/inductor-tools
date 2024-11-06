@@ -340,7 +340,7 @@ node(us_node){
                 fi
                 commit_date=`git log -n 1 --format="%cs"`
                 bref_commit=`git rev-parse --short HEAD`
-                DOCKER_TAG="${commit_date}_${bref_commit}_userbm"
+                DOCKER_TAG="${commit_date}_${bref_commit}_userbm1"
                 echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
             '''
             if (fileExists("${WORKSPACE}/docker_image_tag.log")) {
