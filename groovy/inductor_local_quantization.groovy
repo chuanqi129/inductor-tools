@@ -432,7 +432,7 @@ node(NODE_LABEL){
             sh '''
                 #!/usr/bin/env bash
                 docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-                docker run -tid --name $USER \
+                docker run -tid --name inductor_quant \
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
@@ -441,14 +441,14 @@ node(NODE_LABEL){
                     -v ~/.cache:/root/.cache \
                     -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                     ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-                docker cp scripts/modelbench/quant/version_collect_quant.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/quant/inductor_quant_performance.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/quant/inductor_quant_accuracy.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/quant/inductor_quant_acc.py $USER:/workspace/benchmark
-                docker cp scripts/modelbench/quant/hf_quant_test.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/quant/inductor_dynamic_quant.sh $USER:/workspace/pytorch
-                docker cp scripts/modelbench/quant/numa_launcher.py $USER:/workspace/pytorch
-                docker exec -i $USER bash -c "bash version_collect_quant.sh ${LOG_DIR} $DYNAMO_BENCH"
+                docker cp scripts/modelbench/quant/version_collect_quant.sh inductor_quant:/workspace/pytorch
+                docker cp scripts/modelbench/quant/inductor_quant_performance.sh inductor_quant:/workspace/pytorch
+                docker cp scripts/modelbench/quant/inductor_quant_accuracy.sh inductor_quant:/workspace/pytorch
+                docker cp scripts/modelbench/quant/inductor_quant_acc.py inductor_quant:/workspace/benchmark
+                docker cp scripts/modelbench/quant/hf_quant_test.sh inductor_quant:/workspace/pytorch
+                docker cp scripts/modelbench/quant/inductor_dynamic_quant.sh inductor_quant:/workspace/pytorch
+                docker cp scripts/modelbench/quant/numa_launcher.py inductor_quant:/workspace/pytorch
+                docker exec -i inductor_quant bash -c "bash version_collect_quant.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 prepare_imagenet(){
                     wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
@@ -457,24 +457,24 @@ node(NODE_LABEL){
                     bash valprep.sh
                 }
                 if [ $test_mode == "performance" ]; then
-                    docker exec -i $USER bash -c "bash inductor_quant_performance.sh ${LOG_DIR}"
+                    docker exec -i inductor_quant bash -c "bash inductor_quant_performance.sh ${LOG_DIR}"
                 elif [ $test_mode == "accuracy" ]; then
                     if [ ! -d "${WORKSPACE}/imagenet" ];then
                         prepare_imagenet
                     fi
-                    docker cp ${WORKSPACE}/imagenet $USER:/workspace/benchmark/
-                    docker exec -i $USER bash -c "bash inductor_quant_accuracy.sh ${LOG_DIR}"
+                    docker cp ${WORKSPACE}/imagenet inductor_quant:/workspace/benchmark/
+                    docker exec -i inductor_quant bash -c "bash inductor_quant_accuracy.sh ${LOG_DIR}"
                 elif [ $test_mode == "all" ]; then
                     if [ ! -d "${WORKSPACE}/imagenet" ];then
                         prepare_imagenet
                     fi
-                    docker exec -i $USER bash -c "bash inductor_quant_performance.sh ${LOG_DIR}"
-                    docker cp ${WORKSPACE}/imagenet $USER:/workspace/benchmark/
-                    docker exec -i $USER bash -c "bash inductor_quant_accuracy.sh ${LOG_DIR}"
-                    docker exec -i $USER bash -c "bash inductor_dynamic_quant.sh ${LOG_DIR}"
+                    docker exec -i inductor_quant bash -c "bash inductor_quant_performance.sh ${LOG_DIR}"
+                    docker cp ${WORKSPACE}/imagenet inductor_quant:/workspace/benchmark/
+                    docker exec -i inductor_quant bash -c "bash inductor_quant_accuracy.sh ${LOG_DIR}"
+                    docker exec -i inductor_quant bash -c "bash inductor_dynamic_quant.sh ${LOG_DIR}"
                 fi
                 
-                docker exec -i $USER bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
+                docker exec -i inductor_quant bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
     }
