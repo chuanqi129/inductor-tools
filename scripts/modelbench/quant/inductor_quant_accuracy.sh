@@ -7,16 +7,28 @@ mkdir inductor_quant_acc/
 pip install networkx==2.8
 # export TORCH_COMPILE_DEBUG=1
 # export TORCH_LOGS="+schedule,+inductor,+output_code"
+cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
+start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
+mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
+CORES_PER_SOCKET=$(lscpu | grep Core | awk '{print $4}')
+NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
+NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
+CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
+end_core=$(expr ${start_core} + ${CORES} - 1)
+cpu_allowed_list="${start_core}-${end_core}"
+if [[ ${mem_allowed_list} =~ '-' ]];then
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
+fi
 
-python inductor_quant_acc.py 2>&1 |& tee "./inductor_quant_acc_ptq.log"
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python inductor_quant_acc.py 2>&1 |& tee "./inductor_quant_acc_ptq.log"
 mv ./inductor_quant_acc_ptq.log inductor_quant_acc/
 rm -rf /tmp/*
-TORCHINDUCTOR_CPP_WRAPPER=1 python inductor_quant_acc.py --cpp_wrapper 2>&1 |& tee "./inductor_quant_acc_ptq_cpp_wrapper.log"
+TORCHINDUCTOR_CPP_WRAPPER=1 numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python inductor_quant_acc.py --cpp_wrapper 2>&1 |& tee "./inductor_quant_acc_ptq_cpp_wrapper.log"
 mv ./inductor_quant_acc_ptq_cpp_wrapper.log inductor_quant_acc/
 rm -rf /tmp/*
-python inductor_quant_acc.py  --is_qat 2>&1 |& tee "./inductor_quant_acc_qat.log"
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python inductor_quant_acc.py  --is_qat 2>&1 |& tee "./inductor_quant_acc_qat.log"
 mv ./inductor_quant_acc_qat.log inductor_quant_acc/
-python inductor_quant_acc.py --is_fp32 2>&1 |& tee "./inductor_quant_acc_fp32.log"
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python inductor_quant_acc.py --is_fp32 2>&1 |& tee "./inductor_quant_acc_fp32.log"
 mv ./inductor_quant_acc_fp32.log inductor_quant_acc/
 
 mv inductor_quant_acc ../pytorch/$LOG_DIR/
