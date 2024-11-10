@@ -30,6 +30,9 @@ numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torc
 mv .userbenchmark/cpu PT2E
 mv PT2E userbenchmark_aws/
 
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torchdynamo inductor
+mv .userbenchmark/cpu fp32
+mv fp32 userbenchmark_aws/
 # # FP32 eager
 # ${cmd_prefix}
 # mv .userbenchmark/cpu eager_throughtput_fp32_infer
