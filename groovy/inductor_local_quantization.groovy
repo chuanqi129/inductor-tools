@@ -286,24 +286,23 @@ env._HF_TOKEN = "$HF_TOKEN"
 
 def cleanup(){
     try {
-        sh'''
-            #!/usr/bin/env bash
-            docker_ps=`docker ps -a -q`
-            if [ -n "${docker_ps}" ];then
-                docker stop ${docker_ps}
-            fi
-            docker container prune -f
-            docker system prune -f
-            docker pull ${BASE_IMAGE}
-        '''
-        docker.image(env.BASE_IMAGE).inside(" \
-            -u root \
-            -v ${WORKSPACE}:/root/workspace \
-            --privileged \
-        "){
-        sh '''
-            chmod -R 777 /root/workspace    
-        '''
+        retry(3){
+            sh'''
+                #!/usr/bin/env bash
+                docker_ps=`docker ps -a -q`
+                if [ -n "${docker_ps}" ];then
+                    docker stop ${docker_ps}
+                fi
+                docker container prune -f
+                docker system prune -f
+
+                docker pull ${BASE_IMAGE}
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
+            '''
         }
         deleteDir()
     } catch(e) {
@@ -314,7 +313,7 @@ def cleanup(){
         echo "Error while doing cleanup"
     }
 }
-
+                                            
 def pruneOldImage(){
     sh '''
         #!/usr/bin/env bash
