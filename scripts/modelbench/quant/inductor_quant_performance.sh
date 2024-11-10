@@ -10,16 +10,26 @@ rm -rf .userbenchmark
 mkdir inductor_quant/
 # export TORCH_COMPILE_DEBUG=1
 # export TORCH_LOGS="+schedule,+inductor,+output_code"
+cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
+start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
+mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
+CORES_PER_SOCKET=$(lscpu | grep Core | awk '{print $4}')
+NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
+NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
+CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
+end_core=$(expr ${start_core} + ${CORES} - 1)
+cpu_allowed_list="${start_core}-${end_core}"
+if [[ ${mem_allowed_list} =~ '-' ]];then
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
+fi
  
-TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+TORCHINDUCTOR_FREEZING=1 numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/ptq
-rm -rf /tmp/*
-TORCHINDUCTOR_FREEZING=1 TORCHINDUCTOR_CPP_WRAPPER=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --cpp_wrapper --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+TORCHINDUCTOR_FREEZING=1 TORCHINDUCTOR_CPP_WRAPPER=1 numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --cpp_wrapper -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/cpp
-rm -rf /tmp/*
-TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --is_qat --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+TORCHINDUCTOR_FREEZING=1 numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python run_benchmark.py cpu -m ${models} --torchdynamo inductor --quantize --is_qat -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/qat
-TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m ${models} --torchdynamo inductor --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs
+TORCHINDUCTOR_FREEZING=1 numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python run_benchmark.py cpu -m ${models} --torchdynamo inductor -b 128 --metrics throughputs
 mv .userbenchmark/cpu inductor_quant/general_inductor
 
 mv inductor_quant ../pytorch/$LOG_DIR/
