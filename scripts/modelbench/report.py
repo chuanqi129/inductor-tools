@@ -361,6 +361,8 @@ def failures_reason_parse(model, acc_or_perf, mode):
     return line
 
 def get_failures(target_path, thread_mode, backend_pattern):
+    if args.precision == "amp_fp16":
+        precision = "amp"
     all_model_df = pd.DataFrame()
     failure_msg_list = [
         'fail_to_run',
@@ -372,8 +374,8 @@ def get_failures(target_path, thread_mode, backend_pattern):
         'timeout',
         '0.0000']
     for suite_name in suite_list:
-        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_pattern, suite_name, precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_pattern, suite_name, precision, args.infer_or_train)
 
         perf_data = pd.read_csv(perf_path, usecols=["name", "batch_size", "speedup"]).rename(columns={'batch_size': 'perf_bs'})
         acc_data = pd.read_csv(acc_path, usecols=["name", "batch_size", "accuracy"]).rename(columns={'batch_size': 'acc_bs'})
@@ -506,14 +508,16 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     sf.to_excel(sheet_name='Failures in '+target_thread.split('_cf')[0].split('inductor_log/')[1].strip(),excel_writer=excel,index=False)
 
 def process_suite(suite, thread):
-    target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), args.backend, suite, args.precision, args.infer_or_train)
+    if args.precision == "amp_fp16":
+        precision = "amp"
+    target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), args.backend, suite, precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
     target_data=target_data.copy()
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.ref_backend, suite, args.precision, args.infer_or_train)
+        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.ref_backend, suite, precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
