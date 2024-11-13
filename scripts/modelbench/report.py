@@ -126,11 +126,13 @@ def percentage(part, whole, decimals=2):
 
 def update_passrate_csv(df, target_path, backend):
     new_df = df.copy()
+    if args.precision == "amp_fp16":
+        precision = "amp"
     for suite_name in suite_list:
         passrate_str = new_df.loc[backend][suite_name]
         passed_num = int(passrate_str.split(', ')[1].split('/')[0])
-        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
         perf_df = pd.read_csv(perf_path)
         acc_df = pd.read_csv(acc_path)
         acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
