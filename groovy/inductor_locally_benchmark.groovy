@@ -354,9 +354,6 @@ node(NODE_LABEL){
                 sh '''
                     #!/usr/bin/env bash
                     cd ${WORKSPACE}
-                    if [ "${precision}" == "amp_fp16" ];then
-                        export precision='amp'
-                    fi
                     if [ "${backend}" == "triton_cpu" ];then
                         export backend='inductor'
                     fi
@@ -382,9 +379,6 @@ node(NODE_LABEL){
                 sh '''
                     #!/usr/bin/env bash
                     cd ${WORKSPACE}
-                    if [ "${precision}" == "amp_fp16" ];then
-                        export precision='amp'
-                    fi
                     if [ "${backend}" == "triton_cpu" ];then
                         export backend='inductor'
                     fi
