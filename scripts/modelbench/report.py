@@ -42,7 +42,8 @@ parser.add_argument('--shape',type=str,default='static',help='Shape: static or d
 parser.add_argument('--wrapper',type=str,default='default',help='Wrapper: default or cpp')
 parser.add_argument('--torch_repo',type=str,default='https://github.com/pytorch/pytorch.git',help='pytorch repo')
 parser.add_argument('--torch_branch',type=str,default='main',help='pytorch branch')
-parser.add_argument('--backend',type=str,help='pytorch dynamo backend')
+parser.add_argument('--backend',type=str, help='pytorch dynamo backend')
+parser.add_argument('--ref_backend',type=str, default='inductor', help='reference backend for comparsion')
 parser.add_argument('--threshold',type=float, default=0.1,help='threshold for checking performance regression and improvement')
 args=parser.parse_args()
 
@@ -64,6 +65,7 @@ new_performance_improvement=pd.DataFrame()
 new_performance_improvement_model_list=pd.DataFrame()
 new_fixed_failures=pd.DataFrame()
 new_fixed_failures_model_list=pd.DataFrame()
+target_thread_failures=pd.DataFrame()
 
 # cppwrapper gm values
 multi_threads_gm={}
@@ -117,7 +119,48 @@ def caculate_geomean(df,column_name):
         return "0.0x"
     return f"{gmean(cleaned_df):.2f}x"
 
-def update_summary(excel, reference, target):
+def percentage(part, whole, decimals=2):
+    if whole == 0:
+        return 0
+    return round(100 * float(part) / float(whole), decimals)
+
+def update_passrate_csv(df, target_path, backend):
+    new_df = df.copy()
+    for suite_name in suite_list:
+        passrate_str = new_df.loc[backend][suite_name]
+        passed_num = int(passrate_str.split(', ')[1].split('/')[0])
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, args.precision, args.infer_or_train)
+        perf_df = pd.read_csv(perf_path)
+        acc_df = pd.read_csv(acc_path)
+        acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
+        name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
+        perc = int(percentage(passed_num, len(name_union_df), decimals=0))
+        passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
+        new_df.loc[backend][suite_name] = passrate_str_new
+    new_df.to_csv(target_path + '/passrate_new.csv')
+
+def update_passrate(reference):
+    if reference is not None:
+        if args.mode == "multiple" or args.mode == 'all':
+            reference_mt_pr_data = pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_mt_pr_data, reference_mt, args.ref_backend)
+            target_mt_pr_data = pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
+        if args.mode == "single" or args.mode == 'all':
+            reference_st_pr_data = pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(reference_st_pr_data, reference_st, args.ref_backend)
+            target_st_pr_data = pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
+    else:
+        if args.mode == "multiple" or args.mode == 'all':
+            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_mt_pr_data, target_mt, args.backend)
+        if args.mode == "single" or args.mode == 'all':
+            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            update_passrate_csv(target_st_pr_data, target_st, args.backend)
+
+def update_summary(excel, reference, target, passrate_file, sheet_name):
     if args.suite == 'all':
         data = {
             'Test Scenario':['Single Socket Multi-Threads', ' ', ' ', ' ','Single Core Single-Thread',' ',' ',' '], 
@@ -156,28 +199,28 @@ def update_summary(excel, reference, target):
     if reference is not None:
         summary=pd.DataFrame(data)
         if args.mode == "multiple" or args.mode == 'all':
-            reference_mt_pr_data=pd.read_csv(reference_mt+'/passrate.csv',index_col=0)
+            reference_mt_pr_data=pd.read_csv(reference_mt+'/'+passrate_file,index_col=0)
             reference_mt_gm_data=pd.read_csv(reference_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[2:3,4:7]=reference_mt_gm_data.iloc[0:2,1:7] 
             summary.iloc[0:1,2]=reference
             summary.iloc[2:3,2]=reference 
-            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0) 
-            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:2,1:7]
+            summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:1,1:7]
             summary.iloc[3:4,4:7]=target_mt_gm_data.iloc[0:2,1:7]
             summary.iloc[1:2,2]=target
             summary.iloc[3:4,2]=target
         if args.mode == "single" or args.mode == 'all':
-            reference_st_pr_data=pd.read_csv(reference_st+'/passrate.csv',index_col=0)
+            reference_st_pr_data=pd.read_csv(reference_st+'/'+passrate_file,index_col=0)
             reference_st_gm_data=pd.read_csv(reference_st+'/geomean.csv',index_col=0)
-            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[4:5,4:7]=reference_st_pr_data.iloc[0:1,1:7]
             summary.iloc[6:7,4:7]=reference_st_gm_data.iloc[0:2,1:7]
             summary.iloc[4:5,2]=reference
             summary.iloc[6:7,2]=reference
-            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:2,1:7]
+            summary.iloc[5:6,4:7]=target_st_pr_data.iloc[0:1,1:7]
             summary.iloc[7:8,4:7]=target_st_gm_data.iloc[0:2,1:7]
             summary.iloc[5:6,2]=target
             summary.iloc[7:8,2]=target
@@ -186,23 +229,31 @@ def update_summary(excel, reference, target):
     else:
         summary=pd.DataFrame(data_target)
         if args.mode == "multiple" or args.mode == 'all':
-            target_mt_pr_data=pd.read_csv(target_mt+'/passrate.csv',index_col=0)
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
             target_mt_gm_data=pd.read_csv(target_mt+'/geomean.csv',index_col=0)
-            summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:2,1:7]
-            summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7] 
+            if args.suite == 'all':
+                summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
+                summary.iloc[1:2,4:7]=target_mt_gm_data.iloc[0:2,1:7]
+            else:
+                summary.iloc[0,4]=target_mt_pr_data.iloc[0,1]
+                summary.iloc[1,4]=target_mt_gm_data.iloc[0,1]
             summary.iloc[0:1,2]=target
             summary.iloc[1:2,2]=target
         if args.mode == "single" or args.mode == 'all':
-            target_st_pr_data=pd.read_csv(target_st+'/passrate.csv',index_col=0)
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
             target_st_gm_data=pd.read_csv(target_st+'/geomean.csv',index_col=0)
-            summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:2,1:7]
-            summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
+            if args.suite == 'all':
+                summary.iloc[2:3,4:7]=target_st_pr_data.iloc[0:1,1:7]
+                summary.iloc[3:4,4:7]=target_st_gm_data.iloc[0:2,1:7]
+            else:
+                summary.iloc[2,4]=target_st_pr_data.iloc[0,1]
+                summary.iloc[3,4]=target_st_gm_data.iloc[0,1]
             summary.iloc[2:3,2]=target
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
     for i in range(1, len(data)+1):
         sf.set_column_width(i, 18)
-    sf.to_excel(sheet_name='Summary',excel_writer=excel)
+    sf.to_excel(sheet_name=sheet_name,excel_writer=excel)
 
 def update_swinfo(excel):
     if not (os.path.exists(args.target+'/inductor_log/version.csv')):
@@ -259,7 +310,7 @@ def parse_acc_failure(file,failed_model):
                     if model != failed_model:
                         continue
                     found =  True
-                if found ==  True and ("Error: " in line or "[ERROR]" in line or "TIMEOUT" in line or "FAIL" in line):
+                if found ==  True and ("Error: " in line or "[ERROR]" in line or "TIMEOUT" in line or "FAIL" in line or "fail" in line):
                     line=line.replace(',',' ',20)
                     result.append(model+", "+ line)
                     break
@@ -307,12 +358,20 @@ def failures_reason_parse(model, acc_or_perf, mode):
         pass
     return line
 
-def get_failures(target_path, thread_mode):
+def get_failures(target_path, thread_mode, backend_pattern):
     all_model_df = pd.DataFrame()
-    failure_msg_list = ['fail_to_run', 'infra_error', 'fail_accuracy', 'eager_fail_to_run', 'model_fail_to_load', 'timeout', '0.0000']
+    failure_msg_list = [
+        'fail_to_run',
+        'infra_error',
+        'fail_accuracy',
+        'eager_fail_to_run',
+        'model_fail_to_load',
+        'eager_two_runs_differ',
+        'timeout',
+        '0.0000']
     for suite_name in suite_list:
-        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
-        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, args.backend, suite_name, args.precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_pattern, suite_name, args.precision, args.infer_or_train)
 
         perf_data = pd.read_csv(perf_path, usecols=["name", "batch_size", "speedup"]).rename(columns={'batch_size': 'perf_bs'})
         acc_data = pd.read_csv(acc_path, usecols=["name", "batch_size", "accuracy"]).rename(columns={'batch_size': 'acc_bs'})
@@ -387,10 +446,11 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_fixed_failures
     global new_failures_model_list
     global new_fixed_failures_model_list
-    target_thread_failures = get_failures(target_thread, thread_mode)
+    global target_thread_failures
+    target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=args.backend)
     # new failures compare with reference logs
     if args.reference is not None:
-        refer_thread_failures = get_failures(refer_thread, thread_mode)
+        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=args.ref_backend)
         # New Failures
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
@@ -451,7 +511,7 @@ def process_suite(suite, thread):
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.backend, suite, args.precision, args.infer_or_train)
+        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.ref_backend, suite, args.precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
@@ -665,7 +725,7 @@ def update_issue_commits(precision):
 | GCC  | gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 |
 | GLIBC  | ldd (Ubuntu GLIBC 2.35-0ubuntu3.4) 2.35 |
 | Binutils  | GNU ld (GNU Binutils for Ubuntu) 2.38 |
-| Python  | Python 3.8.18 |
+| Python  | Python 3.10.15 |
 | OpenSSL  | OpenSSL 3.2.0 23 Nov 2023 (Library: OpenSSL 3.2.0 23 Nov 2023) |
 '''
     hw_info = ""
@@ -807,11 +867,11 @@ def html_head():
   <div class="container-table100">
   <div class="wrap-table100">
   <div class="table100">
-  <p><h3>{args.backend} Regular Model Bench Report </p></h3> '''
+  <p><h3>{args.backend} Regular Model Bench Report </p></h3>
+  <p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>'''
 
 def html_tail():
-    return f'''<p><tr><td>Build URL:&nbsp;</td><td><a href={args.url}> {args.url} </a></td></tr></p>
-    <p>find perf regression or improvement from attachment report, Thanks</p>
+    return f'''<p>find perf regression or improvement from attachment report, Thanks</p>
   </div>
   </div>
   </div>
@@ -827,9 +887,12 @@ def html_generate(html_off):
     if not html_off:
         try:
             if args.mode == 'all':
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6])
             else:
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2])
+                if target_thread_failures.empty:
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                else:
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -839,12 +902,23 @@ def html_generate(html_off):
                 failures_html = \
                     "<p>Multi-threads Failures</p>" + mt_failures + \
                     "<p>Single-thread Failures</p>" + st_failures
+                summary_new = pd.DataFrame(content[6]).to_html(classes="table",index = False)
             elif args.mode == 'multiple':
-                mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-                failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+                if target_thread_failures.empty:
+                    failures_html = "<p>Multi-threads Failures</p>" + "None"
+                    summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                else:
+                    mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                    failures_html = "<p>Multi-threads Failures</p>" + mt_failures
+                    summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             elif args.mode == 'single':
-                st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
-                failures_html = "<p>Single-thread Failures</p>" + st_failures
+                if target_thread_failures.empty:
+                    failures_html = "<p>Single-thread Failures</p>" + "None"
+                    summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                else:
+                    st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
+                    failures_html = "<p>Single-thread Failures</p>" + st_failures
+                    summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
@@ -855,6 +929,7 @@ def html_generate(html_off):
                 open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost_f, \
                 open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
                 f.write(html_head() + "<p>Summary</p>" + summary + \
+                        "<p>Summary (exclude model_fail_to_load and eager_fail_to_run)</p>" + summary_new + \
                         "<p>SW info</p>" + swinfo + \
                         failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
@@ -863,15 +938,15 @@ def html_generate(html_off):
                         "<h3><font color='#00dd00'>Improvement</font></h3>" + \
                         "<p>new_perf_improvement</p>" + perf_improvement + \
                         "<p>new_fixed_failures</p>" + fixed_failures + \
-                        f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
+                        f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
                 perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 failure_f.write(f"<p>new_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        failures_regression + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 perf_boost_f.write(f"<p>new_perf_improvement in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        perf_improvement + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
                 fixed_failure_f.write(f"<p>new_fixed_failures in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
-                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull ccr-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
+                        fixed_failures + "<p>SW info</p>" + swinfo + f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>")
             f.close()
             perf_f.close()
             failure_f.close()
@@ -907,21 +982,23 @@ def generate_model_list():
         print('No new issue or improvement compared with reference')
 
 def generate_report(excel, reference, target):
-    update_summary(excel, reference, target)
+    update_passrate(reference)
+    update_summary(excel, reference, target, 'passrate.csv', 'Summary')
     update_swinfo(excel)
     if args.mode == 'multiple' or args.mode == 'all':
         update_failures(excel, target_mt, reference_mt, 'multiple')
     if args.mode =='single' or args.mode == 'all':
         update_failures(excel, target_st, reference_st, 'single')
     update_details(excel)
+    update_summary(excel, reference, target, 'passrate_new.csv', 'Summary New')
     generate_model_list()
     if args.cppwrapper_gm:
         update_cppwrapper_gm(excel,reference,target)
 
-def excel_postprocess(file):
+def excel_postprocess(file, sheet_name):
     wb=file.book
     # Summary
-    ws=wb['Summary']
+    ws=wb[sheet_name]
     if args.reference is not None:
         ws.merge_cells(start_row=2,end_row=5,start_column=1,end_column=1)
         ws.merge_cells(start_row=6,end_row=9,start_column=1,end_column=1)
@@ -953,6 +1030,7 @@ def excel_postprocess(file):
 if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
-    excel_postprocess(excel)
+    excel_postprocess(excel, 'Summary')
+    excel_postprocess(excel, 'Summary New')
     html_generate(args.html_off)     
     update_issue_commits(args.precision)
