@@ -56,42 +56,40 @@ def pruneOldImage(){
 node(us_node){
     stage("prepare torch repo"){
         try {
-            if  ("${report_only}" == "false") {
-                deleteDir()
-                sh'''
-                    #!/usr/bin/env bash
-                    echo "Job URL: ${BUILD_URL}/console .<br>" | tee ${WORKSPACE}/torch_clone.log
-                    if [ "${TORCH_COMMIT}" == "nightly" ];then
-                        # clone pytorch repo
-                        cd ${WORKSPACE}
-                        git clone -b ${TORCH_COMMIT} ${TORCH_REPO}
-                        cd pytorch
-                        main_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1`
-                        git checkout ${main_commit} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                        result=${PIPESTATUS[0]}
-                    else
-                        # clone pytorch repo
-                        cd ${WORKSPACE}
-                        git clone ${TORCH_REPO}
-                        cd pytorch
-                        git checkout ${TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                        result=${PIPESTATUS[0]}
-                    fi
-                    if [ "${result}" = "0" ]; then
-                        echo "<br>[INFO] Torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
-                    else
-                        echo "<br>[ERROR] Torch repo and commit is wrong!<br>" | tee -a ${WORKSPACE}/torch_clone.log
-                        exit 1
-                    fi
-                    commit_date=`git log -n 1 --format="%cs"`
-                    bref_commit=`git rev-parse --short HEAD`
-                    DOCKER_TAG="${commit_date}_${bref_commit}"
-                    echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
-                '''
-                if (fileExists("${WORKSPACE}/docker_image_tag.log")) {
-                    stash includes: 'docker_image_tag.log', name: 'docker_image_tag'
-                    archiveArtifacts  "docker_image_tag.log"
-                }
+            deleteDir()
+            sh'''
+                #!/usr/bin/env bash
+                echo "Job URL: ${BUILD_URL}/console .<br>" | tee ${WORKSPACE}/torch_clone.log
+                if [ "${TORCH_COMMIT}" == "nightly" ];then
+                    # clone pytorch repo
+                    cd ${WORKSPACE}
+                    git clone -b ${TORCH_COMMIT} ${TORCH_REPO}
+                    cd pytorch
+                    main_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1`
+                    git checkout ${main_commit} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                    result=${PIPESTATUS[0]}
+                else
+                    # clone pytorch repo
+                    cd ${WORKSPACE}
+                    git clone ${TORCH_REPO}
+                    cd pytorch
+                    git checkout ${TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
+                    result=${PIPESTATUS[0]}
+                fi
+                if [ "${result}" = "0" ]; then
+                    echo "<br>[INFO] Torch repo and commit is correct.<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                else
+                    echo "<br>[ERROR] Torch repo and commit is wrong!<br>" | tee -a ${WORKSPACE}/torch_clone.log
+                    exit 1
+                fi
+                commit_date=`git log -n 1 --format="%cs"`
+                bref_commit=`git rev-parse --short HEAD`
+                DOCKER_TAG="${commit_date}_${bref_commit}"
+                echo "${DOCKER_TAG}" > ${WORKSPACE}/docker_image_tag.log
+            '''
+            if (fileExists("${WORKSPACE}/docker_image_tag.log")) {
+                stash includes: 'docker_image_tag.log', name: 'docker_image_tag'
+                archiveArtifacts  "docker_image_tag.log"
             }
         } catch (Exception e) {
             emailext(
@@ -109,71 +107,55 @@ node(us_node){
 node(NODE_LABEL){
     stage("prepare"){
         println('prepare......')
-        // TODO: implement report_only logic
-        if  ("${report_only}" == "false") {
-            cleanup()
-            pruneOldImage()
-            retry(3){
-                sleep(60)
-                checkout([
-                    $class: 'GitSCM',
-                    branches: scm.branches,
-                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
-            }
-            unstash 'docker_image_tag'
-            sh'''
-                #!/usr/bin/env bash
-                mkdir -p ${WORKSPACE}/${LOG_DIR}
-                mv docker_image_tag.log ${WORKSPACE}/${LOG_DIR}
-            '''
-        } else {
-            retry(3){
-                sleep(60)
-                checkout([
-                    $class: 'GitSCM',
-                    branches: scm.branches,
-                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
-            }
+        cleanup()
+        pruneOldImage()
+        retry(3){
+            sleep(60)
+            checkout([
+                $class: 'GitSCM',
+                branches: scm.branches,
+                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+                userRemoteConfigs: scm.userRemoteConfigs
+            ])
         }
+        unstash 'docker_image_tag'
+        sh'''
+            #!/usr/bin/env bash
+            mkdir -p ${WORKSPACE}/${LOG_DIR}
+            mv docker_image_tag.log ${WORKSPACE}/${LOG_DIR}
+        '''
     }
 
     stage("trigger inductor images job"){
         try {
-            if  ("${report_only}" == "false") {
-                if ("${build_image}" == "true") {
-                    retry(3){
-                        sleep(60)
-                        def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
-                        def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
-                            [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
-                            [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
-                            [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
-                            [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
-                        ]
-                        def buildStatus = image_build_job.getResult()
-                        def cur_job_url = image_build_job.getAbsoluteUrl()
-                        if (buildStatus == hudson.model.Result.FAILURE) {
-                            sh'''
-                                echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
-                            '''
-                            throw new Exception("Docker image build job failed")
-                        }
+            if ("${build_image}" == "true") {
+                retry(3){
+                    sleep(60)
+                    def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/${LOG_DIR}/docker_image_tag.log''').toString().trim().replaceAll("\n","")
+                    def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
+                        [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
+                        [$class: 'StringParameterValue', name: 'tag', value: "${DOCKER_TAG}"],
+                        [$class: 'StringParameterValue', name: 'HF_TOKEN', value: "${HF_TOKEN}"],
+                    ]
+                    def buildStatus = image_build_job.getResult()
+                    def cur_job_url = image_build_job.getAbsoluteUrl()
+                    if (buildStatus == hudson.model.Result.FAILURE) {
                         sh'''
-                            #!/usr/bin/env bash
-                            docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-                            docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
+                            echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
                         '''
+                        throw new Exception("Docker image build job failed")
                     }
+                    sh'''
+                        #!/usr/bin/env bash
+                        docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                        docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
+                    '''
                 }
-                if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
-                    archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
-                }
+            }
+            if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
+                archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
             }
         } catch (Exception e) {
             sh'''
@@ -194,15 +176,13 @@ node(NODE_LABEL){
     }
 
     stage("prepare container"){
-        if  ("${report_only}" == "false") {
-            withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                sh'''
-                    #!/usr/bin/env bash
-                    docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
-                    docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
-                '''
-            }
-        }
+        withCredentials([usernamePassword(credentialsId: 'caas_docker_hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+            sh'''
+                #!/usr/bin/env bash
+                docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                docker pull ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
+            '''
+        } 
     }
 
     stage("benchmark") {
