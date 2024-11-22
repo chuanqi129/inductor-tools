@@ -1,5 +1,5 @@
 env.DOCKER_IMAGE_NAMESPACE = 'gar-registry.caas.intel.com/pytorch/pt_inductor'
-env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
+env.BASE_IMAGE = 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'gemm_template_log'
 if (env.NODE_LABEL == "0") {
     if (env.precision == "float32") {
@@ -8,6 +8,8 @@ if (env.NODE_LABEL == "0") {
         env.NODE_LABEL = "inductor-gnr-local-tas-sh"
     }
 }
+
+mail_list = params.mail_list ?: "lifeng.a.wang@intel.com"
 
 def cleanup(){
     try {
@@ -96,7 +98,7 @@ node(us_node){
                 subject: "Inductor TAS pipeline Pre-Check failed",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
-                to: maillist,
+                to: "$mail_list",
                 body: '${FILE, path="torch_clone.log"}'
             )
             throw e
@@ -183,7 +185,7 @@ node(NODE_LABEL){
                 subject: "Inductor TAS pipeline Pre-Check failed",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
-                to: maillist,
+                to: "$mail_list",
                 body: '${FILE, path="image_build.log"}'
             )
             archiveArtifacts "image_build.log"
