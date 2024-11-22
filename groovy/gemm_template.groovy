@@ -198,6 +198,7 @@ node(NODE_LABEL){
                 -v ~/.cache:/root/.cache \
                 -v ${WORKSPACE}/${LOG_DIR}:/workspace/pytorch/${LOG_DIR} \
                 ${DOCKER_IMAGE_NAMESPACE}:${docker_image_tag}
+            docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
             docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR}"
             docker exec -i inductor_test bash -c "python -m pytest -v test/inductor/test_cpu_select_algorithm.py 2>&1 | tee ${LOG_DIR}/gemm_ut.log"
             docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
