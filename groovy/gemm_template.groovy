@@ -207,6 +207,28 @@ node(NODE_LABEL){
             }
     }
 
+    stage("Sent Email"){
+        if (fileExists("${WORKSPACE}/${LOG_DIR}/gemm_ut.log") == true){
+            emailext(
+                subject: "GEMM Template Weekly Test Report",
+                mimeType: "text/html",
+                attachmentsPattern: "**/${LOG_DIR}/*.xlsx",
+                from: "pytorch_inductor_val@intel.com",
+                to: "$mail_list",
+                body: "\${FILE,path=\"${env.LOG_DIR}/gemm_ut.log\" lines=1 start=last}"
+            )
+        }else{
+            emailext(
+                subject: "GEMM Template Weekly Test Failed",
+                mimeType: "text/html",
+                from: "pytorch_inductor_val@intel.com",
+                to: "$mail_list",
+                body: 'Job build failed, please double check in ${BUILD_URL}'
+            )
+        }
+        
+    }
+
     stage("stop docker") {
         sh '''
             #!/usr/bin/env bash
