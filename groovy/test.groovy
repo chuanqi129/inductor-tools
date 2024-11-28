@@ -29,7 +29,7 @@ node(NODE_LABEL){
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: "$mail_list",
-                body: '${FILE,path="${env.LOG_DIR}/gemm_ut.log" lines=1 start=last}'
+                body: readFile("${env.LOG_DIR}/gemm_ut.log").readLines().last()
             )
         }else{
             emailext(
