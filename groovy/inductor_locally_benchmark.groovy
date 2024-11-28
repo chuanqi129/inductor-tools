@@ -382,6 +382,7 @@ node(NODE_LABEL){
             }else{
                 sh '''
                     #!/usr/bin/env bash
+                    docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
@@ -395,7 +396,7 @@ node(NODE_LABEL){
                         -m ${THREADS} \
                         --precision ${precision} \
                         --url ${BUILD_URL} \
-                        --image_tag ${target}_aws \
+                        --image_tag ${docker_image_tag} \
                         --suite ${suite} \
                         --infer_or_train ${infer_or_train} \
                         --shape ${shape} \
