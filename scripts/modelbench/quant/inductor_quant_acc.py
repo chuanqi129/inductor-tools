@@ -57,7 +57,7 @@ def run_model(model_name, args):
     if args.cpp_wrapper:
         print("using cpp_wrapper")
         torchinductor.config.cpp_wrapper = args.cpp_wrapper
-    valdir = "/home3/yifeng/datasets/imagenet/val/"
+    valdir = "/workspace/benchmark/imagenet/val/"
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     val_loader = torch.utils.data.DataLoader(
