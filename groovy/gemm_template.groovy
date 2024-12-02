@@ -210,7 +210,7 @@ node(NODE_LABEL){
     stage("Sent Email"){
         if (fileExists("${WORKSPACE}/${LOG_DIR}/gemm_ut.log") == true){
             emailext(
-                subject: "GEMM Template Weekly Test Report",
+                subject: "[Regular Weekly]-GEMM Template Test Report",
                 mimeType: "text/html",
                 attachmentsPattern: "**/${LOG_DIR}/gemm_ut.log",
                 from: "pytorch_inductor_val@intel.com",
@@ -219,7 +219,7 @@ node(NODE_LABEL){
             )
         }else{
             emailext(
-                subject: "GEMM Template Weekly Test Failed",
+                subject: "[Regular Weekly]-GEMM Template Test Failed",
                 mimeType: "text/html",
                 from: "pytorch_inductor_val@intel.com",
                 to: "$mail_list",
