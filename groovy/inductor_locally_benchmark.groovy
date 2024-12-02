@@ -172,8 +172,8 @@ node(NODE_LABEL){
         println('prepare......')
         // TODO: implement report_only logic
         if  ("${report_only}" == "false") {
-            // cleanup()
-            // pruneOldImage()
+            cleanup()
+            pruneOldImage()
             retry(3){
                 sleep(60)
                 checkout([
@@ -285,13 +285,13 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
                 docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
-                #if [ $test_mode == "inference" ]; then
-                #    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite ${test_ENV} $extra_param "
-                #elif [ $test_mode == "training_full" ]; then
-                #    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite ${test_ENV} $extra_param"
-                #elif [ $test_mode == "training" ]; then
-                #    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} ${test_ENV} $extra_param"
-                #fi
+                if [ $test_mode == "inference" ]; then
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite ${test_ENV} $extra_param "
+                elif [ $test_mode == "training_full" ]; then
+                    docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite ${test_ENV} $extra_param"
+                elif [ $test_mode == "training" ]; then
+                    docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} ${test_ENV} $extra_param"
+                fi
                 docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
             '''
         }
@@ -353,7 +353,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                     #!/usr/bin/env bash
-                    docker_image_tag=`cat ${WORKSPACE}/raw_log/docker_image_tag.log`
+                    docker_image_tag=`cat ${WORKSPACE}/docker_image_tag.log`
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
@@ -382,7 +382,7 @@ node(NODE_LABEL){
             }else{
                 sh '''
                     #!/usr/bin/env bash
-                    docker_image_tag=`cat ${WORKSPACE}/raw_log/docker_image_tag.log`
+                    docker_image_tag=`cat ${WORKSPACE}/docker_image_tag.log`
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
