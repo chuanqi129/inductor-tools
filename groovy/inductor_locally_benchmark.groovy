@@ -353,7 +353,7 @@ node(NODE_LABEL){
                 )           
                 sh '''
                     #!/usr/bin/env bash
-                    docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                    docker_image_tag=`cat ${WORKSPACE}/docker_image_tag.log`
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
@@ -382,7 +382,7 @@ node(NODE_LABEL){
             }else{
                 sh '''
                     #!/usr/bin/env bash
-                    docker_image_tag=`cat ${LOG_DIR}/docker_image_tag.log`
+                    docker_image_tag=`cat ${WORKSPACE}/docker_image_tag.log`
                     cd ${WORKSPACE}
                     if [ "${precision}" == "amp_fp16" ];then
                         export precision='amp'
