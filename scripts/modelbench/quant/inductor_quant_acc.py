@@ -121,20 +121,33 @@ def run_model(model_name, args):
             optimized_model = torch.compile(converted_model)
     elif args.is_fp32:
         print("using")
-        model = model.to('xpu')
+
+        if (args.device == 'xpu'):
+            model = model.to('xpu')
+
         with torch.no_grad():
             optimized_model = torch.compile(model)     
     else:
         print("using ptq")
-        model = model.to('xpu')
-        example_inputs = (x.to('xpu'),)
+
+        if (args.device == 'xpu'):
+            model = model.to('xpu')
+            example_inputs = (x.to('xpu'),)
+
         with torch.no_grad():
             exported_model = capture_pre_autograd_graph(
                 model,
                 example_inputs
             )
-            quantizer = xpuiq.XPUInductorQuantizer()
-            quantizer.set_global(xpuiq.get_default_xpu_inductor_quantization_config())
+
+            quantizer = None
+            if (args.device == 'xpu'):
+                quantizer = xpuiq.XPUInductorQuantizer()
+                quantizer.set_global(xpuiq.get_default_xpu_inductor_quantization_config())
+            else:
+                quantizer = xiq.X86InductorQuantizer()
+                quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
+
             # PT2E Quantization flow
             prepared_model = prepare_pt2e(exported_model, quantizer)
             # Calibration
@@ -149,8 +162,11 @@ def run_model(model_name, args):
             #acc1, acc5 = accuracy(output, target, topk=(1, 5))
             #top1.update(acc1[0], images.size(0))
             #top5.update(acc5[0], images.size(0))
-            images = images.to('xpu')
-            target = target.to('xpu')
+
+            if (args.device == 'xpu'):
+                images = images.to('xpu')
+                target = target.to('xpu')
+
             quant_output = optimized_model(images)
             quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
             quant_top1.update(quant_acc1[0], images.size(0))
@@ -167,6 +183,11 @@ if __name__ == "__main__":
     model_list=["resnet50"]
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--device",
+        default='xpu',
+        help="Device to run",
+    )
     parser.add_argument(
         "--quantize",
         action='store_true',
