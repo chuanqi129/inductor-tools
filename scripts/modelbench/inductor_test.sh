@@ -18,8 +18,10 @@ BACKEND=${8:-inductor}
 # Test Mode
 TEST_MODE=${9:-inference}
 SUITE=${10:-all}
+# Extra ENV used for test
+TEST_ENV=${11:-""}
 # Easy to enbale new test
-EXTRA=${11}
+EXTRA=${12}
 
 mkdir -p $LOG_DIR
 
@@ -51,6 +53,12 @@ if [[ ${TEST_MODE} == "training_full" ]]; then
     sed -i "/SKIP_TRAIN = {/a\    \"hf_GPT2_large\"," benchmarks/dynamo/torchbench.py
 fi
 
+DT_extra=''
+if [[ "$DT" == "amp_fp16" ]]; then
+    DT=amp
+    DT_extra="--amp-dtype float16 "
+fi
+
 Flag_extra="$EXTRA "
 if [[ $BACKEND == "aot_inductor" ]]; then
     echo "Testing with aot_inductor."
@@ -63,6 +71,50 @@ elif [[ $BACKEND == "inductor" ]]; then
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
     Flag_extra+="--freezing "
+elif [[ $BACKEND == "inductor_max_autotune" ]]; then
+    echo "Setting freezing for inductor with max autotune by default."
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+elif [[ $BACKEND == "triton_cpu" ]]; then
+    echo "Testing with Triton CPU backend"
+    export TORCHINDUCTOR_FREEZING=1
+    Flag_extra+="--freezing "
+
+    # build triton-cpu
+    # LD_PRELOAD will cause triton-cpu built failure.
+    unset LD_PRELOAD
+    export TRITON_CPU_BACKEND=1
+    export BACKEND="inductor"
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/torchbench.py
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/huggingface.py
+    sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/timm_models.py
+    #pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
+    cd /workspace
+    git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
+    cd triton-cpu
+    pip install ninja cmake wheel
+    git submodule sync && git submodule update --init --recursive
+    pip install -e python
+
+    # Python <= 3.8 has issue:
+    # AttributeError: module 'importlib.resources' has no attribute 'files'
+    full_version=$(python --version 2>&1 | cut -d' ' -f2)
+    major_version=$(echo $full_version | cut -d'.' -f1)
+    minor_version=$(echo $full_version | cut -d'.' -f2)
+    if [ "$major_version" -eq 3 ] && [ "$minor_version" -eq 8 ]; then
+        echo "Python 3.8 is installed."
+        sed -i 's/importlib.resources/importlib_resources/g' "/opt/conda/lib/python3.8/site-packages/triton/backends/cpu/driver.py"
+    fi
+
+    # build sleef
+    export TRITON_CPU_USE_SLEEF="/workspace/pytorch/sleef/build/lib/"
+    cd /workspace/pytorch
+    git clone --depth 1 https://github.com/shibatch/sleef.git
+    cd sleef && mkdir build
+    cmake -S . -B build
+    cmake --build build -j --clean-first
+    cd /workspace/pytorch
+    export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 fi
 
 Shape_extra=""
@@ -83,19 +135,43 @@ else
     SUITE="--suites=${SUITE}"
 fi
 
+if [[ "${TEST_ENV}" != "" ]]; then
+    echo "${TEST_ENV}"
+    IFS=',' read -ra ADDR <<< "$TEST_ENV"
+    for i in "${ADDR[@]}"; do
+        export "$i"
+    done
+else
+    echo "no TEST_ENV"
+fi
+
+cpu_allowed_list=$(cat /proc/self/status | grep Cpus_allowed_list | awk '{print $2}')
+start_core=$(echo ${cpu_allowed_list} | awk -F- '{print $1}')
+mem_allowed_list=$(cat /proc/self/status | grep Mems_allowed_list | awk '{print $2}')
+CORES_PER_SOCKET=$(lscpu | grep Core | awk '{print $4}')
+NUM_SOCKET=$(lscpu | grep "Socket(s)" | awk '{print $2}')
+NUM_NUMA=$(lscpu | grep "NUMA node(s)" | awk '{print $3}')
+CORES=$(expr $CORES_PER_SOCKET \* $NUM_SOCKET / $NUM_NUMA)
+end_core=$(expr ${start_core} + ${CORES} - 1)
+cpu_allowed_list="${start_core}-${end_core}"
+if [[ ${mem_allowed_list} =~ '-' ]];then
+    mem_allowed_list=$(echo ${mem_allowed_list} | awk -F- '{print $1}')
+fi
+
 # multi-threads
 multi_threads_test() {
-    CORES=$(lscpu | grep Core | awk '{print $4}')
-    export OMP_NUM_THREADS=$CORES
+    # Stock Pytorch launcher will set OMP_NUM_THREADS
+    # CORES=$(lscpu | grep Core | awk '{print $4}')
+    export OMP_NUM_THREADS=${CORES}
     timestamp=$(date +%Y%m%d_%H%M%S)
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python benchmarks/dynamo/runner.py --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/multi_threads_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--node_id 0" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
+        numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} python benchmarks/dynamo/runner.py --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --extra-args="--timeout 9000 ${Shape_extra} ${Flag_extra} ${DT_extra}" --channels-last --output-dir=${LOG_DIR}/multi_threads_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/multi_threads_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi
@@ -108,11 +184,11 @@ single_thread_test() {
     if [[ $CHANNELS == "first" ]]; then
         # channels first
         echo "Channels first testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        numactl -C ${start_core} -m ${mem_allowed_list} python benchmarks/dynamo/runner.py --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/single_thread_cf_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     elif [[ $CHANNELS == "last" ]]; then
         # channels last
         echo "Channels last testing...."
-        python benchmarks/dynamo/runner.py --enable_cpu_launcher --cpu_launcher_args "--core_list 0 --ncores_per_instance 1" --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
+        numactl -C ${start_core} -m ${mem_allowed_list} python benchmarks/dynamo/runner.py --dashboard-archive-path=${LOG_DIR}/archive --devices=cpu --dtypes=${DT} --${TEST_MODE} --compilers=${BACKEND} $SUITE --channels-last --batch_size=1 --threads 1 --extra-args="--timeout 9000 ${Shape_extra} ${Wrapper_extra} ${Flag_extra} ${DT_extra}" --output-dir=${LOG_DIR}/single_thread_cl_logs_${timestamp} 2>&1 | tee ${LOG_DIR}/single_thread_model_bench_log_${timestamp}.log
     else
         echo "Please check channels foramt with first / last."
     fi

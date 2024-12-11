@@ -185,7 +185,7 @@ node(NODE_LABEL){
         } else {
             def target_params = getUpstreamParameters(_target_job, _target_sc)
             def ref_params = getUpstreamParameters(_refer_job, _refer_sc)
-            def params_title_list = ['shape', 'WRAPPER', 'suite', 'THREADS']
+            def params_title_list = ['shape', 'WRAPPER', 'suite', 'precision', 'THREADS']
             for (param_title in params_title_list) {
                 if (target_params.get(param_title) != ref_params.get(param_title)) {
                     param_compare_flag = "FAILED"
@@ -253,9 +253,6 @@ node(NODE_LABEL){
             fi
             # Install dependencies
             pip install scipy datacompy PyGithub styleframe pandas bs4 requests
-            if [ "${_precision}" == "amp_fp16" ];then
-                export _precision='amp'
-            fi
             cp scripts/modelbench/report.py ${WORKSPACE}
             if [ ${_cppwp_gm} == 'True' ];then
                 python report.py -r ${_refer_job}_${_refer_sc} -t ${_target_job}_${_target_sc} -m ${thread} --md_off --url ${BUILD_URL} --precision ${_precision} --cppwrapper_gm --mt_interval_start ${_mt_start} --mt_interval_end ${_mt_end} --st_interval_start ${_st_start} --st_interval_end ${_st_end} --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${shape} --wrapper ${wrapper} --torch_repo ${torch_repo} --torch_branch ${torch_branch}  --backend ${backend} --threshold ${threshold} --ref_backend ${ref_backend} 

@@ -124,7 +124,7 @@ def AdditionalInfo():
         <ol><table><tr><td>Build url:&nbsp;</td><td>{args.url}</td></tr></table></ol> \
             <p>SW Info:</p><ol><table> \
                 <tbody> \
-                    <tr><td>docker image:&nbsp;</td><td>ccr-registry.caas.intel.com/pytorch/pt_inductor:nightly</td></tr> \
+                    <tr><td>docker image:&nbsp;</td><td>gar-registry.caas.intel.com/pytorch/pt_inductor:nightly</td></tr> \
                     <tr><td>StockPT:&nbsp;</td><td><a href={url_list[1]}> {commit_list[1]}</a></td></tr> \
                     <tr><td>TORCH_VISION:&nbsp;</td><td><a href={url_list[2]}> {commit_list[2]} </a></td></tr> \
                     <tr><td>TORCH_TEXT:&nbsp;</td><td><a href={url_list[3]}> {commit_list[3]} </a></td></tr> \

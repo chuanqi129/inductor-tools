@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=ubuntu:22.04
-FROM ${BASE_IMAGE} AS dev-base
+FROM cruizba/ubuntu-dind:latest
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
         build-essential \
         ca-certificates \
         ccache \
@@ -19,12 +20,13 @@ RUN apt-get update && \
         pybind11-dev \
         wget \
         vim \
+        openjdk-11-jre-headless \
     && rm -rf /var/lib/apt/lists/*
+
 RUN /usr/sbin/update-ccache-symlinks
 RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
-FROM dev-base AS conda
 ARG PYTHON_VERSION=3.10
 RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
     chmod +x ~/miniforge.sh && \
@@ -32,7 +34,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
     ~/miniforge.sh -b -p /opt/conda && \
     rm ~/miniforge.sh && \
     /opt/conda/bin/conda config --set channel_priority strict && \
-    /opt/conda/bin/conda config --append channels intel && \
+    /opt/conda/bin/conda config --append channels https://software.repos.intel.com/python/conda/ && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
         astunparse \
         cffi \
@@ -41,7 +43,10 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         dataclasses \
         future \
         git-lfs \
+        intel-openmp \
         ipython \
+        mkl \
+        mkl-include \
         ninja \
         numpy \
         requests \
@@ -53,25 +58,18 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         pyyaml \
         setuptools \
         jemalloc \
-        openssl \
+        openssl \      
         weasyprint && \
-    /opt/conda/bin/conda clean -ya && \
+    pip install datacompy scipy styleframe bs4 PyGithub && \
+    /opt/conda/bin/conda clean -ya && \    
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
 
-FROM dev-base AS image
-COPY --from=conda /opt/conda /opt/conda
-RUN pip install torch==2.0.1 torchvision torchaudio torchdata torchtext --no-deps --index-url https://download.pytorch.org/whl/cpu
-ARG TORCH_BENCH_BRANCH=main
-ARG TORCH_BENCH_COMMIT=${TORCH_BENCH_BRANCH}
-ARG HF_HUB_TOKEN=hf_xxx
-ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
-WORKDIR /workspace
-RUN git clone -b ${TORCH_BENCH_BRANCH} https://github.com/pytorch/benchmark.git && \
-    cd benchmark && git checkout ${TORCH_BENCH_COMMIT} && pip install --no-deps -r requirements.txt && \
-    pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 sympy mpmath==1.3.0 && \
-    python install.py --continue_on_fail && \
-    # Need update numpy version to avoid some models crash
-    pip install --upgrade numpy
-WORKDIR /workspace/benchmark
+RUN ln -fs /bin/bash /bin/sh && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5A-base64.crt && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelCA5B-base64.crt && \
+    wget http://owrdropbox.intel.com/dropbox/public/Ansible/certificates/IntelSHA256RootCA-base64.crt && \
+    mv Intel* /usr/local/share/ca-certificates/ && \
+    update-ca-certificates
 
+WORKDIR /root/workspace

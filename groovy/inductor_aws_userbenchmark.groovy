@@ -97,12 +97,6 @@ if ('test_mode' in params) {
 }
 echo "test_mode: $test_mode"
 
-if (test_mode == "training_full") {
-    infer_or_train = "training"
-} else {
-    infer_or_train = test_mode
-}
-
 shape = 'static'
 if ('shape' in params) {
     echo "shape in params"
@@ -143,7 +137,7 @@ if ('IMAGE_BUILD_NODE' in params) {
 }
 echo "IMAGE_BUILD_NODE: $IMAGE_BUILD_NODE"
 
-BASE_IMAGE= 'ubuntu:22.04'
+BASE_IMAGE= 'ubuntu:20.04'
 if ('BASE_IMAGE' in params) {
     echo "BASE_IMAGE in params"
     if (params.BASE_IMAGE != '') {
@@ -161,6 +155,15 @@ if ('TORCH_REPO' in params) {
 }
 echo "TORCH_REPO: $TORCH_REPO"
 
+TORCH_BRANCH= 'nightly'
+if ('TORCH_BRANCH' in params) {
+    echo "TORCH_BRANCH in params"
+    if (params.TORCH_BRANCH != '') {
+        TORCH_BRANCH = params.TORCH_BRANCH
+    }
+}
+echo "TORCH_BRANCH: $TORCH_BRANCH"
+
 TORCH_COMMIT= 'nightly'
 if ('TORCH_COMMIT' in params) {
     echo "TORCH_COMMIT in params"
@@ -169,6 +172,15 @@ if ('TORCH_COMMIT' in params) {
     }
 }
 echo "TORCH_COMMIT: $TORCH_COMMIT"
+
+ONEDNN_BRANCH= 'default'
+if ('ONEDNN_BRANCH' in params) {
+    echo "ONEDNN_BRANCH in params"
+    if (params.ONEDNN_BRANCH != '') {
+        ONEDNN_BRANCH = params.ONEDNN_BRANCH
+    }
+}
+echo "ONEDNN_BRANCH: $ONEDNN_BRANCH"
 
 DYNAMO_BENCH= "$TORCH_COMMIT"
 if ('DYNAMO_BENCH' in params) {
@@ -179,6 +191,15 @@ if ('DYNAMO_BENCH' in params) {
 }
 echo "DYNAMO_BENCH: $DYNAMO_BENCH"
 
+TORCH_AUDIO_BRANCH= 'main'
+if ('TORCH_AUDIO_BRANCH' in params) {
+    echo "TORCH_AUDIO_BRANCH in params"
+    if (params.TORCH_AUDIO_BRANCH != '') {
+        TORCH_AUDIO_BRANCH = params.TORCH_AUDIO_BRANCH
+    }
+}
+echo "TORCH_AUDIO_BRANCH: $TORCH_AUDIO_BRANCH"
+
 AUDIO= 'default'
 if ('AUDIO' in params) {
     echo "AUDIO in params"
@@ -187,6 +208,15 @@ if ('AUDIO' in params) {
     }
 }
 echo "AUDIO: $AUDIO"
+
+TORCH_TEXT_BRANCH= 'main'
+if ('TORCH_TEXT_BRANCH' in params) {
+    echo "TORCH_TEXT_BRANCH in params"
+    if (params.TORCH_TEXT_BRANCH != '') {
+        TORCH_TEXT_BRANCH = params.TORCH_TEXT_BRANCH
+    }
+}
+echo "TORCH_TEXT_BRANCH: $TORCH_TEXT_BRANCH"
 
 TEXT= 'default'
 if ('TEXT' in params) {
@@ -197,6 +227,15 @@ if ('TEXT' in params) {
 }
 echo "TEXT: $TEXT"
 
+TORCH_VISION_BRANCH= 'main'
+if ('TORCH_VISION_BRANCH' in params) {
+    echo "TORCH_VISION_BRANCH in params"
+    if (params.TORCH_VISION_BRANCH != '') {
+        TORCH_VISION_BRANCH = params.TORCH_VISION_BRANCH
+    }
+}
+echo "TORCH_VISION_BRANCH: $TORCH_VISION_BRANCH"
+
 VISION= 'default'
 if ('VISION' in params) {
     echo "VISION in params"
@@ -206,6 +245,15 @@ if ('VISION' in params) {
 }
 echo "VISION: $VISION"
 
+TORCH_DATA_BRANCH= 'main'
+if ('TORCH_DATA_BRANCH' in params) {
+    echo "TORCH_DATA_BRANCH in params"
+    if (params.TORCH_DATA_BRANCH != '') {
+        TORCH_DATA_BRANCH = params.TORCH_DATA_BRANCH
+    }
+}
+echo "TORCH_DATA_BRANCH: $TORCH_DATA_BRANCH"
+
 DATA= 'default'
 if ('DATA' in params) {
     echo "DATA in params"
@@ -214,6 +262,15 @@ if ('DATA' in params) {
     }
 }
 echo "DATA: $DATA"
+
+TORCH_BENCH_BRANCH= 'main'
+if ('TORCH_BENCH_BRANCH' in params) {
+    echo "TORCH_BENCH_BRANCH in params"
+    if (params.TORCH_BENCH_BRANCH != '') {
+        TORCH_BENCH_BRANCH = params.TORCH_BENCH_BRANCH
+    }
+}
+echo "TORCH_BENCH_BRANCH: $TORCH_BENCH_BRANCH"
 
 TORCH_BENCH= 'default'
 if ('TORCH_BENCH' in params) {
@@ -290,7 +347,6 @@ echo "dashboard_title: $dashboard_title"
 env._terminate_ins = "$terminate_instance"
 env._instance_id = "$instance_ids"
 env._instance_name = "$instance_name"
-env._bench_machine = "AWS"
 env._reference = "$refer_build"
 env._test_mode = "$test_mode"
 env._backend = "$backend"
@@ -304,8 +360,10 @@ env._report_only = "$report_only"
 env._dashboard_title = "$dashboard_title"
 
 env._TORCH_REPO = "$TORCH_REPO"
+env._TORCH_BRANCH = "$TORCH_BRANCH"
 env._TORCH_COMMIT = "$TORCH_COMMIT"
 env._DYNAMO_BENCH = "$DYNAMO_BENCH"
+env._ONEDNN_BRANCH = "$ONEDNN_BRANCH"
 
 env._AUDIO = "$AUDIO"
 env._TEXT = "$TEXT"
@@ -317,7 +375,6 @@ env._CHANNELS = "$CHANNELS"
 env._WRAPPER = "$WRAPPER"
 env._HF_TOKEN = "$HF_TOKEN"
 env._suite = "$suite"
-env._infer_or_train = "$infer_or_train"
 
 node(NODE_LABEL){
     stage("Find or create instance"){
@@ -373,40 +430,16 @@ node(NODE_LABEL){
             scp ${WORKSPACE}/scripts/aws/docker_prepare.sh ubuntu@${current_ip}:/home/ubuntu
             ssh ubuntu@${current_ip} "bash docker_prepare.sh"
             scp ${WORKSPACE}/scripts/modelbench/pkill.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/scripts/modelbench/entrance.sh ubuntu@${current_ip}:/home/ubuntu
-            scp ${WORKSPACE}/docker/Dockerfile ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/launch.sh ubuntu@${current_ip}:/home/ubuntu/docker
-            scp ${WORKSPACE}/scripts/modelbench/version_collect.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/entrance_userbm.sh ubuntu@${current_ip}:/home/ubuntu
+            scp ${WORKSPACE}/docker/Dockerfile.userbm ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/launch_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/version_collect_userbm.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_test.sh ubuntu@${current_ip}:/home/ubuntu/docker
             scp ${WORKSPACE}/scripts/modelbench/inductor_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/cpu_usebm.sh ubuntu@${current_ip}:/home/ubuntu/docker
+            scp ${WORKSPACE}/scripts/userbenchmark/cpu_usebm_train.sh ubuntu@${current_ip}:/home/ubuntu/docker
             ssh ubuntu@${current_ip} "bash pkill.sh"
-            ssh ubuntu@${current_ip} " bash entrance.sh \
-                        TAG=${_target} \
-                        PRECISION=${_precision} \
-                        TEST_MODE=${_test_mode} \
-                        SHAPE=${_shape} \
-                        TORCH_REPO=${_TORCH_REPO} \
-                        TORCH_COMMIT=${_TORCH_COMMIT} \
-                        DYNAMO_BENCH=${_DYNAMO_BENCH} \
-                        AUDIO=${_AUDIO} \
-                        TEXT=${_TEXT} \
-                        VISION=${_VISION} \
-                        DATA=${_DATA} \
-                        TORCH_BENCH=${_TORCH_BENCH} \
-                        THREADS=${_THREADS} \
-                        CHANNELS=${_CHANNELS} \
-                        WRAPPER=${_WRAPPER} \
-                        HF_TOKEN=${_HF_TOKEN} \
-                        BACKEND=${_backend} \
-                        SUITE=${_suite} \
-                        MODEL=resnet50 \
-                        TORCH_START_COMMIT=${_TORCH_COMMIT} \
-                        TORCH_END_COMMIT=${_TORCH_COMMIT} \
-                        SCENARIO=accuracy \
-                        KIND=crash \
-                        PERF_RATIO="-1.1" \
-                        EXTRA=${_extra_param} \
-                        &>/dev/null & " &
+            ssh ubuntu@${current_ip} "nohup bash entrance_userbm.sh ${_target} ${_precision} ${_test_mode} ${_shape} ${_TORCH_REPO} ${_TORCH_BRANCH} ${_TORCH_COMMIT} ${_ONEDNN_BRANCH} ${_DYNAMO_BENCH} ${_AUDIO} ${_TEXT} ${_VISION} ${_DATA} ${_TORCH_BENCH} ${_THREADS} ${_CHANNELS} ${_WRAPPER} ${_HF_TOKEN} ${_backend} ${_suite} resnet50 ${_TORCH_COMMIT} ${_TORCH_COMMIT} accuracy crash ${_extra_param} &>/dev/null &" &
             '''
         }
     }
@@ -416,11 +449,17 @@ node(NODE_LABEL){
                     [$class: 'StringParameterValue', name: 'NODE_LABEL', value: "${IMAGE_BUILD_NODE}"],
                     [$class: 'StringParameterValue', name: 'BASE_IMAGE', value: "${BASE_IMAGE}"],                
                     [$class: 'StringParameterValue', name: 'PT_REPO', value: "${TORCH_REPO}"],
+                    [$class: 'StringParameterValue', name: 'PT_BRANCH', value: "${TORCH_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'PT_COMMIT', value: "${TORCH_COMMIT}"],
+                    [$class: 'StringParameterValue', name: 'TORCH_VISION_BRANCH', value: "${TORCH_VISION_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_VISION_COMMIT', value: "${VISION}"],
+                    [$class: 'StringParameterValue', name: 'TORCH_TEXT_BRANCH', value: "${TORCH_TEXT_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_TEXT_COMMIT', value: "${TEXT}"],
+                    [$class: 'StringParameterValue', name: 'TORCH_DATA_BRANCH', value: "${TORCH_DATA_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_DATA_COMMIT', value: "${DATA}"],
+                    [$class: 'StringParameterValue', name: 'TORCH_AUDIO_BRANCH', value: "${TORCH_AUDIO_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_AUDIO_COMMIT', value: "${AUDIO}"],
+                    [$class: 'StringParameterValue', name: 'TORCH_BENCH_BRANCH', value: "${TORCH_BENCH_BRANCH}"],
                     [$class: 'StringParameterValue', name: 'TORCH_BENCH_COMMIT', value: "${TORCH_BENCH}"],
                     [$class: 'StringParameterValue', name: 'BENCH_COMMIT', value: "${DYNAMO_BENCH}"],
                     [$class: 'StringParameterValue', name: 'tag', value: "${env._target}_aws"],
@@ -442,7 +481,7 @@ node(NODE_LABEL){
         for t in {1..100}
         do
             current_ip=`$aws ec2 describe-instances --instance-ids ${ins_id} --profile pytorch --query 'Reservations[*].Instances[*].PublicDnsName' --output text`
-            timeout 2m ssh -o StrictHostKeyChecking=no ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
+            timeout 2m ssh ubuntu@${current_ip} "test -f /home/ubuntu/docker/finished_${_precision}_${_test_mode}_${_shape}.txt"
             if [ $? -eq 0 ]; then
                 if [ -d ${WORKSPACE}/${_target} ]; then
                     rm -rf ${WORKSPACE}/${_target}
@@ -489,72 +528,27 @@ node(NODE_LABEL){
         }
     }
     stage("generate report"){
-        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
-        {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true,
-                    target: "refer",
-                )           
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE}
-                if [ ${_dash_board} == "true" ]; then
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --precision ${_precision} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend} && rm -rf refer
-                else
-                    cp scripts/modelbench/report.py ${WORKSPACE} && python report.py -r refer -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend} && rm -rf refer
-                fi
-                '''
-            }else{
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report.py ${WORKSPACE}
-                if [ ${_dash_board} == "true" ]; then
-                    python report.py -t ${_target} -m ${_THREADS} --gh_token ${_gh_token} --dashboard ${_dashboard_title} --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend}
-                else
-                    python report.py -t ${_target} -m ${_THREADS} --md_off --precision ${_precision} --url ${BUILD_URL} --image_tag ${_target}_aws --suite ${_suite} --infer_or_train ${_infer_or_train} --shape ${_shape} --wrapper ${_WRAPPER} --torch_repo ${_TORCH_REPO} --backend ${_backend}
-                fi
-                '''
-            }
-        }
-        if ("${test_mode}" == "training")
-        {
-            if(refer_build != '0') {
-                copyArtifacts(
-                    projectName: currentBuild.projectName,
-                    selector: specific("${refer_build}"),
-                    fingerprintArtifacts: true
-                )           
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
-                cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -r refer -t ${_target} && rm -rf refer
-                '''
-            }else{
-                sh '''
-                #!/usr/bin/env bash
-                cd ${WORKSPACE} && cp scripts/modelbench/report_train.py ${WORKSPACE} && python report_train.py -t ${_target}
-                '''
-            }
+        if(refer_build != '0') {
+            copyArtifacts(
+                projectName: currentBuild.projectName,
+                selector: specific("${refer_build}"),
+                fingerprintArtifacts: true
+            )           
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx
+            rm -rf refer
+            mkdir -p refer && cp -r inductor_log refer && rm -rf inductor_log
+            cp scripts/userbenchmark/report_userbm.py ${WORKSPACE} && python report_userbm.py -r refer -t ${_target} --url ${BUILD_URL}
+            '''
+        }else{
+            sh '''
+            #!/usr/bin/env bash
+            cd ${WORKSPACE} && cp scripts/userbenchmark/report_userbm.py ${WORKSPACE}
+            python report_userbm.py -t ${_target} --url ${BUILD_URL}
+            '''
         }
     }    
-
-    // stage("regression issue create")
-    // {
-    //     try{
-    //         sh '''
-    //         #!/usr/bin/env bash
-    //         source activate dev
-    //         cd ${HOME}/workspace/pytorch
-    //         git pull origin main
-    //         gh issue create --title "[inductor][cpu]Perf regression ${_precision}_${_test_mode}_${_shape}_${_WRAPPER} (Auto_generated" --body-file ${WORKSPACE}/${_target}/inductor_perf_regression.html
-    //         '''
-    //     }catch(err){
-    //         echo err.getMessage()   
-    //     }
-    // }
 
     stage('archiveArtifacts') {
         // Remove raw log fistly in case inducto_log will be artifact more than 2 times
@@ -562,7 +556,7 @@ node(NODE_LABEL){
         #!/usr/bin/env bash
         rm -rf ${WORKSPACE}/raw_log
         '''
-        if ("${test_mode}" == "inference" || "${test_mode}" == "training_full")
+        if ("${test_mode}" == "user_benchmark")
         {
             sh '''
             #!/usr/bin/env bash
@@ -581,12 +575,6 @@ node(NODE_LABEL){
             '''
         } 
         archiveArtifacts artifacts: "**/inductor_log/**", fingerprint: true
-        if (fileExists("${WORKSPACE}/guilty_commit_search_model_list.csv")) {
-            archiveArtifacts  "guilty_commit_search*"
-        }
-        if (fileExists("${WORKSPACE}/all_model_list.csv")) {
-            archiveArtifacts  "all_model_list.csv"
-        }
     }
 
     stage("Sent Email"){
@@ -595,47 +583,23 @@ node(NODE_LABEL){
         }else{
             maillist="${default_mail}"
         }
-        if ("${test_mode}" == "inference")
-        {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_bench.html") == true){
-                emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(${env._bench_machine})_${env._target}",
-                    mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_bench.html"}'
-                )
-            }else{
-                emailext(
-                    subject: "Failure occurs in Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-(${env._bench_machine})_${env._target}",
-                    mimeType: "text/html",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: 'Job build failed, please double check in ${BUILD_URL}'
-                )
-            }
-        }//inference
-        if ("${test_mode}" == "training" || "${test_mode}" == "training_full")
-        {
-            if (fileExists("${WORKSPACE}/inductor_log/inductor_model_training_bench.html") == true){
-                emailext(
-                    subject: "Torchinductor-${env._backend}-${env._test_mode}-${env._precision}-${env._shape}-${env._WRAPPER}-Report(${env._bench_machine})_${env._target}",
-                    mimeType: "text/html",
-                    attachmentsPattern: "**/inductor_log/*.xlsx",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: '${FILE,path="inductor_log/inductor_model_training_bench.html"}'
-                )
-            }else{
-                emailext(
-                    subject: "Failure occurs in Torchinductor Training Benchmark (${env._bench_machine})_${env._target}",
-                    mimeType: "text/html",
-                    from: "pytorch_inductor_val@intel.com",
-                    to: maillist,
-                    body: 'Job build failed, please double check in ${BUILD_URL}'
-                )
-            }           
-        }//training training_full
+        if (fileExists("${WORKSPACE}/inductor_log/userbenchmark_model_bench.html") == true){
+            emailext(
+                subject: "Userbenchmark-Regular-Report(AWS)_${env._target}",
+                mimeType: "text/html",
+                attachmentsPattern: "**/inductor_log/*.xlsx",
+                from: "pytorch_inductor_val@intel.com",
+                to: maillist,
+                body: '${FILE,path="inductor_log/userbenchmark_model_bench.html"}'
+            )
+        }else{
+            emailext(
+                subject: "Failure occurs in Userbenchmark-Regular-Report(AWS)_${env._target}",
+                mimeType: "text/html",
+                from: "pytorch_inductor_val@intel.com",
+                to: maillist,
+                body: 'Job build failed, please double check in ${BUILD_URL}'
+            )
+        }
     }//email
 }
