@@ -2,7 +2,6 @@
 # TORCHINDUCTOR_FREEZING=1 python inductor_quant_acc.py
 import torch
 import torchvision.models as models
-import torch._dynamo as torchdynamo
 import torch._inductor as torchinductor
 import copy
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e, prepare_qat_pt2e
@@ -120,19 +119,16 @@ def run_model(model_name, args):
             # Lower into Inductor
             optimized_model = torch.compile(converted_model)
     elif args.is_fp32:
-        print("using")
-
-        if (args.device == 'xpu'):
-            model = model.to('xpu')
+        print("using fp32")
+        model = model.to(args.device)
 
         with torch.no_grad():
             optimized_model = torch.compile(model)     
     else:
         print("using ptq")
 
-        if (args.device == 'xpu'):
-            model = model.to('xpu')
-            example_inputs = (x.to('xpu'),)
+        model = model.to(args.device)
+        example_inputs = (x.to(args.device),)
 
         with torch.no_grad():
             exported_model = capture_pre_autograd_graph(
@@ -163,9 +159,8 @@ def run_model(model_name, args):
             #top1.update(acc1[0], images.size(0))
             #top5.update(acc5[0], images.size(0))
 
-            if (args.device == 'xpu'):
-                images = images.to('xpu')
-                target = target.to('xpu')
+            images = images.to(args.device)
+            target = target.to(args.device)
 
             quant_output = optimized_model(images)
             quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
