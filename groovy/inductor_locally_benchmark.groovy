@@ -285,7 +285,7 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
                 docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
-                if [ $test_mode == "inference" ]; then
+                if [[ $test_mode == "inference" ]]; then
                     docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite ${test_ENV} $extra_param "
                 elif [ $test_mode == "training_full" ]; then
                     docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite ${test_ENV} $extra_param"
