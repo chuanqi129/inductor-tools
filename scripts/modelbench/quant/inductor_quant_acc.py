@@ -85,10 +85,10 @@ def run_model(model_name, args):
     if args.is_qat:
         print("using qat")
         for i, (images, _) in enumerate(cal_loader):
-            exported_model = capture_pre_autograd_graph(
+            exported_model = torch.export.export_for_training(
                 model,
                 (images,)
-            )
+            ).module()
             if i==10: break
         quantizer = xiq.X86InductorQuantizer()
         quantizer.set_global(xiq.get_default_x86_inductor_quantization_config(is_qat=True))
@@ -125,10 +125,10 @@ def run_model(model_name, args):
     else:
         print("using ptq")
         with torch.no_grad():
-            exported_model = capture_pre_autograd_graph(
+            exported_model = torch.export.export_for_training(
                 model,
                 example_inputs
-            )
+            ).module()
             quantizer = xiq.X86InductorQuantizer()
             quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
             # PT2E Quantization flow
