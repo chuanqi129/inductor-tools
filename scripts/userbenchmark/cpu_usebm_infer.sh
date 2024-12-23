@@ -26,7 +26,7 @@ fi
 #PTQ
 export TORCHINDUCTOR_FREEZING=1
 # numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torchdynamo inductor --quantization pt2e
-numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torchdynamo inductor --quantization auto_quant
+numactl -C ${start_core}-${end_core} -m ${mem_allowed_list} ${cmd_prefix} --torchdynamo inductor --quantization auto_quant --inductor-compile-mode max-autotune
 mv .userbenchmark/cpu PT2E
 mv PT2E userbenchmark_aws/
 
