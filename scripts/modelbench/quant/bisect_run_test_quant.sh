@@ -30,7 +30,8 @@ prepare_test() {
 
 run_perf_drop_test() {
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $DT $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
-    detected_value=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    #detected_value=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
+    detected_value=$(bash hf_quant_test.sh key1 torch_compile_quant_static | grep "7/7" | awk -F',|i' '{print $6}')
     result=$(echo $detected_value | awk '{ printf "%.5f", $1/1 }')
     echo "=====result: $result======="
     ratio=$(echo "$EXP_PERF $result" | awk '{ printf "%.2f\n", $1/$2 }')
