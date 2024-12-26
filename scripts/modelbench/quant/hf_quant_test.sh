@@ -87,6 +87,10 @@ elif  [ ${model_all} == "key" ]; then
     model_all="\
     text-classification+albert-base-v1,\
     "
+elif  [ ${model_all} == "key1" ]; then
+    model_all="\
+    text-classification+xlm-roberta-base,\
+    "
 fi
 
 model_list=($(echo "${model_all}" |sed 's/,/ /g'))
