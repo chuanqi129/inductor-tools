@@ -39,7 +39,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     git checkout ${END_COMMIT}
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
     # expected_perf=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
-    expected_perf=$(bash hf_quant_test.sh key1 torch_compile_quant_static | grep "7/7" | awk -F',|i' '{print $6}')
+    expected_perf=$(bash hf_quant_test.sh key1 torch_compile_quant_static | grep "eval_samples_per_second" | awk -F'=' '{print $2}')
     # expected_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Expected performance: $expected_perf " > ${LOG_DIR}/perf_drop.log
 
@@ -54,7 +54,7 @@ if [ "$SCENARIO" == "performance" ] && [ "$KIND" == "drop" ]; then
     # cd benchmark && git checkout main && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt` && cd /workspace/pytorch
     # detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $FREEZE | tail -n 1 | awk -F, '{print $5}')
     #current_perf=$(bash ./quant_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER | tail -n 1)
-    current_perf=$(bash hf_quant_test.sh key1 torch_compile_quant_static | grep "7/7" | awk -F',|i' '{print $6}')
+    current_perf=$(bash hf_quant_test.sh key1 torch_compile_quant_static | grep "eval_samples_per_second" | awk -F'=' '{print $2}')
     # current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf " >> ${LOG_DIR}/perf_drop.log
 
