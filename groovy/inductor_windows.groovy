@@ -2,7 +2,7 @@
 properties([
     parameters([
         string(name: 'NODE_LABEL', defaultValue: 'clx137', description: '', trim: true),
-        string(name: 'create_conda_env', defaultValue: "true", description: '', trim: true),
+        booleanParam(name: 'create_conda_env', defaultValue: true, description: ''),
         string(name: 'conda_env_name', defaultValue: 'pt_win', description: '', trim: true),
         string(name: 'recipients', defaultValue: 'lifeng.a.wang@intel.com', description: '', trim: true),
     ])
