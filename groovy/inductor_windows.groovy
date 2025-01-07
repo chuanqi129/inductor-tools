@@ -23,11 +23,21 @@ node(NODE_LABEL) {
                 """
             }
 
-        pwsh '''
-        Set-Location "$env:WORKSPACE"
+        retry(3) {
+        pwsh """
         $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
         $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
         git clone --depth=1 https://github.com/pytorch/pytorch.git
-        '''
+        """
+        }
+    }
+
+    stage('conduct the benchmarks'){
+        pwsh """
+        Set-Location pytorch
+        cmd.exe "/K" '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
+        '&& pwsh -File scripts/windows_inductor/test.ps1 -dir ./logs' ' +
+        '-envName ${conda_env_name}'
+        """
     }
 }
