@@ -17,7 +17,7 @@ node(NODE_LABEL) {
             pwsh '''
             cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
-            '&& pwsh -File inductor-tools/scripts/windows_inductor/prepare_env_nightly.ps1 ' +
+            '&& pwsh -File scripts/windows_inductor/prepare_env_nightly.ps1 ' +
             '-envName ${conda_env_name}'
             )
             '''
