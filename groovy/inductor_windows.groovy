@@ -23,11 +23,11 @@ node(NODE_LABEL) {
                 """
             }
 
-        pwsh """
+        pwsh '''
         Set-Location "$env:WORKSPACE"
         $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
         $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
         git clone --depth=1 https://github.com/pytorch/pytorch.git
-        """
+        '''
     }
 }
