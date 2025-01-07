@@ -35,9 +35,11 @@ node(NODE_LABEL) {
     stage('conduct the benchmarks'){
         pwsh """
         Set-Location pytorch
-        cmd.exe "/K" '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
-        '&& pwsh -File scripts/windows_inductor/test.ps1 -dir ./logs' ' +
-        '-envName ${conda_env_name}'
+        cmd.exe "/K" (
+            '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
+            '&& pwsh -File scripts/windows_inductor/test.ps1 -dir ./logs ' +
+            '-envName ${conda_env_name}'
+        )
         """
     }
 }
