@@ -24,11 +24,11 @@ node(NODE_LABEL) {
             }
 
         retry(3) {
-        pwsh """
+        pwsh '''
         $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
         $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
         git clone --depth=1 https://github.com/pytorch/pytorch.git
-        """
+        '''
         }
     }
 
