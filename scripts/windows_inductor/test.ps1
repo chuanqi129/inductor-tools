@@ -1,6 +1,6 @@
 param (
     [string]$dir = "C:\logs",
-    [string]$envName = "pt_win",
+    [string]$envName = "pt_win"
 )
 
 Write-Output "The log directory is: $dir"
