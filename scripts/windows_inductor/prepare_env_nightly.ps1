@@ -24,7 +24,6 @@ conda activate $envName
 
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 
-git clone --depth=1 https://github.com/pytorch/benchmark.git
 Set-Location benchmark
 pip install --no-deps -r requirements.txt
 pip install  safetensors portalocker tokenizers==0.19 huggingface_hub regex botocore ninja

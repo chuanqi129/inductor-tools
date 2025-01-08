@@ -1,5 +1,6 @@
 param (
-    [string]$dir = "C:\logs"
+    [string]$dir = "C:\logs",
+    [string]$envName = "pt_win"
 )
 
 Write-Output "The log directory is: $dir"
@@ -11,6 +12,10 @@ foreach ($d in $dirs) {
         New-Item -ItemType Directory -Path $d
     }
 }
+
+# Activate the new environment
+Write-Host "Activating conda environment: $envName"
+conda activate $envName
 
 $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
 $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
