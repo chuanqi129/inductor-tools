@@ -23,16 +23,17 @@ node(NODE_LABEL) {
         git clone --depth=1 https://github.com/pytorch/benchmark.git
         '''
         }
+    }
 
     stage("prepare the conda environment") {
         if(params.create_conda_env)
             /**
              * Executes a PowerShell script to set up the environment for the inductor tools on Windows.
-             * 
+             *
              * The script performs the following steps:
              * 1. Runs the Intel oneAPI setvars.bat script to set up the Intel environment variables.
              * 2. Executes a PowerShell script to prepare the environment for nightly builds.
-             * 
+             *
              * @param conda_env_name The name of the conda environment to be used.
              */
             {
