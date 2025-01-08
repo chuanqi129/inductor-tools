@@ -43,15 +43,17 @@ node(NODE_LABEL) {
     }
 
     stage('conduct the benchmarks'){
+        def workspaceDir = env.WORKSPACE
+        def logsDir = "${workspaceDir}/logs"
         pwsh """
         Set-Location pytorch
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
-            '&& pwsh -File ../scripts/windows_inductor/test.ps1 D:/Jenkins/workspace/inductor_windows/logs ' +
+            '&& pwsh -File ../scripts/windows_inductor/test.ps1 ${logsDir} ' +
             '-envName ${conda_env_name}'
         )
         """
-        archiveArtifacts artifacts: "logs", excludes: null
+        archiveArtifacts artifacts: 'logs/**', fingerprint: true
     }
 
 }
