@@ -7,13 +7,11 @@ $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
 $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
 $env:DISTUTILS_USE_SDK = 1
 
-
 # Create a new conda environment
 Write-Host "Creating conda environment: $envName with Python $pythonVersion"
 
 # Check if the conda environment exists and remove it if it does
 $envList = conda env list | Select-String -Pattern "^\s*$envName\s"
-
 if ($envList) {
     Write-Host "Environment $envName exists. Removing it..."
     conda env remove -y -n $envName
@@ -32,6 +30,3 @@ pip install --no-deps -r requirements.txt
 pip install  safetensors portalocker tokenizers==0.19 huggingface_hub regex botocore ninja
 
 python install.py --continue_on_fail --no-build-isolation
-
-
-
