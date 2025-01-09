@@ -7,7 +7,7 @@ import copy
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e, prepare_qat_pt2e
 import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
 import torch.ao.quantization.quantizer.xpu_inductor_quantizer as xpuiq
-from torch._export import capture_pre_autograd_graph
+from torch.export import export_for_training
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
@@ -85,10 +85,10 @@ def run_model(model_name, args):
     if args.is_qat:
         print("using qat")
         for i, (images, _) in enumerate(cal_loader):
-            exported_model = capture_pre_autograd_graph(
+            exported_model = export_for_training(
                 model,
                 (images,)
-            )
+            ).module()
             if i==10: break
         quantizer = xiq.X86InductorQuantizer()
         quantizer.set_global(xiq.get_default_x86_inductor_quantization_config(is_qat=True))
@@ -131,10 +131,10 @@ def run_model(model_name, args):
         example_inputs = (x.to(args.device),)
 
         with torch.no_grad():
-            exported_model = capture_pre_autograd_graph(
+            exported_model = export_for_training(
                 model,
                 example_inputs
-            )
+            ).module()
 
             quantizer = None
             if (args.device == 'xpu'):
