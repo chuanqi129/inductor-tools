@@ -4,7 +4,10 @@ properties([
         string(name: 'NODE_LABEL', defaultValue: 'clx137', description: '', trim: true),
         booleanParam(name: 'create_conda_env', defaultValue: true, description: ''),
         string(name: 'conda_env_name', defaultValue: 'pt_win', description: '', trim: true),
+        choice(name: 'compiler', choices: ['msvc', 'icc'], description: ''),
         choice(name: 'wrapper', choices: ['default', 'cpp'], description: ''),
+        choice(name: 'suite', choices: ['all', 'torchbench', 'huggingface', 'timm_models'], description: ''),
+        choice(name: 'precision', choices: ['float32'], description: ''),
         string(name: 'recipients', defaultValue: 'lifeng.a.wang@intel.com', description: '', trim: true),
     ])
 ])
@@ -18,7 +21,7 @@ node(NODE_LABEL) {
         // Clones the PyTorch/Benchmark repository from GitHub with a depth of 1, which means only the latest commit will be cloned.
         pwsh '''
         $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
-        $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
+        $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"  # add it to the jenkins node
         git clone --depth=1 https://github.com/pytorch/pytorch.git
         git clone --depth=1 https://github.com/pytorch/benchmark.git
         '''
@@ -49,16 +52,16 @@ node(NODE_LABEL) {
 
     stage('conduct the benchmarks'){
         def workspaceDir = env.WORKSPACE
-        def logsDir = "${workspaceDir}/logs"
+        def logsDir = "${workspaceDir}/inductor_log"
         pwsh """
         Set-Location pytorch
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
             '&& pwsh -File ../scripts/windows_inductor/dynamo_test_${wrapper}.ps1 ${logsDir} ' +
-            '-envName ${conda_env_name}'
+            '&& pwsh -File ../scripts/windows_inductor/test.ps1 -dir ${logsDir} ' +
+            '-envName ${conda_env_name} -suite ${suite} -precision ${precision} -compiler ${compiler}'
         )
         """
-        archiveArtifacts artifacts: 'logs/**', fingerprint: true
+        archiveArtifacts artifacts: 'inductor_log/**', fingerprint: true
     }
-
 }
