@@ -1550,6 +1550,8 @@ def excel_postprocess(file, scenario, precison, mode, suite):
 
 if __name__ == "__main__":
     excel = StyleFrame.ExcelWriter("inductor_log/Inductor_E2E_Test_Report.xlsx")
+    if args.suite[0] == "all":
+        args.suite = ["huggingface", "timm_models", "torchbench"]
     generate_report(excel, args.scenario, args.precision, args.mode, args.suite)
     for sc in args.scenario:
         summary_conclusion(sc, excel)

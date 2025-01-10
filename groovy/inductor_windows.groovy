@@ -63,4 +63,21 @@ node(NODE_LABEL) {
         """
         archiveArtifacts artifacts: 'inductor_log/**', fingerprint: true
     }
+
+    stage('generate the report'){
+        stage('generate the report'){
+        pwsh """
+        conda run -n $conda_env_name pip install styleframe
+        conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite
+        """
+    }
+        archiveArtifacts artifacts: 'inductor_log/Inductor_E2E_Test_Report.xlsx', fingerprint: true
+    }
+
+    stage('send email'){
+        emailext body: 'Please check the attachment for the inductor report.',
+            subject: 'Windows Inductor Report',
+            to: params.recipients,
+            attachmentsPattern: 'inductor_log/Inductor_E2E_Test_Report.xlsx'
+    }
 }
