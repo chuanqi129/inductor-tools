@@ -57,7 +57,6 @@ node(NODE_LABEL) {
         Set-Location pytorch
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
-            '&& pwsh -File ../scripts/windows_inductor/dynamo_test_${wrapper}.ps1 ${logsDir} ' +
             '&& pwsh -File ../scripts/windows_inductor/test.ps1 -dir ${logsDir} ' +
             '-envName ${conda_env_name} -suite ${suite} -precision ${precision} -compiler ${compiler}'
         )
