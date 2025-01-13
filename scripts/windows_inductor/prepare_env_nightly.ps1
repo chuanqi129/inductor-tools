@@ -3,23 +3,21 @@ param (
     [string]$pythonVersion = "3.10"
 )
 
-$env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
-$env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"
 $env:DISTUTILS_USE_SDK = 1
 
 # Create a new conda environment
-Write-Host "Creating conda environment: $envName with Python $pythonVersion"
+Write-Output "Creating conda environment: $envName with Python $pythonVersion"
 
 # Check if the conda environment exists and remove it if it does
 $envList = conda env list | Select-String -Pattern "^\s*$envName\s"
 if ($envList) {
-    Write-Host "Environment $envName exists. Removing it..."
+    Write-Output "Environment $envName exists. Removing it..."
     conda env remove -y -n $envName
 }
 conda create -y -n $envName python=$pythonVersion
 
 # Activate the new environment
-Write-Host "Activating conda environment: $envName"
+Write-Output "Activating conda environment: $envName"
 conda activate $envName
 
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu

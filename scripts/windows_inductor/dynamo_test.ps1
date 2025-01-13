@@ -9,6 +9,10 @@ param (
 
 $env:TORCHINDUCTOR_FREEZING = 1
 
+if ($wrapper -eq "cpp") {
+    $env:TORCHINDUCTOR_CPP_WRAPPER = 1
+}
+
 # Set the compiler
 if ($compiler -eq "msvc") {
     $env:CXX = "cl"
@@ -25,7 +29,7 @@ else {
 }
 
 # Activate the new environment
-Write-Host "Activating conda environment: $envName"
+Write-Output "Activating conda environment: $envName"
 conda activate $envName
 
 function Test-torchbench {
@@ -38,8 +42,14 @@ function Test-torchbench {
         --performance --float32 -dcpu `
         --output=$logDir\inductor_torchbench_float32_inference_cpu_performance.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only BERT_pytorch `
+        --timeout 9000 --freezing --dashboard `
+        -x llava -x simple_gpt_tp_manual -x stable_diffusion `
+        -x llama_v2_7b_16h -x hf_clip -x tacotron2 -x nanogpt `
+        -x hf_T5_generate -x torchrec_dlrm -x simple_gpt `
+        -x hf_Whisper -x stable_diffusion_text_encoder `
+        -x sam -x sam_fast -x detectron2_maskrcnn `
+        -x cm3leon_generate -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\torchbench_perf_test_output.log"
 
     # Torchbench accuracy test
@@ -47,8 +57,14 @@ function Test-torchbench {
         --accuracy --float32 -dcpu `
         --output=$logDir\inductor_torchbench_float32_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only BERT_pytorch `
+        --timeout 9000 --freezing --dashboard `
+        -x llava -x simple_gpt_tp_manual -x stable_diffusion `
+        -x llama_v2_7b_16h -x hf_clip -x tacotron2 -x nanogpt `
+        -x hf_T5_generate -x torchrec_dlrm -x simple_gpt `
+        -x hf_Whisper -x stable_diffusion_text_encoder `
+        -x sam -x sam_fast -x detectron2_maskrcnn `
+        -x cm3leon_generate -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\torchbench_accuracy_test_output.log"
 }
 
@@ -63,8 +79,9 @@ function Test-huggingface {
         --performance --float32 -dcpu `
         --output=$logDir\inductor_huggingface_float32_inference_cpu_performance.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only T5Small `
+        --timeout 9000 --freezing --dashboard `
+        -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\huggingface_perf_test_output.log"
 
     # Huggingface accuracy test
@@ -72,9 +89,11 @@ function Test-huggingface {
         --accuracy --float32 -dcpu `
         --output=$logDir\inductor_huggingface_float32_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only T5Small `
+        --timeout 9000 --freezing --dashboard `
+        -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\huggingface_accuracy_test_output.log"
+
 }
 
 
@@ -88,8 +107,14 @@ function Test-timm_models {
         --performance --float32 -dcpu `
         --output=$logDir\inductor_timm_models_float32_inference_cpu_performance.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only vit_base_patch16_224 `
+        --timeout 9000 --freezing --dashboard `
+        -x llava -x simple_gpt_tp_manual -x stable_diffusion `
+        -x llama_v2_7b_16h -x hf_clip -x tacotron2 -x nanogpt `
+        -x hf_T5_generate -x torchrec_dlrm -x simple_gpt `
+        -x hf_Whisper -x stable_diffusion_text_encoder `
+        -x sam -x sam_fast -x detectron2_maskrcnn `
+        -x cm3leon_generate -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\timm_models_perf_test_output.log"
 
     # Timm_models accuracy test
@@ -97,9 +122,11 @@ function Test-timm_models {
         --accuracy --float32 -dcpu `
         --output=$logDir\inductor_timm_models_float32_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
-        --timeout 9000 --freezing `
-        --cold-start-latency --only vit_base_patch16_224 `
+        --timeout 9000 --freezing --dashboard `
+        -x llama_v2_7b_16h `
+        --cold-start-latency `
         2>&1 | Tee-Object -FilePath "$logDir\timm_models_accuracy_test_output.log"
+
 }
 
 foreach ($s in $suite_list) {
@@ -110,5 +137,5 @@ foreach ($s in $suite_list) {
     }
     New-Item -ItemType Directory -Path $log_dir
     Write-Output "The log directory is: $log_dir"
-    Invoke-Expression "Test-$s -logDir $log_dir"
-} 
+    & "Test-$s" -logDir $log_dir
+}
