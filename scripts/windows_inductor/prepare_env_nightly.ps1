@@ -1,6 +1,7 @@
 param (
     [string]$envName = "pt_win",
-    [string]$pythonVersion = "3.10"
+    [string]$pythonVersion = "3.10",
+    [string]$benchmarkLocation = "c:\benchmark"
 )
 
 $env:DISTUTILS_USE_SDK = 1
@@ -22,7 +23,13 @@ conda activate $envName
 
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 
-Set-Location benchmark
+if (Test-Path $benchmarkLocation) {
+    Write-Output "Directory $benchmarkLocation exists. Removing it..."
+    Remove-Item -Recurse -Force $benchmarkLocation
+}
+git clone --depth=1 https://github.com/pytorch/benchmark.git $benchmarkLocation
+
+Set-Location $benchmarkLocation
 pip install --no-deps -r requirements.txt
 pip install  safetensors portalocker tokenizers==0.19 huggingface_hub regex botocore ninja
 

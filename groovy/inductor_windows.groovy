@@ -23,7 +23,6 @@ node(NODE_LABEL) {
         $env:HTTP_PROXY = "http://proxy.ims.intel.com:911"
         $env:HTTPS_PROXY = "http://proxy.ims.intel.com:911"  # add it to the jenkins node
         git clone --depth=1 https://github.com/pytorch/pytorch.git
-        git clone --depth=1 https://github.com/pytorch/benchmark.git
         '''
         }
     }
