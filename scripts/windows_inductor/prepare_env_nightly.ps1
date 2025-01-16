@@ -24,13 +24,16 @@ conda activate $envName
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 
 if (Test-Path $benchmarkLocation) {
-    Write-Output "Directory $benchmarkLocation exists. Removing it..."
-    Remove-Item -Recurse -Force $benchmarkLocation
+    Write-Output "Directory $benchmarkLocation exists. Using it directly..."
+    Set-Location $benchmarkLocation
+    git pull
+} else {
+    Write-Output "Directory $benchmarkLocation does not exist. Cloning repository..."
+    git clone --depth=1 https://github.com/pytorch/benchmark.git $benchmarkLocation
 }
-git clone --depth=1 https://github.com/pytorch/benchmark.git $benchmarkLocation
 
 Set-Location $benchmarkLocation
 pip install --no-deps -r requirements.txt
 pip install  safetensors portalocker tokenizers==0.19 huggingface_hub regex botocore ninja
 
-python install.py --continue_on_fail --no-build-isolation
+python install.py --continue_on_fail
