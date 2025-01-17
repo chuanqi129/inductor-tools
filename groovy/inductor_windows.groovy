@@ -58,6 +58,7 @@ node(NODE_LABEL) {
         pwsh """
         \$env:HTTP_PROXY = "${http_proxy}"
         \$env:HTTPS_PROXY = "${http_proxy}"
+        New-Item -ItemType SymbolicLink -Path "${workspaceDir}\\benchmark" -Target "C:\\benchmark"
         Set-Location pytorch
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
