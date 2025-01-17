@@ -21,8 +21,8 @@ node(NODE_LABEL) {
         retry(3) {
         // Clones the PyTorch/Benchmark repository from GitHub with a depth of 1, which means only the latest commit will be cloned.
         pwsh """
-        \$env:HTTP_PROXY = ${http_proxy}
-        \$env:HTTPS_PROXY = ${http_proxy}
+        \$env:HTTP_PROXY = "${http_proxy}"
+        \$env:HTTPS_PROXY = "${http_proxy}"
         git clone --depth=1 https://github.com/pytorch/pytorch.git
         """
         }
@@ -41,8 +41,8 @@ node(NODE_LABEL) {
              */
             {
                 pwsh """
-                \$env:HTTP_PROXY = ${http_proxy}
-                \$env:HTTPS_PROXY = ${http_proxy}
+                \$env:HTTP_PROXY = "${http_proxy}"
+                \$env:HTTPS_PROXY = "${http_proxy}"
                 cmd.exe "/K" (
                 '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
                 '&& pwsh -File scripts/windows_inductor/prepare_env_nightly.ps1 ' +
@@ -56,8 +56,8 @@ node(NODE_LABEL) {
         def workspaceDir = env.WORKSPACE
         def logsDir = "${workspaceDir}/inductor_log"
         pwsh """
-        \$env:HTTP_PROXY = ${http_proxy}
-        \$env:HTTPS_PROXY = ${http_proxy}
+        \$env:HTTP_PROXY = "${http_proxy}"
+        \$env:HTTPS_PROXY = "${http_proxy}"
         Set-Location pytorch
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
