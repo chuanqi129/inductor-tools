@@ -7,7 +7,7 @@ env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
-if (env.precision == "float32") {
+if (env.precision == 'float32') {
     env.labelName = "inductor-icx-local-tas"
 } else if (env.precision == 'amp-gnr-sh') {
     env.precision = 'amp'
