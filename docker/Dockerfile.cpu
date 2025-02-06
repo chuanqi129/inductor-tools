@@ -1,0 +1,86 @@
+# syntax=docker/dockerfile:1
+ENV http_proxy=http://proxy.ims.intel.com:911
+ENV https_proxy=http://proxy.ims.intel.com:911
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} AS dev-base
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libtcmalloc-minimal4 \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        numactl \
+        pybind11-dev \
+        wget \
+        vim \
+    && rm -rf /var/lib/apt/lists/*
+RUN /usr/sbin/update-ccache-symlinks
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
+
+FROM dev-base AS conda
+ARG PYTHON_VERSION=3.10
+RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    chmod +x ~/miniforge.sh && \
+    # Fix conda install issue
+    ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake=3.26 \
+        mamba=1.5.8 \
+        dataclasses \
+        future \
+        git-lfs \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \      
+        weasyprint && \
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
+
+FROM dev-base AS build
+COPY --from=conda /opt/conda /opt/conda
+WORKDIR /workspace
+RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+    git clone https://github.com/pytorch/ao.git && \
+    cd ao && pip install -e . && cd .. && \
+    git clone https://github.com/pytorch/torchtune.git && \
+    cd torchtune && pip install -e . && cd .. && \
+    git clone -b benchmark https://github.com/zxd1997066/torchchat.git && \
+    conda install -y gperftools -c conda-forge && \
+    pip install intel-openmp && \
+    pip install tomli transformers
+
+# Clean for final image
+FROM dev-base AS image
+ARG BENCH_COMMIT=${PT_COMMIT}
+COPY --from=build /opt/conda /opt/conda
+COPY --from=build /workspace/ao /workspace/ao
+COPY --from=build /workspace/torchtune /workspace/torchtune
+COPY --from=build /workspace/torchchat /workspace/torchchat
+WORKDIR /workspace/torchchat
