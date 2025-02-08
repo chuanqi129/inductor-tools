@@ -98,7 +98,7 @@ node("inductor_image"){
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 result=${PIPESTATUS[0]}
-                if [ "${result}" = "0" ]; then
+                if [ "${result}" -eq 0 ]; then
                     echo "<br><br>[INFO] Target torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
                     echo "<br><br>[ERROR] Target torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
@@ -110,7 +110,7 @@ node("inductor_image"){
                 cd ${WORKSPACE}/baseline_pytorch
                 git checkout ${baseline_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                 result=${PIPESTATUS[0]}
-                if [ "${result}" = "0" ]; then
+                if [ "${result}" -eq "0" ]; then
                     echo "<br><br>[INFO] Baseline torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
                     echo "<br><br>[ERROR] Baseline torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
