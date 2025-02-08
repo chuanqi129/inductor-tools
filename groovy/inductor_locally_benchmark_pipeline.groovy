@@ -110,7 +110,7 @@ node("inductor_image"){
                 git clone ${baseline_TORCH_REPO} baseline_pytorch
                 cd ${WORKSPACE}/baseline_pytorch
                 git checkout ${baseline_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                result=${PIPESTATUS[0]}
+                result=$?
                 if [ "${result}" -eq 0 ]; then
                     echo "<br><br>[INFO] Baseline torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
