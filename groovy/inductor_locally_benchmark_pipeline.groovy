@@ -91,16 +91,18 @@ node("inductor_image"){
             sh'''
                 #!/usr/bin/env bash
                 set -ex
+                echo "==============="
 
                 echo "Job URL: ${BUILD_URL}/console .<br><br>" | tee ${WORKSPACE}/torch_clone.log
                 cd ${WORKSPACE}
                 git clone ${target_TORCH_REPO} target_pytorch
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                result=${PIPESTATUS[0]}
                 echo "==============="
                 echo ${result}
-                if [ "${result}" == 0 ]; then
+                result=${PIPESTATUS[0]}
+                
+                if [ "${result}" == "0" ]; then
                     echo "<br><br>[INFO] Target torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
                     echo "<br><br>[ERROR] Target torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
