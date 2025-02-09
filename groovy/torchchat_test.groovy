@@ -77,6 +77,7 @@ if ('backend' in params) {
     echo "backend in params"
     if (params.backend != '') {
         env.backend = params.backend
+        backend = backend.split(",")
     }
 }
 echo "backend: $backend"
@@ -220,9 +221,19 @@ if ('docker_pull' in params) {
 }
 echo "docker_pull: $docker_pull"
 
+env.torchchat_modeldir= '/localdisk/datasets/huggingface/'
+if ('torchchat_modeldir' in params) {
+    echo "torchchat_modeldir in params"
+    if (params.torchchat_modeldir != '') {
+        env.torchchat_modeldir = params.torchchat_modeldir
+    }
+}
+echo "torchchat_modeldir: $torchchat_modeldir"
+
 env.http_proxy='http://proxy.ims.intel.com:911'
 env.https_proxy='http://proxy.ims.intel.com:911'
 env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
+env.LOG_DIR = 'torchchat_log'
 
 def cleanup(){
     try {
@@ -375,6 +386,45 @@ node(NODE_LABEL){
     }//stage env prepare
     
     stage("Benchmark"){
+        for (modelid in modelids){
+            for (dtype in dtypes){
+                for (in_len in input_length){
+                    for (ou_len in output_length){
+                        for (bak in backend){
+                            withEnv(["modelid=${modelid}","dtype=${dtype}","in_len=${in_len}","ou_len=${ou_len}","bak=${bak}","device=${device}"]){
+                                sh '''
+                                    #!/bin/bash
+                                    set -x
+                                    if [ "${bak}" = "eager" ];then
+                                        prefill="noprefill"
+                                        autotune="noautotune"
+                                    else
+                                        prefill="prefill"
+                                        autotune="max_autotune"
+                                    fi
+                                    docker run -tid --name torchchat_test \
+                                        --privileged \
+                                        --env https_proxy=${https_proxy} \
+                                        --env http_proxy=${http_proxy} \
+                                        --env HF_HUB_TOKEN=$HF_TOKEN \
+                                        --net host --shm-size 10G \
+                                        -v ~/.cache:/root/.cache \
+                                        -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
+                                        -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/
+                                        gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
+                                    docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
+                                    docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len "
+                                '''
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
         for (modelid in modelids){
             for (dtype in dtypes){ 
                     withEnv(["modelid=${modelid}","dtype=${dtype}","device=${device}"]){
