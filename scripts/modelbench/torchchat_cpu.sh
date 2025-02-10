@@ -27,9 +27,7 @@ export OMP_NUM_THREADS=$CORES
 end_core=$(expr $CORES - 1)
 export TORCHINDUCTOR_FREEZING=1
 
-TCMALLOC="/home/miniforge3/envs/chat_ww01/lib/libtcmalloc.so"
-IOMP="/home/miniforge3/envs/chat_ww01/lib/libiomp5.so"
-export LD_PRELOAD=$IOMP:$TCMALLOC
+export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libtcmalloc.so
 
 num_iter=5
 
@@ -90,7 +88,7 @@ fi
 model=${6:-llama3.1}
 
 max_new_tokens=${7:-128}
-SUBFIX="--num-samples $num_iter --device cpu --max-new-tokens $max_new_tokens"
+SUBFIX="--num-samples $num_iter --device cpu --max-new-tokens $max_new_tokens --attention-backend flash_attention"
 
 input_length=${8:-1024}
 if [[ ${input_length} == "128" ]]; then
@@ -106,5 +104,8 @@ elif [[ ${input_length} == "8192" ]]; then
 fi
 
 #$PREFIX python3 torchchat.py generate mistral --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $IPEX_ARGS $SUBFIX
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX
+if [ ! -d "torchchat_log" ]; then
+    mkdir -p "torchchat_log"
+fi
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee ${LOG_DIR}/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}.log
 
