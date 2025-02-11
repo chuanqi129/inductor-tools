@@ -240,26 +240,26 @@ def pruneOldImage(){
     '''
 }
 node(NODE_LABEL){
-    if (env.build_image == 'True'){
-        stage("prepare"){
-            println('prepare......')
-            // TODO: implement report_only logic
-            cleanup()
-            pruneOldImage()
-            retry(3){
-                checkout([
-                    $class: 'GitSCM',
-                    branches: scm.branches,
-                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
-            }
-            sh'''
-                #!/usr/bin/env bash
-                mkdir -p ${WORKSPACE}/${LOG_DIR}
-            '''
+    stage("prepare"){
+        println('prepare......')
+        // TODO: implement report_only logic
+        cleanup()
+        if (env.build_image == 'True'){pruneOldImage()}
+        retry(3){
+            checkout([
+                $class: 'GitSCM',
+                branches: scm.branches,
+                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+                userRemoteConfigs: scm.userRemoteConfigs
+            ])
         }
+        sh'''
+            #!/usr/bin/env bash
+            mkdir -p ${WORKSPACE}/${LOG_DIR}
+        '''
+    }
+    if (env.build_image == 'True'){       
         stage("trigger inductor images job"){
             try {
                 retry(3){
