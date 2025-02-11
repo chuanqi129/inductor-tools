@@ -1,4 +1,4 @@
-NODE_LABEL = 'OOB-MCR'
+env.NODE_LABEL = 'OOB-MCR'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
