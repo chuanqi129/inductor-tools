@@ -64,7 +64,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
 FROM dev-base AS build
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
-RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
+RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu && \
     git clone https://github.com/pytorch/ao.git && \
     cd ao && pip install -e . && cd .. && \
     git clone https://github.com/pytorch/torchtune.git && \
