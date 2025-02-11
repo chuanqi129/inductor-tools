@@ -325,7 +325,7 @@ node(NODE_LABEL){
                         echo 'modelid,benchmark_script,Parallel,input/output,BS,batch_size,first_token_latency,next_token_latency'| tee -a ${log_dir}/summary.log
                     elif [ "$benchmark_script" = "throughput" ];then
                         echo 'modelid,benchmark_script,datasets,Parallel,input/output,num_prompts,token_throughput,request_throughput,first_token_latency,next_token_latency, bs_group' | tee -a ${log_dir}/summary.log
-                    elif [ "$benchmark_script" =~ "serving" ];then 
+                    elif [ "$benchmark_script" = "serving" ];then 
                         echo 'modelid,benchmark_script,datasets,Parallel,input/output,num_prompts,request_rate,token_throughput,first_token_latency,inter_token_latency' | tee -a ${log_dir}/summary.log
                     fi
                 else
