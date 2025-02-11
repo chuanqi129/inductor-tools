@@ -361,7 +361,7 @@ node(NODE_LABEL){
                                         --net host --shm-size 10G \
                                         -v ~/.cache:/root/.cache \
                                         -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
-                                        -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/
+                                        -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
                                         gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                                     docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
                                     docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len "
