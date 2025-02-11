@@ -36,24 +36,6 @@ if ('dtypes' in params) {
 }
 echo "dtypes: $dtypes"
 
-env.prefill = 'noprefill'
-if ('prefill' in params) {
-    echo "prefill in params"
-    if (params.prefill != '') {
-        env.prefill = params.prefill
-    }
-}
-echo "prefill: $prefill"
-
-env.conda_name = 'tgi'
-if ('conda_name' in params) {
-    echo "conda_name in params"
-    if (params.conda_name != '') {
-        env.conda_name = params.conda_name
-    }
-}
-echo "conda_name: $conda_name"
-
 env.torchchat_repo = 'https://github.com/pytorch/torchchat.git'
 if ('torchchat_repo' in params) {
     echo "torchchat_repo in params"
@@ -82,15 +64,6 @@ if ('backend' in params) {
 }
 echo "backend: $backend"
 
-env.autotune= 'max_autotune'
-if ('autotune' in params) {
-    echo "autotune in params"
-    if (params.autotune != '') {
-        env.autotune = params.autotune
-    }
-}
-echo "autotune: $autotune"
-
 env.profile= 'false'
 if ('profile' in params) {
     echo "profile in params"
@@ -118,7 +91,7 @@ if ('extra_args' in params) {
 }
 echo "extra_args: $extra_args"
 
-input_length = ''
+env.input_length = ''
 if ('input_length' in params) {
     echo "input_length"
     if (params.input_length != '') {
@@ -128,7 +101,7 @@ if ('input_length' in params) {
 }
 echo "input_length: $input_length"
 
-output_length = ''
+env.output_length = ''
 if ('output_length' in params) {
     echo "output_length"
     if (params.output_length != '') {
@@ -192,16 +165,6 @@ if ('hardware' in params) {
     }
 }
 echo "hardware: $hardware"
-
-env.length_configs= ' '
-if ('length_configs' in params) {
-    echo "length_configs in params"
-    if (params.length_configs != '') {
-        env.length_configs = params.length_configs
-        length_configs = length_configs.split(",")
-    }
-}
-echo "length_configs: $length_configs"
 
 env.test_mode= 'performance'
 if ('test_mode' in params) {
