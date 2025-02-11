@@ -107,5 +107,5 @@ fi
 if [ ! -d "torchchat_log" ]; then
     mkdir -p "torchchat_log"
 fi
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee ${LOG_DIR}/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}.log
 
