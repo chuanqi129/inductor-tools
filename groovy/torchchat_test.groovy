@@ -193,8 +193,8 @@ if ('torchchat_modeldir' in params) {
 }
 echo "torchchat_modeldir: $torchchat_modeldir"
 
-env.http_proxy=$NODE_PROXY
-env.https_proxy=$NODE_PROXY
+env.http_proxy=env.NODE_PROXY
+env.https_proxy=env.NODE_PROXY
 env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
 env.LOG_DIR = 'torchchat_log'
 
