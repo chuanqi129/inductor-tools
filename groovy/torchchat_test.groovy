@@ -242,61 +242,59 @@ def pruneOldImage(){
 
 if (env.build_image == 'True'){
     node(NODE_LABEL){
-        stage("get dockerfile"){
-            echo 'get dockerfile......'
-            sh '''#!/bin/bash
-                set -xe
-                # Start docker if docker deamon is not running
-                if systemctl is-active --quiet docker; then
-                    echo "Docker daemon is running...";
-                else
-                    echo "Starting docker deamon..." 
-                    sudo systemctl start docker || true;
-                fi
-                # Clean up any existing containers
-                docker stop $(docker ps -aq) || true
-                docker system prune -af
-                # Clean up WORKSPACE
-                rm -rf ${WORKSPACE}/* || sudo rm -rf ${WORKSPACE}/* || \
-                    docker run -i --rm -v ${WORKSPACE}:${WORKSPACE} ubuntu:22.04 rm -rf ${WORKSPACE}/*
-            '''
-            deleteDir()
-            checkout scm     
-        }
-        stage("build image"){
+        stage("prepare"){
+            println('prepare......')
+            // TODO: implement report_only logic
+            cleanup()
+            pruneOldImage()
             retry(3){
-                echo 'Building image......'
-                sh '''
-                #!/usr/bin/env bash
-                docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}` || true
-                if [ "${device}" = "cpu" ];then
-                    dockerfile="Dockerfile.cpu"
-                elif [ "${device}" = "xpu" ];then
-                    dockerfile=Dockerfile.xpu
-                elif [ "${device}" = "a100" ];then
-                    dockerfile=Dockerfile
-                fi
-                if [ -z "${docker_img_status}" ];then
-                    cp docker/${dockerfile} ./
-                    DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device} -f ${dockerfile} --target image .
-                else
-                    echo "gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device} existed, skip build image"
-                fi
-                '''
+                checkout([
+                    $class: 'GitSCM',
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                    extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
             }
-        }
-        stage('push image') {
-            retry(3){
-                echo 'push image......'
-                sh '''
+            sh'''
                 #!/usr/bin/env bash
-                docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}` || true
-                if [ -z "${docker_img_status}" ];then
-                    docker push gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                else
-                    echo "gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device} existed, skip push image"
-                fi
+                mkdir -p ${WORKSPACE}/${LOG_DIR}
+            '''
+        }
+        stage("trigger inductor images job"){
+            try {
+                retry(3){
+                    sleep(60)
+                    def image_build_job = build job: 'torchlib_images', propagate: false, parameters: [             
+                        [$class: 'StringParameterValue', name: 'tag', value: "${docker_name}"],
+                        [$class: 'StringParameterValue', name: 'device', value: "${device}"],
+                    ]
+                    def buildStatus = image_build_job.getResult()
+                    def cur_job_url = image_build_job.getAbsoluteUrl()
+                    if (buildStatus == hudson.model.Result.FAILURE) {
+                        sh'''
+                            echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
+                        '''
+                        throw new Exception("Docker image build job failed")
+                    }
+                    sh'''
+                        #!/usr/bin/env bash
+                        docker pull gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
+                    '''
+                }
+
+            if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
+                archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
+            }
+
+            } catch (Exception e) {
+                sh'''
+                    #!/usr/bin/env bash
+                    set -ex
+                    echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/image_build.log
                 '''
+                archiveArtifacts "image_build.log"
+                throw e
             }
         }
     }

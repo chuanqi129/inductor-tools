@@ -137,33 +137,24 @@ node(NODE_LABEL){
         deleteDir()
         checkout scm     
     }
-    stage("nightly_pre") {
-        if ("${tag}" == "nightly") {
-            withCredentials([usernamePassword(credentialsId: iap_credential, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                sh '''
-                #!/usr/bin/env bash
-                # No need login for every time
-                # docker login gar-registry.caas.intel.com --username $USERNAME --password $PASSWORD
-                docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:nightly
-                docker tag gar-registry.caas.intel.com/pytorch/pt_inductor:nightly gar-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-                docker push gar-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-                docker rmi -f gar-registry.caas.intel.com/pytorch/pt_inductor:nightly_pre
-                docker rmi -f gar-registry.caas.intel.com/pytorch/pt_inductor:nightly
-                '''
-            }
-        }
-    }   
     stage("build image"){
         retry(3){
             echo 'Building image......'
             sh '''
             #!/usr/bin/env bash
-            docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/pt_inductor:${tag}` || true
+            docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}` || true
+            if [ "${device}" = "cpu" ];then
+                dockerfile="Dockerfile.cpu"
+            elif [ "${device}" = "xpu" ];then
+                dockerfile=Dockerfile.xpu
+            elif [ "${device}" = "a100" ];then
+                dockerfile=Dockerfile
+            fi
             if [ -z "${docker_img_status}" ];then
                 cp docker/Dockerfile ./
-                DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} --build-arg PT_REPO=${PT_REPO} --build-arg PT_COMMIT=${PT_COMMIT} --build-arg TORCH_VISION_COMMIT=${TORCH_VISION_COMMIT} --build-arg TORCH_DATA_COMMIT=${TORCH_DATA_COMMIT} --build-arg TORCH_TEXT_COMMIT=${TORCH_TEXT_COMMIT} --build-arg TORCH_AUDIO_COMMIT=${TORCH_AUDIO_COMMIT} --build-arg TORCH_BENCH_COMMIT=${TORCH_BENCH_COMMIT} --build-arg BENCH_COMMIT=${BENCH_COMMIT} --build-arg HF_HUB_TOKEN=${HF_TOKEN} -t gar-registry.caas.intel.com/pytorch/pt_inductor:${tag} -f Dockerfile --target image .
+                DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f ${dockerfile} --target image .
             else
-                echo "gar-registry.caas.intel.com/pytorch/pt_inductor:${tag} existed, skip build image"
+                echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip build image"
             fi
             '''
         }
@@ -174,11 +165,11 @@ node(NODE_LABEL){
             echo 'push image......'
             sh '''
             #!/usr/bin/env bash
-            docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/pt_inductor:${tag}` || true
+            docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}` || true
             if [ -z "${docker_img_status}" ];then
-                docker push gar-registry.caas.intel.com/pytorch/pt_inductor:${tag}
+                docker push gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}
             else
-                echo "gar-registry.caas.intel.com/pytorch/pt_inductor:${tag} existed, skip push image"
+                echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip push image"
             fi
             '''
         }
@@ -187,7 +178,7 @@ node(NODE_LABEL){
     stage('clean image') {
         sh '''
         #!/usr/bin/env bash
-        docker rmi -f gar-registry.caas.intel.com/pytorch/pt_inductor:${tag}
+        docker rmi -f gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}
         '''
     }
     
