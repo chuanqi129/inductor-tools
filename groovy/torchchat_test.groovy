@@ -239,9 +239,8 @@ def pruneOldImage(){
         docker system prune -f
     '''
 }
-
-if (env.build_image == 'True'){
-    node(NODE_LABEL){
+node(NODE_LABEL){
+    if (env.build_image == 'True'){
         stage("prepare"){
             println('prepare......')
             // TODO: implement report_only logic
@@ -298,15 +297,6 @@ if (env.build_image == 'True'){
             }
         }
     }
-}
-node(NODE_LABEL){
-    properties(
-        [disableConcurrentBuilds(),]
-    )
-    cleanup()
-    deleteDir()
-    checkout scm
-    currentBuild.displayName = "#${BUILD_NUMBER}-${NODE_LABEL}-${benchmark_script}-${docker_name}"
 
     stage("Environment Prepare"){
         withEnv(["docker_name=${docker_name}","device=${device}","build_image=${build_image}","test_mode=${test_mode}","build_image=${build_image}","docker_pull=${docker_pull}"]){
@@ -396,5 +386,6 @@ node(NODE_LABEL){
             --file_name ${WORKSPACE}/logs/summary.log --hardware ${hardware}
         '''
     }
-    }   
+    }  
 }
+
