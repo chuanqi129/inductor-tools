@@ -241,7 +241,7 @@ def pruneOldImage(){
 }
 
 if (env.build_image == 'True'){
-    node(IMAGE_NODE){
+    node(NODE_LABEL){
         stage("get dockerfile"){
             echo 'get dockerfile......'
             sh '''#!/bin/bash
