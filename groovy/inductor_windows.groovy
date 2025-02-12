@@ -1,15 +1,15 @@
 // set parameters
 properties([
     parameters([
-        string(name: 'NODE_LABEL', defaultValue: '', description: '', trim: true),
+        string(name: 'NODE_LABEL', defaultValue: 'clx137', description: '', trim: true),
         booleanParam(name: 'create_conda_env', defaultValue: true, description: ''),
         string(name: 'conda_env_name', defaultValue: 'pt_win', description: '', trim: true),
         choice(name: 'compiler', choices: ['msvc', 'icc'], description: ''),
-        choice(name: 'wrapper', choices: ['default', 'cpp'], description: ''),
+        choice(name: 'wrapper', choices: ['cpp', 'default'], description: ''),
         choice(name: 'suite', choices: ['all', 'torchbench', 'huggingface', 'timm_models'], description: ''),
         choice(name: 'precision', choices: ['float32'], description: ''),
-        string(name: 'recipients', defaultValue: '', description: '', trim: true),
-        string(name: 'http_proxy', defaultValue: '', description: '', trim: true),
+        string(name: 'recipients', defaultValue: 'lifeng.a.wang@intel.com', description: '', trim: true),
+        string(name: 'http_proxy', defaultValue: 'http://proxy.ims.intel.com:911', description: '', trim: true),
     ])
 ])
 
@@ -83,7 +83,7 @@ node(NODE_LABEL) {
 
     stage('send email'){
         emailext body: 'Please check the attachment for the inductor report.',
-            subject: 'Windows Inductor Report',
+            subject: "[Regular Weekly]-Windows-Inductor-Test-${env.compiler}-${env.wrapper}-Report",
             to: params.recipients,
             attachmentsPattern: 'inductor_log/Inductor_E2E_Test_Report.xlsx'
     }
