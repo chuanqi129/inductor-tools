@@ -101,6 +101,26 @@ if ('input_length' in params) {
 }
 echo "input_length: $input_length"
 
+env.qconfigs = ''
+if ('qconfigs' in params) {
+    echo "qconfigs"
+    if (params.qconfigs != '') {
+        qconfigs = params.qconfigs
+        qconfigs = qconfigs.split(",")
+    }
+}
+echo "qconfigs: $qconfigs"
+
+env.groupsize = ''
+if ('groupsize' in params) {
+    echo "groupsize"
+    if (params.groupsize != '') {
+        groupsize = params.groupsize
+        groupsize = groupsize.split(",")
+    }
+}
+echo "groupsize: $groupsize"
+
 env.output_length = ''
 if ('output_length' in params) {
     echo "output_length"
@@ -342,7 +362,9 @@ node(NODE_LABEL){
                 for (in_len in input_length){
                     for (ou_len in output_length){
                         for (bak in backend){
-                            withEnv(["modelid=${modelid}","dtype=${dtype}","in_len=${in_len}","ou_len=${ou_len}","bak=${bak}","device=${device}"]){
+                            for (qconfig in qconfigs){
+                                for (gps in groupsize){
+                                    withEnv(["modelid=${modelid}","dtype=${dtype}","in_len=${in_len}","ou_len=${ou_len}","bak=${bak}","device=${device}","qconfig=${qconfig}","gps=${gps}"]){
                                 sh '''
                                     #!/bin/bash
                                     set -x
@@ -364,8 +386,10 @@ node(NODE_LABEL){
                                         -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
                                         gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                                     docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
-                                    docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len "
+                                    docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
                                 '''
+                                    }
+                                } 
                             }
                         }
                     }
