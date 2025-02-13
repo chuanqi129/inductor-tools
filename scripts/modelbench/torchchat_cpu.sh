@@ -82,23 +82,42 @@ fi
 qconfig=${9:-qconfig1}
 gps=${10:-0}
 
-if [[ ${dtype} == "int8" ]]; then
-    bw=8
-elif [[ ${dtype} == "int4" ]]; then
-    bw=4
-fi
 if [[ ${qconfig} == "qconfig1" ]]; then
-    DTYPE_CONFIG='{"precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"precision": {"dtype": "bf16"}, "linear:int8": {"bitwidth": 8, "groupsize": '${gps}'}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"precision": {"dtype": "bf16"}, "linear:int4": {"groupsize": '${gps}'}}'
+    fi
 elif [[ ${qconfig} == "qconfig2" ]]; then
-    DTYPE_CONFIG='{"precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"precision": {"dtype": "int8"}, "linear:int8": {"bitwidth": 8, "groupsize": '${gps}'}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"precision": {"dtype": "int4"}, "linear:int4": {"groupsize": '${gps}'}}'
+    fi
 elif [[ ${qconfig} == "qconfig3" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 8, "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:int8": {"bitwidth": 8, "groupsize": '${gps}'}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 4, "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:int4": {"groupsize": '${gps}'}}'
+    fi
 elif [[ ${qconfig} == "qconfig4" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 8, "groupsize":32}, "precision": {"dtype": "int8"}, "linear:int8": {"bitwidth": 8, "groupsize": '${gps}'}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 4, "groupsize":32}, "precision": {"dtype": "int4"}, "linear:int4": {"groupsize": '${gps}'}}'
+    fi
 elif [[ ${qconfig} == "aot_qconfig1" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"groupsize" : 256}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 8, "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:int8": {"bitwidth": 8, "groupsize": 256}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 4, "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:int4": {"groupsize": 256}}'
+    fi
 elif [[ ${qconfig} == "aot_qconfig2" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"groupsize" : 256}}'
+    if [[ ${dtype} == "int8" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 8, "groupsize":32}, "precision": {"dtype": "int8"}, "linear:int8": {"bitwidth": 8, "groupsize": 256}}'
+    elif [[ ${dtype} == "int4" ]]; then
+        DTYPE_CONFIG='{"embedding": {"bitwidth": 4, "groupsize":32}, "precision": {"dtype": "int4"}, "linear:int4": {"groupsize": 256}}'
+    fi
 fi
 
 if [[ ${dtype} == "fp32" ]]; then
