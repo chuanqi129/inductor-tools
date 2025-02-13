@@ -82,6 +82,11 @@ fi
 qconfig=${9:-qconfig1}
 gps=${10:-0}
 
+if [[ ${dtype} == "int8" ]]; then
+    bw=8
+elif [[ ${dtype} == "int4" ]]; then
+    bw=4
+fi
 if [[ ${qconfig} == "qconfig1" ]]; then
     DTYPE_CONFIG='{"precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
 elif [[ ${qconfig} == "qconfig2" ]]; then
