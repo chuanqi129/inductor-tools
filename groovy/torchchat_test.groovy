@@ -357,6 +357,21 @@ node(NODE_LABEL){
     }//stage env prepare
     
     stage("Benchmark"){
+        sh'''
+            #!/bin/bash
+            set -x
+            docker run -tid --name torchchat_test \
+                --privileged \
+                --env https_proxy=${https_proxy} \
+                --env http_proxy=${http_proxy} \
+                --env HF_HUB_TOKEN=$HF_TOKEN \
+                --net host --shm-size 10G \
+                -v ~/.cache:/root/.cache \
+                -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
+                -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
+                gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
+            docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
+        '''
         for (modelid in modelids){
             for (dtype in dtypes){
                 for (in_len in input_length){
@@ -375,22 +390,7 @@ node(NODE_LABEL){
                                         prefill="prefill"
                                         autotune="max_autotune"
                                     fi
-                                    docker run -tid --name torchchat_test \
-                                        --privileged \
-                                        --env https_proxy=${https_proxy} \
-                                        --env http_proxy=${http_proxy} \
-                                        --env HF_HUB_TOKEN=$HF_TOKEN \
-                                        --net host --shm-size 10G \
-                                        -v ~/.cache:/root/.cache \
-                                        -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
-                                        -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
-                                        gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                                    docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
                                     docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
-                                    docker_ps=`docker ps -a -q`
-                                    if [ -n "${docker_ps}" ];then
-                                        docker stop ${docker_ps}
-                                    fi
                                 '''
                                     }
                                 } 
