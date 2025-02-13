@@ -124,5 +124,15 @@ fi
 if [ ! -d "torchchat_log" ]; then
     mkdir -p "torchchat_log"
 fi
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}_${max_new_tokens}_${gps}_${qconfig}.log
+
+if [ ${dtype} == "int8" ] || [ ${dtype} == "int4" ]; then
+    if [ ${qconfig} == "aot_qconfig1" ] || [ ${qconfig} == "aot_qconfig2" ]; then
+        numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py export ${model} $DTYPE_ARGS "$DTYPE_CONFIG" --output-dso-path ${model}.so
+        numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --dso-path ${model}.so  --prompt "$PROMPT" $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_eager_${input_length}_${max_new_tokens}_256_${qconfig}.log
+    else
+        numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}_${gps}_${qconfig}.log
+    fi
+else
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}_${gps}_${qconfig}.log
+fi
 
