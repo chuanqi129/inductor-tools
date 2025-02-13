@@ -387,6 +387,10 @@ node(NODE_LABEL){
                                         gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                                     docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
                                     docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
+                                    docker_ps=`docker ps -a -q`
+                                    if [ -n "${docker_ps}" ];then
+                                        docker stop ${docker_ps}
+                                    fi
                                 '''
                                     }
                                 } 
