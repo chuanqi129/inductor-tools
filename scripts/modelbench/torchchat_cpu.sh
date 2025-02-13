@@ -90,15 +90,15 @@ fi
 if [[ ${qconfig} == "qconfig1" ]]; then
     DTYPE_CONFIG='{"precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
 elif [[ ${qconfig} == "qconfig2" ]]; then
-    DTYPE_CONFIG='{"precision": {"dtype": '${dtype}'}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    DTYPE_CONFIG='{"precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
 elif [[ ${qconfig} == "qconfig3" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": '${dtype}'}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
+    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
 elif [[ ${qconfig} == "qconfig4" ]]; then
     DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"bitwidth": '${bw}', "groupsize": '${gps}'}}'
 elif [[ ${qconfig} == "aot_qconfig1" ]]; then
     DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "bf16"}, "linear:'${dtype}'": {"groupsize" : 256}}'
 elif [[ ${qconfig} == "aot_qconfig2" ]]; then
-    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": '${dtype}'}, "linear:'${dtype}'": {"groupsize" : 256}}'
+    DTYPE_CONFIG='{"embedding": {"bitwidth": '${bw}', "groupsize":32}, "precision": {"dtype": "'${dtype}'"}, "linear:'${dtype}'": {"groupsize" : 256}}'
 fi
 
 if [[ ${dtype} == "fp32" ]]; then
