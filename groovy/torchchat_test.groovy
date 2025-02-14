@@ -251,7 +251,7 @@ def cleanup(){
 def pruneOldImage(){
     sh '''
         #!/usr/bin/env bash
-        old_image_id=`docker images | grep pt_inductor | awk '{print $3}'`
+        old_image_id=`docker images | grep torchchat | awk '{print $3}'`
         old_image=`echo $old_image_id | awk '{print $1}'`
         if [ -n "${old_image}" ]; then
             docker rmi -f $old_image
