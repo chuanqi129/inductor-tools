@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+FROM gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310 as dev-base
+SHELL ["/bin/bash", "-c"]
+ENV PATH=~/miniforge-pypy3/bin/:${PATH}
+WORKDIR /workspace
+ARG CONDA_NAME=chat_test
+ARG python_version=3.10
+ARG driver_name
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    curl gnupg ca-certificates wget && \
+    apt-get clean && \
+    rm -rf  /var/lib/apt/lists/*
+
+RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA256RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA256RootCA-Base64.crt
+RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA384RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA384RootCA-Base64.crt
+RUN update-ca-certificates
+
+RUN mkdir -p /etc/apt/keyrings
+RUN curl --noproxy '*' -fsSL https://gfx-assets-build.intel.com/artifactory/api/gpg/key/public | gpg --yes --dearmor -o /etc/apt/keyrings/gfx-assets-build.gpg
+
+RUN MAJOR=$(echo $driver_name | sed -n 's/[^0-9]*\([0-9]*\)\..*/\1/p') && \
+    MINOR=$(echo $driver_name | awk -F. '{print $2}') && \ 
+    echo "deb [signed-by=/etc/apt/keyrings/gfx-assets-build.gpg] https://gfx-assets-build.fm.intel.com/artifactory/agama-debs-per-build untested/main/agama/hotfix_agama-ci-devel-${MAJOR}/jammy hotfix_agama-ci-devel-${MAJOR}.${MINOR}" | tee /etc/apt/sources.list.d/https___gfx_assets_build_fm_intel_com_artifactory_agama_debs_per_build_untested_main_agama_hotfix_agama_ci_devel_${MAJOR}_jammy_hotfix_agama_ci_devel_${MAJOR}_${MINOR}.list > /dev/null
+
+ENV no_proxy=.intel.com,intel.com,localhost,127.0.0.1
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    intel-opencl-icd intel-level-zero-gpu libze1 intel-ocloc \
+    libigc-dev libze-dev libigdfcl-dev libnl-genl-3-200 && \
+    apt-get clean && \
+    rm -rf  /var/lib/apt/lists/*
+
+RUN set -ex && \
+    conda_env=$CONDA_NAME && \
+    . /root/miniforge-pypy3/bin/activate && \
+    rm -rf  /root/miniforge-pypy3/envs/* && \
+    conda create -n $CONDA_NAME  python=3.10 -y && \
+    conda activate ${conda_env} && \
+    if [ $? -ne 0 ]; then echo 'Conda env fail'; exit; fi && \
+    pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu && \
+    git clone https://github.com/pytorch/ao.git && \
+    cd ao && pip install -e . && cd .. && \
+    git clone -b benchmark https://github.com/zxd1997066/torchtune.git && \
+    cd torchtune && pip install -e . && cd .. && \
+    git clone -b benchmark https://github.com/zxd1997066/torchchat.git && \
+    python -m pip install intel-openmp && \
+    python -m pip install numpy ninja cmake==3.28.4 &&\
+    python -m pip install tomli transformers &&\
+    echo 1 | update-alternatives --config gcc &&\
+    rm -rf /workspace/ubit-artifactory-ba.intel.com && \
+
+WORKDIR /workspace/torchchat
+

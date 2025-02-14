@@ -281,40 +281,56 @@ node(NODE_LABEL){
     }
     if (env.build_image == 'True'){       
         stage("trigger inductor images job"){
-            try {
-                retry(3){
-                    sleep(60)
-                    def image_build_job = build job: 'torchlib_images', propagate: false, parameters: [             
-                        [$class: 'StringParameterValue', name: 'tag', value: "${docker_name}"],
-                        [$class: 'StringParameterValue', name: 'device', value: "${device}"],
-                    ]
-                    def buildStatus = image_build_job.getResult()
-                    def cur_job_url = image_build_job.getAbsoluteUrl()
-                    if (buildStatus == hudson.model.Result.FAILURE) {
+            if (env.device == 'cpu'){
+                try {
+                    retry(3){
+                        sleep(60)
+                        def image_build_job = build job: 'torchlib_images', propagate: false, parameters: [             
+                            [$class: 'StringParameterValue', name: 'tag', value: "${docker_name}"],
+                            [$class: 'StringParameterValue', name: 'device', value: "${device}"],
+                        ]
+                        def buildStatus = image_build_job.getResult()
+                        def cur_job_url = image_build_job.getAbsoluteUrl()
+                        if (buildStatus == hudson.model.Result.FAILURE) {
+                            sh'''
+                                echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
+                            '''
+                            throw new Exception("Docker image build job failed")
+                        }
                         sh'''
-                            echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
+                            #!/usr/bin/env bash
+                            docker pull gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                         '''
-                        throw new Exception("Docker image build job failed")
                     }
-                    sh'''
-                        #!/usr/bin/env bash
-                        docker pull gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                    '''
+
+                if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
+                    archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
                 }
 
-            if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
-                archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
-            }
+                } catch (Exception e) {
+                    sh'''
+                        #!/usr/bin/env bash
+                        set -ex
+                        echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/image_build.log
+                    '''
+                    archiveArtifacts "image_build.log"
+                    throw e
+                }
+            }else{
+                sh '''#!/usr/bin/env bash
+                    docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}` || true
+                    if [ -z "${docker_img_status}" ];then
+                        cp docker/Dockerfile.xpu ./
+                        DOCKER_BUILDKIT=1 docker build --no-cache --build-arg driver_name=${driver_name} \
+                             -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f Dockerfile.xpu --target image .
+                        docker push gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}
+                    else
+                        echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip build image"
+                    fi
 
-            } catch (Exception e) {
-                sh'''
-                    #!/usr/bin/env bash
-                    set -ex
-                    echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/image_build.log
                 '''
-                archiveArtifacts "image_build.log"
-                throw e
             }
+            
         }
     }
 
@@ -357,21 +373,41 @@ node(NODE_LABEL){
     }//stage env prepare
     
     stage("Benchmark"){
-        sh'''
-            #!/bin/bash
-            set -x
-            docker run -tid --name torchchat_test \
-                --privileged \
-                --env https_proxy=${https_proxy} \
-                --env http_proxy=${http_proxy} \
-                --env HF_HUB_TOKEN=$HF_TOKEN \
-                --net host --shm-size 10G \
-                -v ~/.cache:/root/.cache \
-                -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
-                -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
-                gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-            docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
-        '''
+        if (env.device == 'cpu'){
+            sh'''
+                #!/bin/bash
+                set -x
+                docker run -tid --name torchchat_test \
+                    --privileged \
+                    --env https_proxy=${https_proxy} \
+                    --env http_proxy=${http_proxy} \
+                    --env HF_HUB_TOKEN=$HF_TOKEN \
+                    --net host --shm-size 10G \
+                    -v ~/.cache:/root/.cache \
+                    -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
+                    -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
+                    gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
+                docker cp scripts/modelbench/torchchat_cpu.sh torchchat_test:/workspace/torchchat
+            '''
+        }else{
+            sh'''
+                #!/bin/bash
+                set -x
+                docker run -tid --name torchchat_test \
+                    --device /dev/dri
+                    --privileged \
+                    --env https_proxy=${https_proxy} \
+                    --env http_proxy=${http_proxy} \
+                    --env HF_HUB_TOKEN=$HF_TOKEN \
+                    --net host --shm-size 10G \
+                    -v ~/.cache:/root/.cache \
+                    -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchchat/${LOG_DIR} \
+                    -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
+                    gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
+                docker cp scripts/modelbench/torchchat_xpu.sh torchchat_test:/workspace/torchchat
+            '''
+        }
+        
         for (modelid in modelids){
             for (dtype in dtypes){
                 for (in_len in input_length){
@@ -380,18 +416,18 @@ node(NODE_LABEL){
                             for (qconfig in qconfigs){
                                 for (gps in groupsize){
                                     withEnv(["modelid=${modelid}","dtype=${dtype}","in_len=${in_len}","ou_len=${ou_len}","bak=${bak}","device=${device}","qconfig=${qconfig}","gps=${gps}"]){
-                                sh '''
-                                    #!/bin/bash
-                                    set -x
-                                    if [ "${bak}" = "eager" ];then
-                                        prefill="noprefill"
-                                        autotune="noautotune"
-                                    else
-                                        prefill="prefill"
-                                        autotune="max_autotune"
-                                    fi
-                                    docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
-                                '''
+                                    sh '''
+                                        #!/bin/bash
+                                        set -x
+                                        if [ "${bak}" = "eager" ];then
+                                            prefill="noprefill"
+                                            autotune="noautotune"
+                                        else
+                                            prefill="prefill"
+                                            autotune="max_autotune"
+                                        fi
+                                        docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
+                                    '''
                                     }
                                 } 
                             }
