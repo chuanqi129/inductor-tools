@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310 AS dev-base
-ENV PATH=~/miniforge-pypy3/bin/:${PATH}
+ARG BASE_IMAGE=gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310
+FROM ${BASE_IMAGE} AS dev-base
+ENV PATH /root/miniforge-pypy3/bin/:$PATH
 WORKDIR /workspace
 ARG CONDA_NAME=chat_test
 ARG python_version=3.10
@@ -50,7 +51,7 @@ RUN set -ex && \
     echo 1 | update-alternatives --config gcc &&\
     rm -rf /workspace/ubit-artifactory-ba.intel.com && \
 
-FROM gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310 as dev-base
+FROM dev-base AS image
 COPY --from=build /root/miniforge-pypy3 /root/miniforge-pypy3
 COPY --from=build /workspace/ao /workspace/ao
 COPY --from=build /workspace/torchtune /workspace/torchtune
