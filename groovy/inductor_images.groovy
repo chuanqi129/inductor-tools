@@ -165,7 +165,7 @@ node(NODE_LABEL){
                     DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f ${dockerfile} --target image .
                 elif [ "${device}" = "xpu" ];then
                     DOCKER_BUILDKIT=1 docker build --no-cache --build-arg driver_name=${driver_name} \
-                             -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f Dockerfile.xpu --target image .
+                             -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f Dockerfile.xpu .
                 fi
             else
                 echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip build image"
