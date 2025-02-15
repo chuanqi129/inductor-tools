@@ -213,6 +213,15 @@ if ('torchchat_modeldir' in params) {
 }
 echo "torchchat_modeldir: $torchchat_modeldir"
 
+env.driver_name= 'hotfix_agama-ci-devel-803.103'
+if ('driver_name' in params) {
+    echo "driver_name in params"
+    if (params.driver_name != '') {
+        env.driver_name = params.driver_name
+    }
+}
+echo "driver_name: $driver_name"
+
 env.http_proxy=env.NODE_PROXY
 env.https_proxy=env.NODE_PROXY
 env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
