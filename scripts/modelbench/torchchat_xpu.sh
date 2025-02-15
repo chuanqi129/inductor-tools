@@ -15,7 +15,7 @@ export TORCHCHAT_MODELDIR=/localdisk/datasets/huggingface/
 export TORCHINDUCTOR_FREEZING=1
 
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so
-
+conda activate chat_test
 num_iter=5
 
 dtype=${1:-bf16}

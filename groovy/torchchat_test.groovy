@@ -421,7 +421,11 @@ node(NODE_LABEL){
                                             prefill="prefill"
                                             autotune="max_autotune"
                                         fi
-                                        docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
+                                        if [ "${device}" = "cpu" ];then
+                                            docker exec -i torchchat_test bash -c "bash torchchat_cpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
+                                        else
+                                            docker exec -i torchchat_test bash -c "bash torchchat_xpu.sh $dtype $prefill $bak $autotune $profile $modelid $ou_len $in_len $qconfig $gps "
+                                        fi
                                     '''
                                     }
                                 } 
