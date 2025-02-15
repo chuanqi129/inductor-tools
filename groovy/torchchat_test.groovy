@@ -389,7 +389,7 @@ node(NODE_LABEL){
                 #!/bin/bash
                 set -x
                 docker run -tid --name torchchat_test \
-                    --device /dev/dri
+                    --device /dev/dri \
                     --privileged \
                     --env https_proxy=${https_proxy} \
                     --env http_proxy=${http_proxy} \
