@@ -51,10 +51,5 @@ RUN set -ex && \
     echo 1 | update-alternatives --config gcc &&\
     rm -rf /workspace/ubit-artifactory-ba.intel.com && \
 
-FROM dev-base AS image
-COPY --from=build /root/miniforge-pypy3 /root/miniforge-pypy3
-COPY --from=build /workspace/ao /workspace/ao
-COPY --from=build /workspace/torchtune /workspace/torchtune
-COPY --from=build /workspace/torchchat /workspace/torchchat
 WORKDIR /workspace/torchchat
 
