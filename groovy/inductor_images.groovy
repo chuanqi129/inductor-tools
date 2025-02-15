@@ -160,7 +160,7 @@ node(NODE_LABEL){
                 dockerfile=Dockerfile
             fi
             if [ -z "${docker_img_status}" ];then
-                cp docker/${dockerfile} ./
+                cp docker/Dockerfile.cpu ./
                 if [ "${device}" = "cpu" ];then
                     DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f ${dockerfile} --target image .
                 elif [ "${device}" = "xpu" ];then
