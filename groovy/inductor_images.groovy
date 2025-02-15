@@ -115,6 +115,15 @@ if ('iap_credential' in params) {
 }
 echo "iap_credential: $iap_credential"
 
+iap_credential= 'chuanqiw_intel_id'
+if ('iap_credential' in params) {
+    echo "iap_credential in params"
+    if (params.iap_credential != '') {
+        iap_credential = params.iap_credential
+    }
+}
+echo "iap_credential: $iap_credential"
+
 node(NODE_LABEL){
     stage("get dockerfile"){
         echo 'get dockerfile......'
@@ -152,7 +161,12 @@ node(NODE_LABEL){
             fi
             if [ -z "${docker_img_status}" ];then
                 cp docker/${dockerfile} ./
-                DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f ${dockerfile} --target image .
+                if [ "${device}" = "cpu" ];then
+                    DOCKER_BUILDKIT=1 docker build --no-cache --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg BASE_IMAGE=${BASE_IMAGE} -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f ${dockerfile} --target image .
+                elif [ "${device}" = "xpu" ];then
+                    DOCKER_BUILDKIT=1 docker build --no-cache --build-arg driver_name=${driver_name} \
+                             -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f Dockerfile.xpu --target image .
+                fi
             else
                 echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip build image"
             fi

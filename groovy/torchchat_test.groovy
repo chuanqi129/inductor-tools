@@ -281,13 +281,13 @@ node(NODE_LABEL){
     }
     if (env.build_image == 'True'){       
         stage("trigger inductor images job"){
-            if (env.device == 'cpu'){
                 try {
                     retry(3){
                         sleep(60)
                         def image_build_job = build job: 'torchlib_images', propagate: false, parameters: [             
                             [$class: 'StringParameterValue', name: 'tag', value: "${docker_name}"],
                             [$class: 'StringParameterValue', name: 'device', value: "${device}"],
+                            [$class: 'StringParameterValue', name: 'driver_name', value: "${driver_name}"],
                         ]
                         def buildStatus = image_build_job.getResult()
                         def cur_job_url = image_build_job.getAbsoluteUrl()
@@ -316,20 +316,6 @@ node(NODE_LABEL){
                     archiveArtifacts "image_build.log"
                     throw e
                 }
-            }else{
-                sh '''#!/usr/bin/env bash
-                    docker_img_status=`docker manifest inspect gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}` || true
-                    if [ -z "${docker_img_status}" ];then
-                        cp docker/Dockerfile.xpu ./
-                        DOCKER_BUILDKIT=1 docker build --no-cache --build-arg driver_name=${driver_name} \
-                             -t gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} -f Dockerfile.xpu --target image .
-                        docker push gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device}
-                    else
-                        echo "gar-registry.caas.intel.com/pytorch/torchchat:${tag}_${device} existed, skip build image"
-                    fi
-
-                '''
-            }
             
         }
     }
