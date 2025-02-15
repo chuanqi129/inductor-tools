@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310 as dev-base
+FROM gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310 AS dev-base
 ENV PATH=~/miniforge-pypy3/bin/:${PATH}
 WORKDIR /workspace
 ARG CONDA_NAME=chat_test
