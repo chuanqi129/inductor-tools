@@ -1,17 +1,7 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE} AS dev-base
-ENV PATH /root/miniforge-pypy3/bin/:$PATH
-WORKDIR /workspace
-ARG CONDA_NAME=chat_test
-ARG python_version=3.10
-ARG driver_name
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    curl gnupg ca-certificates wget && \
-    apt-get clean && \
-    rm -rf  /var/lib/apt/lists/*
-
 RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA256RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA256RootCA-Base64.crt
 RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA384RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA384RootCA-Base64.crt
 RUN update-ca-certificates
@@ -23,14 +13,69 @@ RUN MAJOR=$(echo $driver_name | sed -n 's/[^0-9]*\([0-9]*\)\..*/\1/p') && \
     MINOR=$(echo $driver_name | awk -F. '{print $2}') && \ 
     echo "deb [signed-by=/etc/apt/keyrings/gfx-assets-build.gpg] https://gfx-assets-build.fm.intel.com/artifactory/agama-debs-per-build untested/main/agama/hotfix_agama-ci-devel-${MAJOR}/jammy hotfix_agama-ci-devel-${MAJOR}.${MINOR}" | tee /etc/apt/sources.list.d/https___gfx_assets_build_fm_intel_com_artifactory_agama_debs_per_build_untested_main_agama_hotfix_agama_ci_devel_${MAJOR}_jammy_hotfix_agama_ci_devel_${MAJOR}_${MINOR}.list > /dev/null
 
-ENV no_proxy=.intel.com,intel.com,localhost,127.0.0.1
-
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    intel-opencl-icd intel-level-zero-gpu libze1 intel-ocloc \
-    libigc-dev libze-dev libigdfcl-dev libnl-genl-3-200 && \
-    apt-get clean && \
-    rm -rf  /var/lib/apt/lists/*
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libtcmalloc-minimal4 \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        pybind11-dev \
+        wget \
+        vim \
+        intel-opencl-icd intel-level-zero-gpu libze1 intel-ocloc \
+        libigc-dev libze-dev libigdfcl-dev libnl-genl-3-200 && \
+        && rm -rf /var/lib/apt/lists/*
+RUN /usr/sbin/update-ccache-symlinks
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
+
+FROM dev-base AS conda
+ARG PYTHON_VERSION=3.10
+RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    chmod +x ~/miniforge.sh && \
+    # Fix conda install issue
+    ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake=3.26 \
+        mamba=1.5.8 \
+        dataclasses \
+        future \
+        git-lfs \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        openssl \    
+        weasyprint && \
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
+
+FROM dev-base AS build
+COPY --from=conda /opt/conda /opt/conda
+WORKDIR /workspace
 
 RUN set -ex && \
     conda_env=$CONDA_NAME && \
@@ -51,5 +96,10 @@ RUN set -ex && \
     echo 1 | update-alternatives --config gcc &&\
     rm -rf /workspace/ubit-artifactory-ba.intel.com && \
 
+FROM dev-base AS image
+COPY --from=build /opt/conda /opt/conda
+COPY --from=build /workspace/ao /workspace/ao
+COPY --from=build /workspace/torchtune /workspace/torchtune
+COPY --from=build /workspace/torchchat /workspace/torchchat
 WORKDIR /workspace/torchchat
 
