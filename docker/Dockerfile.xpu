@@ -1,11 +1,27 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=gar-registry.caas.intel.com/pytorch/ipex_gpu/ubuntu2204:miniforge_py310
+ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE} AS dev-base
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    curl gnupg ca-certificates wget && \
-    apt-get clean && \
-    rm -rf  /var/lib/apt/lists/*
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
+        build-essential \
+        ca-certificates \
+        ccache \
+        cmake \
+        curl \
+        ffmpeg \
+        git \
+        libtcmalloc-minimal4 \
+        libjpeg-dev \
+        libpng-dev \
+        libsm6 \
+        libxext6 \
+        numactl \
+        pybind11-dev \
+        wget \
+        vim \
+    && rm -rf /var/lib/apt/lists/*
+RUN /usr/sbin/update-ccache-symlinks
 ARG driver_name
 RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA256RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA256RootCA-Base64.crt
 RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA384RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA384RootCA-Base64.crt
@@ -22,37 +38,61 @@ RUN apt-get update && \
     libigc-dev libze-dev libigdfcl-dev libnl-genl-3-200 && \
     apt-get clean && \
     rm -rf  /var/lib/apt/lists/*
-ENV PATH /root/miniforge-pypy3/bin:PATH
+RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
+ENV PATH /opt/conda/bin:$PATH
 
-FROM dev-base AS miniforge-pypy3
-ARG CONDA_NAME=chat_test
-ARG python_version=3.10
-RUN set -ex && \
-    conda_env=$CONDA_NAME && \
-    . /root/miniforge-pypy3/bin/activate && \
-    rm -rf  /root/miniforge-pypy3/envs/* && \
-    conda create -n $CONDA_NAME python=${python_version} -y && \
-    conda activate $CONDA_NAME && \
-    if [ $? -ne 0 ]; then echo 'Conda env fail'; exit; fi
+FROM dev-base AS conda
+ARG PYTHON_VERSION=3.10
+RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    chmod +x ~/miniforge.sh && \
+    # Fix conda install issue
+    ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+        astunparse \
+        cffi \
+        cython \
+        cmake=3.26 \
+        mamba=1.5.8 \
+        dataclasses \
+        future \
+        git-lfs \
+        ipython \
+        mkl \
+        mkl-include \
+        ninja \
+        numpy \
+        requests \
+        typing \
+        typing_extensions \
+        Pillow \
+        pkg-config \
+        pybind11 \
+        pyyaml \
+        setuptools \
+        jemalloc \
+        openssl \      
+        weasyprint && \
+    /opt/conda/bin/conda clean -ya && \
+    # Fix GLIBCXX version issue
+    rm -f /opt/conda/lib/libstdc++.so.6
 
 FROM dev-base AS build
-COPY --from=miniforge-pypy3 /root/miniforge-pypy3 /root/miniforge-pypy3 
-WORKDIR /workspace        
-RUN conda activate $CONDA_NAME && \
-    pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu && \
+COPY --from=conda /opt/conda /opt/conda
+WORKDIR /workspace
+RUN pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu && \
     git clone https://github.com/pytorch/ao.git && \
     cd ao && pip install -e . && cd .. && \
     git clone -b benchmark https://github.com/zxd1997066/torchtune.git && \
     cd torchtune && pip install -e . && cd .. && \
     git clone -b benchmark https://github.com/zxd1997066/torchchat.git && \
-    python -m pip install intel-openmp && \
-    python -m pip install numpy ninja cmake==3.28.4 &&\
-    python -m pip install tomli transformers &&\
-    echo 1 | update-alternatives --config gcc &&\
-    rm -rf /workspace/ubit-artifactory-ba.intel.com && \
+    conda install -y gperftools -c conda-forge && \
+    pip install intel-openmp && \
+    pip install tomli transformers
 
+# Clean for final image
 FROM dev-base AS image
-COPY --from=build /root/miniforge-pypy3 /root/miniforge-pypy3
+COPY --from=build /opt/conda /opt/conda
 COPY --from=build /workspace/ao /workspace/ao
 COPY --from=build /workspace/torchtune /workspace/torchtune
 COPY --from=build /workspace/torchchat /workspace/torchchat
