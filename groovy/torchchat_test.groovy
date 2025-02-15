@@ -400,6 +400,10 @@ node(NODE_LABEL){
                     -v ${torchchat_modeldir}:/localdisk/datasets/huggingface/ \
                     gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                 docker cp scripts/modelbench/torchchat_xpu.sh torchchat_test:/workspace/torchchat
+                docker cp scripts/modelbench/driver_install.sh torchchat_test:/workspace/torchchat
+                docker exec -i torchchat_test bash -c "bash driver_install.sh "
+                systemctl restart docker
+                docker start torchchat_test
             '''
         }
         

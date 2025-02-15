@@ -9,7 +9,6 @@ set -x
 export SYCL_CACHE_PERSISTENT=1
 export ENABLE_SDP_FUSION=1
 export SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
-conda activate chat_test
 export TORCHCHAT_MODELDIR=/localdisk/datasets/huggingface/
 
 export TORCHINDUCTOR_FREEZING=1
