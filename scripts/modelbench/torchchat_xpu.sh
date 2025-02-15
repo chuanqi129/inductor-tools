@@ -139,8 +139,8 @@ fi
 if [ ${dtype} == "int8" ] || [ ${dtype} == "int4" ]; then
     if [ ${qconfig} == "aot_qconfig1" ] || [ ${qconfig} == "aot_qconfig2" ]; then
         PROMPT="It's done, and submitted. You can play 'Survival of the Tastiest' on Android, and on the web. Playing on the web works, but you have to simulate multiple touch for table moving and that can be a bit confusing. There is a lot I'd like to talk about. I will go through every topic, insted of making the typical what went right/wrong list. Concept Working over the theme was probably one of the hardest tasks which I had to face. Originally, I had an idea of what kind of game I wanted to develop, gameplay wise"
-        python3 torchchat.py export ${model} $DTYPE_ARGS "$DTYPE_CONFIG" --output-dso-path ${model}.so
-        python3 torchchat.py generate ${model} --dso-path ${model}.so  --prompt "$PROMPT" $PROFILE_ARGS --num-samples $num_iter --device cpu --max-new-tokens 128 --attention-backend flash_attention 2>&1 | tee torchchat_log/${model}_${dtype}_eager_128_128_256_${qconfig}.log
+        python3 torchchat.py export ${model} $DTYPE_ARGS "$DTYPE_CONFIG" --output-dso-path ${model}.so --device xpu
+        python3 torchchat.py generate ${model} --dso-path ${model}.so  --prompt "$PROMPT" $PROFILE_ARGS --num-samples $num_iter --device xpu --max-new-tokens 128 --attention-backend flash_attention 2>&1 | tee torchchat_log/${model}_${dtype}_eager_128_128_256_${qconfig}.log
     else
         python3 torchchat.py generate ${model} --prompt "$PROMPT" $DTYPE_ARGS "$DTYPE_CONFIG" $COMPILE_ARGS $PREFILL_ARGS $MAX_AUTOTUNE_ARGS $PROFILE_ARGS $SUBFIX 2>&1 | tee torchchat_log/${model}_${dtype}_${compile}_${input_length}_${max_new_tokens}_${gps}_${qconfig}.log
     fi
