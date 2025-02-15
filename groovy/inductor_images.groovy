@@ -115,11 +115,11 @@ if ('iap_credential' in params) {
 }
 echo "iap_credential: $iap_credential"
 
-iap_credential= 'chuanqiw_intel_id'
-if ('iap_credential' in params) {
-    echo "iap_credential in params"
-    if (params.iap_credential != '') {
-        iap_credential = params.iap_credential
+driver_name= 'hotfix_agama-ci-devel-803.103'
+if ('driver_name' in params) {
+    echo "driver_name in params"
+    if (params.driver_name != '') {
+        driver_name = params.driver_name
     }
 }
 echo "iap_credential: $iap_credential"
