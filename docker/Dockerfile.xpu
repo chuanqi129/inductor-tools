@@ -16,28 +16,11 @@ RUN apt-get update && \
         libpng-dev \
         libsm6 \
         libxext6 \
-        numactl \
         pybind11-dev \
         wget \
         vim \
     && rm -rf /var/lib/apt/lists/*
 RUN /usr/sbin/update-ccache-symlinks
-ARG driver_name
-RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA256RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA256RootCA-Base64.crt
-RUN curl --noproxy '*' http://certificates.intel.com/repository/certificates/IntelSHA384RootCA-Base64.crt -o /usr/local/share/ca-certificates/IntelSHA384RootCA-Base64.crt
-RUN update-ca-certificates
-RUN mkdir -p /etc/apt/keyrings
-RUN curl --noproxy '*' -fsSL https://gfx-assets-build.intel.com/artifactory/api/gpg/key/public | gpg --yes --dearmor -o /etc/apt/keyrings/gfx-assets-build.gpg
-RUN MAJOR=$(echo $driver_name | sed -n 's/[^0-9]*\([0-9]*\)\..*/\1/p') && \
-    MINOR=$(echo $driver_name | awk -F. '{print $2}') && \ 
-    echo "deb [signed-by=/etc/apt/keyrings/gfx-assets-build.gpg] https://gfx-assets-build.fm.intel.com/artifactory/agama-debs-per-build untested/main/agama/hotfix_agama-ci-devel-${MAJOR}/jammy hotfix_agama-ci-devel-${MAJOR}.${MINOR}" | tee /etc/apt/sources.list.d/https___gfx_assets_build_fm_intel_com_artifactory_agama_debs_per_build_untested_main_agama_hotfix_agama_ci_devel_${MAJOR}_jammy_hotfix_agama_ci_devel_${MAJOR}_${MINOR}.list > /dev/null
-ENV no_proxy=.intel.com,intel.com,localhost,127.0.0.1
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    intel-opencl-icd intel-level-zero-gpu libze1 intel-ocloc \
-    libigc-dev libze-dev libigdfcl-dev libnl-genl-3-200 && \
-    apt-get clean && \
-    rm -rf  /var/lib/apt/lists/*
 RUN mkdir /opt/ccache && ccache --set-config=cache_dir=/opt/ccache
 ENV PATH /opt/conda/bin:$PATH
 
@@ -70,7 +53,6 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         pybind11 \
         pyyaml \
         setuptools \
-        jemalloc \
         openssl \      
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
