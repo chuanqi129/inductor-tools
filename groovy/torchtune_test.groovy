@@ -407,15 +407,18 @@ node(NODE_LABEL){
             '''
         }
         
-        withEnv(["device=${device}"]){
+        for (dtype in dtypes){
+            withEnv(["device=${device}", "device=${device}"]){
             sh '''
                 if [ "${device}" = "cpu" ];then
-                    docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh "
+                    docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype "
                 else
-                    docker exec -i torchchat_test bash -c "bash torchtune_xpu.sh "
+                    docker exec -i torchchat_test bash -c "bash torchtune_xpu.sh $dtype "
                 fi
             '''
-        }                            
+        }                   
+        }
+                 
 
     if (fileExists("${WORKSPACE}/logs/summary.log") == true){
         archiveArtifacts "logs/summary.log"
