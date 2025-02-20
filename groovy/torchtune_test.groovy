@@ -402,7 +402,7 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/driver_install.sh torchchat_test:/workspace/torchchat
                 docker exec -i torchtune_test bash -c "bash driver_install.sh "
                 sudo systemctl restart docker
-                docker start torchchat_test
+                docker start torchtune_test
             '''
         }
         
