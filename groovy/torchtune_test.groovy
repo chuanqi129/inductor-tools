@@ -101,15 +101,14 @@ if ('input_length' in params) {
 }
 echo "input_length: $input_length"
 
-env.qconfigs = ''
-if ('qconfigs' in params) {
-    echo "qconfigs"
-    if (params.qconfigs != '') {
-        qconfigs = params.qconfigs
-        qconfigs = qconfigs.split(",")
+env.iter = '5'
+if ('iter' in params) {
+    echo "iter"
+    if (params.iter != '') {
+        iter = params.iter
     }
 }
-echo "qconfigs: $qconfigs"
+echo "iter: $iter"
 
 env.groupsize = ''
 if ('groupsize' in params) {
@@ -408,12 +407,12 @@ node(NODE_LABEL){
         }
         
         for (dtype in dtypes){
-            withEnv(["device=${device}", "device=${device}"]){
+            withEnv(["device=${device}", "device=${device}", "iter=${iter}"]){
             sh '''
                 if [ "${device}" = "cpu" ];then
-                    docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype "
+                    docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype $iter "
                 else
-                    docker exec -i torchchat_test bash -c "bash torchtune_xpu.sh $dtype "
+                    docker exec -i torchchat_test bash -c "bash torchtune_xpu.sh $dtype $iter "
                 fi
             '''
         }                   
