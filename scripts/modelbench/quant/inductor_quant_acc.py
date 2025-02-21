@@ -56,7 +56,7 @@ def run_model(model_name, args):
     if args.cpp_wrapper:
         print("using cpp_wrapper")
         torchinductor.config.cpp_wrapper = args.cpp_wrapper
-    valdir = "/workspace/benchmark/imagenet/val/"
+    valdir = args.dataset_dir
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     val_loader = torch.utils.data.DataLoader(
@@ -174,8 +174,8 @@ def run_model(model_name, args):
                 .format(top1=quant_top1, top5=quant_top5))
 
 if __name__ == "__main__":
-    # model_list=["alexnet","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
-    model_list=["resnet50"]
+    model_list=["alexnet","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
+    # model_list=["resnet50"]
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -203,6 +203,16 @@ if __name__ == "__main__":
         action='store_true',
         help="fp32 inductor",
     )
+    parser.add_argument(
+        "--dataset_dir",
+        default='/workspace/benchmark/imagenet/val/',
+        help="ImageNet dir",
+    )
+    parser.add_argument(
+        "--model_list",
+        default=None,
+        help="Models list, such as: alexnet,resnet50 which split with ,",
+    )
     args = parser.parse_args()
-    for model in model_list:
+    for model in model_list if args.model_list is None else args.model_list.split(","):
         run_model(model, args)
