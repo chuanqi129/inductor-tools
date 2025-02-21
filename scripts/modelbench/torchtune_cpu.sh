@@ -22,6 +22,7 @@ export TORCHINDUCTOR_FREEZING=1
 
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so:${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libtcmalloc.so
 dtype=${1:-bf16}
+iter=${1:-5}
 cd /workspace/torchtune/
 if [ ! -d "torchtune_log" ]; then
     mkdir -p "torchtune_log"
