@@ -407,7 +407,7 @@ node(NODE_LABEL){
         }
         
         for (dtype in dtypes){
-            withEnv(["device=${device}", "device=${device}", "iter=${iter}"]){
+            withEnv(["device=${device}", "device=${device}", "iter=${iter}", "dtype=${dtype}"]){
             sh '''
                 if [ "${device}" = "cpu" ];then
                     docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype $iter "
