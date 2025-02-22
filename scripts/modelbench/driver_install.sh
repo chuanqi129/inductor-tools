@@ -6,19 +6,16 @@ set -x
 #
 #
 #
-wget -qO - https://repositories.intel.com/gpu/intel-graphics.key |
-    gpg --yes --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-apt update
 apt install -y gpg-agent wget
 . /etc/os-release
 if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
     echo "Ubuntu version ${VERSION_CODENAME} not supported"
 else
     wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
-    sudo gpg --yes --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+    gpg --yes --dearmor --output /usr/share/keyrings/intel-graphics.gpg
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu ${VERSION_CODENAME}/lts/2350 unified" | \
-    sudo tee /etc/apt/sources.list.d/intel-gpu-${VERSION_CODENAME}.list
-    sudo apt update
+    tee /etc/apt/sources.list.d/intel-gpu-${VERSION_CODENAME}.list
+    apt update
 fi
 # . /etc/os-release
 # if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
