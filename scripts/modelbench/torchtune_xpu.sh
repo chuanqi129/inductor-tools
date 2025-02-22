@@ -1,8 +1,5 @@
 set -x
 
-export http_proxy=http://proxy.ims.intel.com:911
-export https_proxy=http://proxy.ims.intel.com:911
-
 export TORCHINDUCTOR_FREEZING=1
 
 export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libiomp5.so
