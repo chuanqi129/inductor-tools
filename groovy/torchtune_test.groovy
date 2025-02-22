@@ -412,7 +412,7 @@ node(NODE_LABEL){
                 if [ "${device}" = "cpu" ];then
                     docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype $iter "
                 else
-                    docker exec -i torchchat_test bash -c "bash torchtune_xpu.sh $dtype $iter "
+                    docker exec -i torchtune_test bash -c "bash torchtune_xpu.sh $dtype $iter "
                 fi
             '''
         }                   
