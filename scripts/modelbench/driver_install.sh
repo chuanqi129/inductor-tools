@@ -20,14 +20,14 @@ else
     sudo tee /etc/apt/sources.list.d/intel-gpu-${VERSION_CODENAME}.list
     sudo apt update
 fi
-. /etc/os-release
-if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
-    echo "Ubuntu version ${VERSION_CODENAME} not supported"
-else
-    wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run
-    chmod +x intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run
-    ./intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run -y
-fi
+# . /etc/os-release
+# if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
+#     echo "Ubuntu version ${VERSION_CODENAME} not supported"
+# else
+#     wget https://repositories.intel.com/gpu/ubuntu/dists/jammy/lts/2350/intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run
+#     chmod +x intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run
+#     ./intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run -y
+# fi
 apt install -y \
     linux-headers-$(uname -r) \
     linux-modules-extra-$(uname -r) \
