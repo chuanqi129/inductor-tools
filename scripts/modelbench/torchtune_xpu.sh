@@ -46,5 +46,5 @@ tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3
 tune run lora_finetune_single_device --config llama3/8B_qdora_single_device device=xpu dtype=$dtype max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qdora.log
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
+    tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
 fi
