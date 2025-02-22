@@ -6,7 +6,9 @@ set -x
 #
 #
 #
+apt update
 apt install -y gpg-agent wget
+
 . /etc/os-release
 if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
     echo "Ubuntu version ${VERSION_CODENAME} not supported"
