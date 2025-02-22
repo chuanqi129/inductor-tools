@@ -399,7 +399,7 @@ node(NODE_LABEL){
                     -v ${torchtune_modeldir}:/tmp \
                     gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
                 docker cp scripts/modelbench/torchtune_xpu.sh torchtune_test:/workspace/torchchat
-                docker cp scripts/modelbench/driver_install.sh torchchat_test:/workspace/torchchat
+                docker cp scripts/modelbench/driver_install.sh torchtune_test:/workspace/torchchat
                 docker exec -i torchtune_test bash -c "bash driver_install.sh "
                 sudo systemctl restart docker
                 docker start torchtune_test
