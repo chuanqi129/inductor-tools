@@ -34,16 +34,16 @@ numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run knowledge_
 #mistralai/Mistral-7B-Instruct-v0.2 ppo
 tune download weqweasdas/RM-Mistral-7B --output-dir /tmp/RM-Mistral-7B/
 tune download mistralai/Mistral-7B-Instruct-v0.2 --output-dir /tmp/Mistral-7B-Instruct-v0.2/ 
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run ppo_full_finetune_single_device --config mistral/7B_full_ppo_low_memory device=cpu dtype=$dtype optimizer.component=torchao.prototype.low_bit_optim.AdamWFp8 2>&1 | tee torchtune_log/Mistral-7B-Instruct-v0.2_ppo.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run ppo_full_finetune_single_device --config mistral/7B_full_ppo_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 2>&1 | tee torchtune_log/Mistral-7B-Instruct-v0.2_ppo.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora_dpo
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora_dpo.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer.component=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full.log
 #mistralai/Mistral-7B-v0.1 full finetune
 tune download mistralai/Mistral-7B-v0.1 --output-dir /tmp/Mistral-7B-v0.1
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer.component=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora.log
@@ -62,14 +62,7 @@ numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finet
 #meta-llama/Meta-Llama-3-8B-Instruct qdora
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_qdora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qdora.log
-
-
-
-
-
-
-
-
-
-
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_dora_single_device device=cpu
+if [[ $dtype == 'bf16' ]]; then
+    #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
+fi
