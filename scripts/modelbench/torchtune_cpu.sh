@@ -43,7 +43,7 @@ tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full.log
 #mistralai/Mistral-7B-v0.1 full finetune
 tune download mistralai/Mistral-7B-v0.1 --output-dir /tmp/Mistral-7B-v0.1
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 enable_activation_offloading=False max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora.log
