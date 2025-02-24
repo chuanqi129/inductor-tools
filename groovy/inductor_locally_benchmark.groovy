@@ -283,6 +283,8 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/inductor_test.sh inductor_test:/workspace/pytorch
                 docker cp scripts/modelbench/inductor_train.sh inductor_test:/workspace/pytorch
                 docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
+                docker cp scripts/install_gcc13.sh inductor_test:/workspace/pytorch
+                docker exec -i inductor_test bash -c "bash install_gcc13.sh"
                 docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
                 if [ $test_mode == "inference" ]; then
