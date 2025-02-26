@@ -213,7 +213,7 @@ node(NODE_LABEL){
             )          
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_target_job}_${_target_sc} && mv inductor_log ${_target_job}_${_target_sc}
+            cd ${WORKSPACE} && rm inductor_log/*.xlsx && mkdir -p ${_target_job}_${_target_sc} && mv inductor_log ${_target_job}_${_target_sc}
             '''
             copyArtifacts(
                 projectName: "${refer_job}",
