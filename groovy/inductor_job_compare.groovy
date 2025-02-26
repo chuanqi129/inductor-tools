@@ -222,7 +222,7 @@ node(NODE_LABEL){
             )            
             sh '''
             #!/usr/bin/env bash
-            cd ${WORKSPACE} && rm inductor_log/*.html && rm inductor_log/*.xlsx && mkdir -p ${_refer_job}_${_refer_sc} && mv inductor_log ${_refer_job}_${_refer_sc}
+            cd ${WORKSPACE} && rm inductor_log/*.xlsx && mkdir -p ${_refer_job}_${_refer_sc} && mv inductor_log ${_refer_job}_${_refer_sc}
             '''        
         }
         stage("report"){
