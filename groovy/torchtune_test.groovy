@@ -401,8 +401,8 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/torchtune_xpu.sh torchtune_test:/workspace/torchchat
                 docker cp scripts/modelbench/driver_install.sh torchtune_test:/workspace/torchchat
                 docker exec -i torchtune_test bash -c "bash driver_install.sh "
-                sudo systemctl restart docker
-                docker start torchtune_test
+                #sudo systemctl restart docker
+                #docker start torchtune_test
             '''
         }
         
