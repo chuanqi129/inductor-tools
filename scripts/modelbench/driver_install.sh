@@ -32,6 +32,7 @@ apt install -y flex bison intel-fw-gpu intel-i915-dkms xpu-smi
     # linux-modules-extra-$(uname -r) \
     #flex bison \
     #intel-fw-gpu intel-i915-dkms xpu-smi
+apt install -y intel-i915-dkms || true
 apt install -y \
     intel-opencl-icd intel-level-zero-gpu level-zero \
     intel-media-va-driver-non-free libmfxgen1 libvpl2 \
