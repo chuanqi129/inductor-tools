@@ -28,8 +28,8 @@ fi
 #     ./intel-gpu-ubuntu-${VERSION_CODENAME}-2350.run -y
 # fi
 apt install -y \
-    linux-headers-$(uname -r) \
-    linux-modules-extra-$(uname -r) \
+    # linux-headers-$(uname -r) \
+    # linux-modules-extra-$(uname -r) \
     flex bison \
     intel-fw-gpu intel-i915-dkms xpu-smi
 apt install -y \
