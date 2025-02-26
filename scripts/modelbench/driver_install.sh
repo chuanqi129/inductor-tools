@@ -1,13 +1,13 @@
-# set -x
-# # llama 3-1/1024
+set -x
+# llama 3-1/1024
 
-# #
-# #PROMPT="write me a story about a boy and his bear"
-# #
-# #
-# #
-# apt update
-# apt install -y gpg-agent wget
+#
+#PROMPT="write me a story about a boy and his bear"
+#
+#
+#
+apt update
+apt install -y gpg-agent wget
 
 # . /etc/os-release
 # if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
