@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--device",
-        default='xpu',
+        default='cpu',
         help="Device to run",
     )
     parser.add_argument(
