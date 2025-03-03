@@ -49,6 +49,13 @@ if [[ $BACKEND == "aot_inductor" ]]; then
     sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py    
 fi
 
+if [[ $BACKEND == "aot_max_autotune" ]]; then
+    # Workaround for test with runner.py
+    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py
+    sed -i "s/torch._inductor.aoti_compile_and_package(ep)/torch._inductor.aoti_compile_and_package(ep, inductor_configs={'max_autotune': True})/" common.py
+    BACKEND=aot_inductor
+fi
+
 echo "Testing with ${BACKEND}."
 Backend_extra="$(python -c "import runner; print(runner.TABLE['${MODE}']['${BACKEND}'])") "
 
