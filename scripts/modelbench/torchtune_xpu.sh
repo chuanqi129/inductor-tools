@@ -13,10 +13,10 @@ fi
 tune download meta-llama/Llama-3.2-1B-Instruct --output-dir /tmp/Llama-3.2-1B-Instruct
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device device=xpu dtype=$dtype max_steps_per_epoch=$iter seed=123 2>&1 | tee torchtune_log/Llama-3.2-1B-Instruct_KD.log
-#mistralai/Mistral-7B-Instruct-v0.2 ppo
-tune download weqweasdas/RM-Mistral-7B --output-dir /tmp/RM-Mistral-7B/
-tune download mistralai/Mistral-7B-Instruct-v0.2 --output-dir /tmp/Mistral-7B-Instruct-v0.2/ 
-tune run ppo_full_finetune_single_device --config mistral/7B_full_ppo_low_memory device=xpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 2>&1 | tee torchtune_log/Mistral-7B-Instruct-v0.2_ppo.log
+#tiny llama ppo
+tune download smohammadi/tinyllama_rm_sentiment_1b --output-dir /tmp/tinyllama_rm_sentiment_1b/
+tune download TinyLlama/TinyLlama_v1.1 --output-dir /tmp/TinyLlama_v1.1/ 
+tune run ppo_full_finetune_single_device --config recipes/configs/llama2/1B_full_ppo_low_memory_single_device.yaml device=xpu dtype=$dtype seed=123 2>&1 | tee torchtune_log/tiny_llama_ppo.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora_dpo
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=xpu dtype=$dtype max_steps_per_epoch=$iter seed=123 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora_dpo.log
