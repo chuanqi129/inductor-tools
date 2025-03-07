@@ -9,6 +9,7 @@ cd /workspace/torchtune/
 if [ ! -d "torchtune_log" ]; then
     mkdir -p "torchtune_log"
 fi
+export HF_HOME=/tmp/huggingface/
 #meta-llama/Llama-3.2-1B-Instruct KD
 tune download meta-llama/Llama-3.2-1B-Instruct --output-dir /tmp/Llama-3.2-1B-Instruct
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
