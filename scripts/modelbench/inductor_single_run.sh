@@ -83,7 +83,7 @@ fi
 multi_threads_test() {
     export OMP_NUM_THREADS=$CORES
     end_core=$(expr $CORES - 1)    
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Flag_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} python benchmarks/dynamo/${SUITE}.py --ci --${SCENARIO} --${DT} -dcpu --no-skip --dashboard --only "${MODEL}" ${Channels_extra} ${BS_extra} ${Shape_extra} ${Flag_extra} ${Backend_extra} ${DT_extra} --timeout 9000 --output=/tmp/inductor_single_test_mt.csv && \
     cat /tmp/inductor_single_test_mt.csv && rm /tmp/inductor_single_test_mt.csv
 }
 
