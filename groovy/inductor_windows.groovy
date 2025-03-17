@@ -8,7 +8,7 @@ properties([
         choice(name: 'wrapper', choices: ['cpp', 'default'], description: ''),
         choice(name: 'suite', choices: ['all', 'torchbench', 'huggingface', 'timm_models'], description: ''),
         choice(name: 'precision', choices: ['float32'], description: ''),
-        string(name: 'recipients', defaultValue: 'lifeng.a.wang@intel.com', description: '', trim: true),
+        string(name: 'recipients', defaultValue: 'chuanqi.wang@intel.com;yucheng.liu@intel.com;leslie.fang@intel.com;xu.han@intel.com;lifeng.a.wang@intel.com', description: '', trim: true),
         string(name: 'http_proxy', defaultValue: 'http://proxy.ims.intel.com:911', description: '', trim: true),
     ])
 ])
