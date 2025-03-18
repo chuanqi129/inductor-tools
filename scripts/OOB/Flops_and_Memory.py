@@ -115,13 +115,17 @@ class UniversalModelAnalyzer:
                      module.dilation[0] * (module.kernel_size[0] - 1) - 1) // module.stride[0] + 1
             out_w = (input_shape[2] + 2 * module.padding[1] -
                      module.dilation[1] * (module.kernel_size[1] - 1) - 1) // module.stride[1] + 1
-            flops = (out_h * out_w * input_shape[0] * module.out_channels *
+            flops = 2 * (out_h * out_w * input_shape[0] * module.out_channels *
                      module.kernel_size[0] * module.kernel_size[1] // module.groups)
+            if module.bias == True:
+                flops += module.out_channels * out_h * out_w
 
         # Linear
         elif isinstance(module, nn.Linear):
             input_shape = input_shapes[0]
-            flops = input_shape[-1] * module.out_features
+            flops = np.prod(input_shape) * module.out_features * 2
+            if module.bias == True:
+                flops += input_shape[0] * input_shape[1] * module.out_features
 
         # MultiheadAttention
         elif isinstance(module, nn.MultiheadAttention):
@@ -190,14 +194,14 @@ class UniversalModelAnalyzer:
 
         return int(flops)
     
-    def _calculate_memory_load(self, module: nn.Module, input_shapes: list, output_shapes: list) -> int:
+    def _calculate_memory_load(self, module: nn.Module, input_shapes: list) -> int:
         """
         Calculate the memory load of a given module
         """
         memory_load = 0
         if not input_shapes:
             return 0
-        memory_load = np.prod(input_shapes[0]) + np.prod(output_shapes[0])
+        memory_load = np.prod(input_shapes[0])
         return int(memory_load)
 
     def analyze(self):
@@ -234,7 +238,7 @@ class UniversalModelAnalyzer:
             params = sum(p.numel() for p in module.parameters())
             # Compute FLOPs and memory load
             flops = self._calculate_flops(module, input_shapes)
-            memory_load = self._calculate_memory_load(module, input_shapes, output_shapes) + params
+            memory_load = self._calculate_memory_load(module, input_shapes) + params
 
             total_flops += flops
             total_params += params
