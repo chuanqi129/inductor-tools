@@ -4,7 +4,7 @@ import numpy as np
 from typing import Union, Dict, Tuple
 import torchvision
 import transformers
-import timm
+# import timm
 import math
 
 class UniversalModelAnalyzer:
@@ -132,10 +132,13 @@ class UniversalModelAnalyzer:
             print("a1:", input_shapes[0])
             q_shape = input_shapes[0]
             seq_len, embed_dim = q_shape[-2], q_shape[-1]
-            flops += 3 * seq_len * embed_dim * module.embed_dim
-            flops += 2 * seq_len * seq_len * embed_dim
-            flops += 2 * seq_len * seq_len * embed_dim
-            flops += seq_len * embed_dim * module.embed_dim
+            flops += 3 * 2 * seq_len * embed_dim * module.embed_dim # Projection
+            flops += 2 * seq_len * seq_len * embed_dim # SDPA
+            flops += 3 * seq_len * seq_len # softmax
+            flops += 2 * seq_len * seq_len * embed_dim # (A = softmax(**))* V
+            flops += 2 * seq_len * embed_dim * module.embed_dim # Projection out
+            if module.bias == True:
+                flops += seq_len * module.embed_dim
 
         # LayerNorm
         elif isinstance(module, nn.LayerNorm):
