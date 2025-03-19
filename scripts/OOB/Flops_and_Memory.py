@@ -111,9 +111,9 @@ class UniversalModelAnalyzer:
         # Conv2d
         if isinstance(module, nn.Conv2d):
             input_shape = input_shapes[0]
-            out_h = (input_shape[1] + 2 * module.padding[0] -
+            out_h = (input_shape[2] + 2 * module.padding[0] -
                      module.dilation[0] * (module.kernel_size[0] - 1) - 1) // module.stride[0] + 1
-            out_w = (input_shape[2] + 2 * module.padding[1] -
+            out_w = (input_shape[3] + 2 * module.padding[1] -
                      module.dilation[1] * (module.kernel_size[1] - 1) - 1) // module.stride[1] + 1
             flops = 2 * (out_h * out_w * input_shape[0] * module.in_channels * module.out_channels *
                      module.kernel_size[0] * module.kernel_size[1] // module.groups)
@@ -191,7 +191,7 @@ class UniversalModelAnalyzer:
             # weight(nx, nf), bias(nf,), input(N, seq, hidden)
             N, seq_len, hidden_size = input_shapes[0]
             # torchmm = 2mnk
-            flops = 2 * seq_len * nx * nf
+            flops = 2 * N * seq_len * nx * nf
         else:
             print(f"Warning: FLOPs calculation of {type(module)} is not implemented, return 0")
 
