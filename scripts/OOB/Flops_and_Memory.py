@@ -87,7 +87,7 @@ class UniversalModelAnalyzer:
             return torch.randn(64, *self.input_spec).to(self.device)
         elif isinstance(self.input_spec, dict):  # NLP model input
             return {
-                k: torch.randint(0, 10000, (1024,) + shape).to(self.device)
+                k: torch.randint(0, 10000, (16,) + shape).to(self.device)
                 for k, shape in self.input_spec.items()
             }
         else:
@@ -115,16 +115,16 @@ class UniversalModelAnalyzer:
                      module.dilation[0] * (module.kernel_size[0] - 1) - 1) // module.stride[0] + 1
             out_w = (input_shape[2] + 2 * module.padding[1] -
                      module.dilation[1] * (module.kernel_size[1] - 1) - 1) // module.stride[1] + 1
-            flops = 2 * (out_h * out_w * input_shape[0] * module.out_channels *
+            flops = 2 * (out_h * out_w * input_shape[0] * module.in_channels * module.out_channels *
                      module.kernel_size[0] * module.kernel_size[1] // module.groups)
-            if module.bias == True:
+            if module.bias == "True":
                 flops += module.out_channels * out_h * out_w
 
         # Linear
         elif isinstance(module, nn.Linear):
             input_shape = input_shapes[0]
             flops = np.prod(input_shape) * module.out_features * 2
-            if module.bias == True:
+            if module.bias == "True":
                 flops += input_shape[0] * input_shape[1] * module.out_features
 
         # MultiheadAttention
@@ -137,7 +137,7 @@ class UniversalModelAnalyzer:
             flops += 3 * seq_len * seq_len # softmax
             flops += 2 * seq_len * seq_len * embed_dim # (A = softmax(**))* V
             flops += 2 * seq_len * embed_dim * module.embed_dim # Projection out
-            if module.bias == True:
+            if module.bias == "True":
                 flops += seq_len * module.embed_dim
 
         # LayerNorm
@@ -260,32 +260,32 @@ if __name__ == "__main__":
     # example1: vision model
     #model = torch.hub.load('pytorch/vision:v0.10.0', 'timm_vision_transformer')
     # model = torchvision.models.__dict__["resnet50"]()
-    # # model = torchvision.models.__dict__["squeezenet1_1"]()
-    # analyzer = UniversalModelAnalyzer(model, input_spec=(3, 256, 256))
+    model = torchvision.models.__dict__["squeezenet1_1"]()
+    analyzer = UniversalModelAnalyzer(model, input_spec=(3, 256, 256))
     # analyzer.analyze()
     # example2: NLP model
-    from transformers import BertModel
-    from transformers import GPT2Tokenizer, GPT2Model
-    from transformers import (
-        AutoConfig,
-        AutoModelForCausalLM,
-        AutoTokenizer,
-        AutoModelForSequenceClassification,
-        pipeline,
-    )
-    generator = pipeline(
-        "text-generation",
-        model= "gpt2",
-    )
+    # from transformers import BertModel
+    # from transformers import GPT2Tokenizer, GPT2Model
+    # from transformers import (
+    #     AutoConfig,
+    #     AutoModelForCausalLM,
+    #     AutoTokenizer,
+    #     AutoModelForSequenceClassification,
+    #     pipeline,
+    # )
+    # generator = pipeline(
+    #     "text-generation",
+    #     model= "gpt2",
+    # )
  
     # model = BertModel.from_pretrained("bert-large-cased")
     # model = GPT2Model.from_pretrained('gpt2')
     # model = AutoModelForSequenceClassification.from_pretrained("bert-large-cased")
-    print("model:", generator.model)
-    analyzer = UniversalModelAnalyzer(
-        generator.model,
-        input_spec={"input_ids": (32,), "attention_mask": (32,)}
-    )
+    # print("model:", model)
+    # analyzer = UniversalModelAnalyzer(
+    #     model,
+    #     input_spec={"input_ids": (128,), "attention_mask": (128,)}
+    # )
     analyzer.analyze()
     # example3：Timms model
     # model = timm.create_model('vit_base_patch16_224', pretrained=True)
