@@ -31,3 +31,14 @@ torchrun --nproc-per-node 4 pippy_gpt2.py
 pip uninstall trl
 pip install transformers==4.36.2
 torchrun --nproc-per-node 2 pippy_llama.py
+#Deepspeed
+#Deepspeed build need IPEX, but you can uninstall IPEX after installing Deepspeed
+#https://github.com/ys950902/DeepSpeed/blob/sy/xccl_enable/accelerator/xpu_accelerator.py#L309-L317 no DpcppBuildExtension in torch.utils.cpp_extension
+git clone -b sy/xccl_enable https://github.com/ys950902/DeepSpeed.git
+cd DeepSpeed/
+pip install py-cpuinfo
+pip install -e .
+pip install SentencePiece
+git clone https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models.git
+cd frameworks.ai.pytorch.gpu-models/LLM/generation
+bash run_benchmark_ds.sh
