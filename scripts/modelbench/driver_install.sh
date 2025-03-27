@@ -19,7 +19,7 @@ else
     tee /etc/apt/sources.list.d/intel-gpu-${VERSION_CODENAME}.list
     apt update
 fi
-apt install -y 
+apt install -y \
     linux-headers-$(uname -r) \
     linux-modules-extra-$(uname -r) \
     flex bison \
