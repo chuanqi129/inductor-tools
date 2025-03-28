@@ -56,5 +56,5 @@ tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3
 tune run full_finetune_single_device --config llama3/8B_full_single_device device=xpu dtype=$dtype max_steps_per_epoch=$iter optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_full.log
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
-    tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
+    tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
 fi
