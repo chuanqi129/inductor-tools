@@ -30,7 +30,7 @@ fi
 #meta-llama/Llama-3.2-1B-Instruct KD
 tune download meta-llama/Llama-3.2-1B-Instruct --output-dir /tmp/Llama-3.2-1B-Instruct
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Llama-3.2-1B-Instruct_KD.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Llama-3.2-1B-Instruct_KD.log
 #tiny llama ppo
 tune download smohammadi/tinyllama_rm_sentiment_1b --output-dir /tmp/tinyllama_rm_sentiment_1b/
 tune download TinyLlama/TinyLlama_v1.1 --output-dir /tmp/TinyLlama_v1.1/ 
@@ -40,38 +40,38 @@ tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama
 numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora_dpo.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full.log
 #mistralai/Mistral-7B-v0.1 full finetune
 tune download mistralai/Mistral-7B-v0.1 --output-dir /tmp/Mistral-7B-v0.1
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 enable_activation_offloading=False max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config mistral/7B_full_low_memory device=cpu dtype=$dtype optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 enable_activation_offloading=False max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Mistral-7B-v0.1_full.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora.log
 #mistralai/Mistral-7B-v0.1 lora finetune
 tune download mistralai/Mistral-7B-v0.1 --output-dir /tmp/Mistral-7B-v0.1
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config mistral/7B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Mistral-7B-v0.1_lora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config mistral/7B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Mistral-7B-v0.1_lora.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_qlora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_qlora.log
 #mistralai/Mistral-7B-v0.1 qlora finetune
 tune download mistralai/Mistral-7B-v0.1 --output-dir /tmp/Mistral-7B-v0.1
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config mistral/7B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Mistral-7B-v0.1_qlora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config mistral/7B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Mistral-7B-v0.1_qlora.log
 #meta-llama/Meta-Llama-3-8B-Instruct dora
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_dora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_dora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_dora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_dora.log
 #meta-llama/Meta-Llama-3-8B-Instruct qdora
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_qdora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qdora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_qdora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qdora.log
 #meta-llama/Meta-Llama-3-8B-Instruct qlora
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora.log
 #meta-llama/Meta-Llama-3-8B-Instruct lora
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_lora.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3/8B_lora_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_lora.log
 #meta-llama/Meta-Llama-3-8B-Instruct full
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3/8B_full_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_full.log
+numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3/8B_full_single_device device=cpu dtype=$dtype max_steps_per_epoch=$iter optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_full.log
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=1024 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300.log
 fi
