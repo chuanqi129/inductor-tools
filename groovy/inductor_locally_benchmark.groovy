@@ -4,6 +4,9 @@ if ('backend' in params) {
     if (params.backend != '') {
         env.backend = params.backend
     }
+    if (params.backend == 'aot_max_autotune') {
+        env.backend = 'aot_inductor'
+    }
 }
 echo "backend: $backend"
 
