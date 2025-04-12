@@ -128,16 +128,6 @@ if ('iter' in params) {
 }
 echo "iter: $iter"
 
-env.groupsize = ''
-if ('groupsize' in params) {
-    echo "groupsize"
-    if (params.groupsize != '') {
-        groupsize = params.groupsize
-        groupsize = groupsize.split(",")
-    }
-}
-echo "groupsize: $groupsize"
-
 env.output_length = ''
 if ('output_length' in params) {
     echo "output_length"
@@ -147,15 +137,6 @@ if ('output_length' in params) {
     }
 }
 echo "output_length: $output_length"
-
-env.build_image= 'False'
-if ('build_image' in params) {
-    echo "build_image in params"
-    if (params.build_image != '') {
-        env.build_image = params.build_image
-    }
-}
-echo "build_image: $build_image"
 
 env.conda_name= 'test'
 if ('conda_name' in params) {
@@ -175,25 +156,6 @@ if ('upload_log' in params) {
 }
 echo "upload_log: $upload_log"
 
-env.tensor_parallel= 'False'
-if ('tensor_parallel' in params) {
-    echo "tensor_parallel in params"
-    if (params.tensor_parallel != '') {
-        env.tensor_parallel = params.tensor_parallel
-    }
-}
-echo "tensor_parallel: $tensor_parallel"
-
-env.tp_sockets= '1'
-if ('tp_sockets' in params) {
-    echo "tp_sockets in params"
-    if (params.tp_sockets != '') {
-        env.tp_sockets = params.tp_sockets
-        tp_sockets = tp_sockets.split(",")
-    }
-}
-echo "tp_sockets: $tp_sockets"
-
 env.hardware= 'emr'
 if ('hardware' in params) {
     echo "hardware in params"
@@ -202,24 +164,6 @@ if ('hardware' in params) {
     }
 }
 echo "hardware: $hardware"
-
-env.test_mode= 'performance'
-if ('test_mode' in params) {
-    echo "test_mode in params"
-    if (params.test_mode != '') {
-        env.test_mode = params.test_mode
-    }
-}
-echo "test_mode: $test_mode"
-
-env.docker_pull= 'True'
-if ('docker_pull' in params) {
-    echo "docker_pull in params"
-    if (params.docker_pull != '') {
-        env.docker_pull = params.docker_pull
-    }
-}
-echo "docker_pull: $docker_pull"
 
 env.torchtune_modeldir= '/localdisk/datasets/huggingface/'
 if ('torchtune_modeldir' in params) {
@@ -251,6 +195,7 @@ node(NODE_LABEL){
         sh'''
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
+            which conda
             conda create -n ${conda_name} python=${python_version} cmake=3.28 ninja -y
             conda activate ${conda_name}
             git clone ${pt_repo} pytorch
