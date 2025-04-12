@@ -157,14 +157,14 @@ if ('build_image' in params) {
 }
 echo "build_image: $build_image"
 
-env.docker_name= 'test'
-if ('docker_name' in params) {
-    echo "docker_name in params"
-    if (params.docker_name != '') {
-        env.docker_name = params.docker_name
+env.conda_name= 'test'
+if ('conda_name' in params) {
+    echo "conda_name in params"
+    if (params.conda_name != '') {
+        env.conda_name = params.conda_name
     }
 }
-echo "docker_name: $docker_name"
+echo "conda_name: $conda_name"
 
 env.upload_log= 'False'
 if ('upload_log' in params) {
