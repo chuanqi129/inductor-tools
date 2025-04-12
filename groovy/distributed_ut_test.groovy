@@ -36,23 +36,41 @@ if ('dtypes' in params) {
 }
 echo "dtypes: $dtypes"
 
-env.torchchat_repo = 'https://github.com/pytorch/torchchat.git'
-if ('torchchat_repo' in params) {
-    echo "torchchat_repo in params"
-    if (params.torchchat_repo != '') {
-        env.torchchat_repo = params.torchchat_repo
+env.pt_repo = 'https://github.com/pytorch/pytorch.git'
+if ('pt_repo' in params) {
+    echo "pt_repo in params"
+    if (params.pt_repo != '') {
+        env.pt_repo = params.pt_repo
     }
 }
-echo "torchchat_repo: $torchchat_repo"
+echo "pt_repo: $pt_repo"
 
-env.torchchat_branch= 'main'
-if ('torchchat_branch' in params) {
-    echo "torchchat_branch in params"
-    if (params.torchchat_branch != '') {
-        env.torchchat_branch = params.torchchat_branch
+env.pt_branch= 'main'
+if ('pt_branch' in params) {
+    echo "pt_branch in params"
+    if (params.pt_branch != '') {
+        env.pt_branch = params.pt_branch
     }
 }
-echo "torchchat_branch: $torchchat_branch"
+echo "pt_branch: $pt_branch"
+
+env.xpu_ops_repo = 'https://github.com/intel/torch-xpu-ops.git'
+if ('xpu_ops_repo' in params) {
+    echo "xpu_ops_repo in params"
+    if (params.xpu_ops_repo != '') {
+        env.xpu_ops_repo = params.xpu_ops_repo
+    }
+}
+echo "xpu_ops_repo: $xpu_ops_repo"
+
+env.xpu_ops_branch= 'main'
+if ('xpu_ops_branch' in params) {
+    echo "xpu_ops_branch in params"
+    if (params.xpu_ops_branch != '') {
+        env.xpu_ops_branch = params.xpu_ops_branch
+    }
+}
+echo "xpu_ops_branch: $xpu_ops_branch"
 
 env.backend= 'compile'
 if ('backend' in params) {
@@ -212,19 +230,9 @@ if ('torchtune_modeldir' in params) {
 }
 echo "torchtune_modeldir: $torchtune_modeldir"
 
-env.driver_name= 'hotfix_agama-ci-devel-803.103'
-if ('driver_name' in params) {
-    echo "driver_name in params"
-    if (params.driver_name != '') {
-        env.driver_name = params.driver_name
-    }
-}
-echo "driver_name: $driver_name"
-
 env.http_proxy=env.NODE_PROXY
 env.https_proxy=env.NODE_PROXY
-env.BASE_IMAGE= 'gar-registry.caas.intel.com/pytorch/pt_inductor:ubuntu_22.04'
-env.LOG_DIR = 'torchtune_log'
+env.LOG_DIR = 'distributed_log'
 
 node(NODE_LABEL){
     stage("Prepare Stock Pytorch"){
@@ -257,150 +265,49 @@ node(NODE_LABEL){
         '''
     }
    
-        stage("trigger inductor images job"){
-                try {
-                    retry(3){
-                        sleep(60)
-                        def image_build_job = build job: 'torchlib_images', propagate: false, parameters: [             
-                            [$class: 'StringParameterValue', name: 'tag', value: "${docker_name}"],
-                            [$class: 'StringParameterValue', name: 'device', value: "${device}"],
-                            [$class: 'StringParameterValue', name: 'driver_name', value: "${driver_name}"],
-                        ]
-                        def buildStatus = image_build_job.getResult()
-                        def cur_job_url = image_build_job.getAbsoluteUrl()
-                        if (buildStatus == hudson.model.Result.FAILURE) {
-                            sh'''
-                                echo "[FAILED] Docker image build Job URL: ${cur_job_url}/console .<br>" | tee ${WORKSPACE}/image_build.log
-                            '''
-                            throw new Exception("Docker image build job failed")
-                        }
-                        sh'''
-                            #!/usr/bin/env bash
-                            docker pull gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                        '''
-                    }
+    stage("Build Pytorch XPU"){
+        echo 'Building PyTorch......'
+        sh '''
+        set -xe
+        conda activate ${conda_name}
+        source scripts/modelbench/distributed/env.sh
+        export USE_XCCL=1
+        cd pytorch
+        pip install -r requirements.txt
+        current_commit=$(git rev-parse HEAD)
+        WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log
+        pip install --force-reinstall dist/*.whl
+        git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
+        '''
+    }
 
-                if (fileExists("${WORKSPACE}/${LOG_DIR}/docker_image_tag.log")) {
-                    archiveArtifacts  "${LOG_DIR}/docker_image_tag.log"
-                }
-
-                } catch (Exception e) {
-                    sh'''
-                        #!/usr/bin/env bash
-                        set -ex
-                        echo "Job URL: ${BUILD_URL}/console .<br>" | tee -a ${WORKSPACE}/image_build.log
-                    '''
-                    archiveArtifacts "image_build.log"
-                    throw e
-                }
-            
-        }
-
-
-    stage("Environment Prepare"){
-        withEnv(["docker_name=${docker_name}","device=${device}","build_image=${build_image}","test_mode=${test_mode}","build_image=${build_image}","docker_pull=${docker_pull}"]){
-            sh '''
-                #!/bin/bash
-		        set -x
-  
-                cd ${WORKSPACE}
-                export http_proxy=$NODE_PROXY
-                export https_proxy=$NODE_PROXY
-                export no_proxy=.intel.com
-                
-                export LC_ALL=C.UTF-8
-                export LANG=C.UTF-8
-                
-                export log_dir=${WORKSPACE}/logs
-                mkdir $log_dir
-                image_name=gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                if [ "$docker_pull" = "True" ];then
-                    docker pull ${image_name}
-                else
-                    echo "docker pull is False, use local docker image"
-                fi
-                if [ "$test_mode" = "performance" ];then
-                    if [ "$benchmark_script" = "latency" ];then
-                        echo 'modelid,benchmark_script,Parallel,input/output,BS,batch_size,first_token_latency,next_token_latency'| tee -a ${log_dir}/summary.log
-                    elif [ "$benchmark_script" = "throughput" ];then
-                        echo 'modelid,benchmark_script,datasets,Parallel,input/output,num_prompts,token_throughput,request_throughput,first_token_latency,next_token_latency, bs_group' | tee -a ${log_dir}/summary.log
-                    elif [ "$benchmark_script" = "serving" ];then 
-                        echo 'modelid,benchmark_script,datasets,Parallel,input/output,num_prompts,request_rate,token_throughput,first_token_latency,inter_token_latency' | tee -a ${log_dir}/summary.log
-                    fi
-                else
-                    echo 'modelid,benchmark_script,dtype,Parallel,input/output,Status' | tee -a ${log_dir}/summary.log
-                fi
-            '''
-        }//with env
-
-    }//stage env prepare
+    stage("Run Torch XPU Distributed UT"){
+        echo "Running distributed UT"
+        sh '''
+        set -xe
+        conda activate ${conda_name}
+        source scripts/modelbench/distributed/env.sh
+        pip install pytest pytest-timeout
+        sudo cp /proc/sys/kernel/yama/ptrace_scope ptrace_scope.bk
+        sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
+        cd ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu
+        XCCL_EANBLE=$(python -c "import torch;print(torch.distributed.is_xccl_available())")
+        if [[ "${XCCL_ENABLE}}" == 'False' ]]; then
+            echo -e "[ERROR] XCCL is not enabled"
+            exit 1
+        fi
+        python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log
+        cd ${WORKSPACE}
+        sudo cp ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
+        '''
+    }
     
-    stage("Benchmark"){
-        if (env.device == 'cpu'){
-            sh'''
-                #!/bin/bash
-                set -x
-                docker run -tid --name torchtune_test \
-                    --privileged \
-                    --env https_proxy=${https_proxy} \
-                    --env http_proxy=${http_proxy} \
-                    --env HF_HUB_TOKEN=$HF_TOKEN \
-                    --net host --shm-size 10G \
-                    -v ~/.cache:/root/.cache \
-                    -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchtune/${LOG_DIR} \
-                    -v ${torchtune_modeldir}:/tmp \
-                    gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                docker cp scripts/modelbench/torchtune_cpu.sh torchtune_test:/workspace/torchchat
-            '''
-        }else{
-            sh'''
-                #!/bin/bash
-                set -x
-                docker run -tid --name torchtune_test \
-                    --device /dev/dri \
-                    --privileged \
-                    --env https_proxy=${https_proxy} \
-                    --env http_proxy=${http_proxy} \
-                    --env HF_HUB_TOKEN=$HF_TOKEN \
-                    --net host --shm-size 10G \
-                    -v ~/.cache:/root/.cache \
-                    -v ${WORKSPACE}/${LOG_DIR}:/workspace/torchtune/${LOG_DIR} \
-                    -v ${torchtune_modeldir}:/tmp \
-                    gar-registry.caas.intel.com/pytorch/torchchat:${docker_name}_${device}
-                docker cp scripts/modelbench/torchtune_xpu.sh torchtune_test:/workspace/torchchat
-                docker cp scripts/modelbench/driver_install.sh torchtune_test:/workspace/torchchat
-                docker exec -i torchtune_test bash -c "bash driver_install.sh "
-                #sudo systemctl restart docker
-                #docker start torchtune_test
-            '''
-        }
-        
-        for (dtype in dtypes){
-            withEnv(["device=${device}", "device=${device}", "iter=${iter}", "dtype=${dtype}"]){
-            sh '''
-                if [ "${device}" = "cpu" ];then
-                    docker exec -i torchtune_test bash -c "bash torchtune_cpu.sh $dtype $iter "
-                else
-                    docker exec -i torchtune_test bash -c "bash torchtune_xpu.sh $dtype $iter "
-                fi
-            '''
-        }                   
-        }
-                 
-
+    stage("Archive logs"){
     if (fileExists("${WORKSPACE}/logs/summary.log") == true){
         archiveArtifacts "logs/summary.log"
     }   
-    archiveArtifacts artifacts: "**/torchtune_log/**", excludes: null
+    archiveArtifacts artifacts: "**/distributed_log/**", excludes: null
     fingerprint: true 
-    if (env.upload_log == 'True'){
-        sh '''
-        set -e 
-        set -x
-        python vllm_func_json.py \
-            --file_name ${WORKSPACE}/logs/summary.log --hardware ${hardware}
-        '''
-    }
     }  
 }
 
