@@ -204,7 +204,7 @@ node(NODE_LABEL){
         sh'''
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
-            ${conda_path}/conda create -n ${conda_name} python=${python_version} cmake=3.28 ninja -y
+            ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
             source ${conda_path}/activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
@@ -240,7 +240,7 @@ node(NODE_LABEL){
         set -xe
         source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
-        pip install pytest pytest-timeout
+        pip install pytest pytest-timeout xmlrunner
         sudo cp /proc/sys/kernel/yama/ptrace_scope ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
         cd ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu
