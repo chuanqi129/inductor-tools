@@ -147,6 +147,15 @@ if ('conda_name' in params) {
 }
 echo "conda_name: $conda_name"
 
+env.conda_path= '/home/sdp/miniforge-pypy3/bin/'
+if ('conda_path' in params) {
+    echo "conda_path in params"
+    if (params.conda_path != '') {
+        env.conda_path = params.conda_path
+    }
+}
+echo "conda_path: $conda_path"
+
 env.upload_log= 'False'
 if ('upload_log' in params) {
     echo "upload_log in params"
@@ -195,9 +204,8 @@ node(NODE_LABEL){
         sh'''
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
-            which conda
-            conda create -n ${conda_name} python=${python_version} cmake=3.28 ninja -y
-            conda activate ${conda_name}
+            ${conda_path}/conda create -n ${conda_name} python=${python_version} cmake=3.28 ninja -y
+            source ${conda_path}/activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
@@ -214,7 +222,7 @@ node(NODE_LABEL){
         echo 'Building PyTorch......'
         sh '''
         set -xe
-        conda activate ${conda_name}
+        source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         export USE_XCCL=1
         cd pytorch
@@ -230,7 +238,7 @@ node(NODE_LABEL){
         echo "Running distributed UT"
         sh '''
         set -xe
-        conda activate ${conda_name}
+        source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout
         sudo cp /proc/sys/kernel/yama/ptrace_scope ptrace_scope.bk
