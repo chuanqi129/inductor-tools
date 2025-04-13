@@ -241,7 +241,7 @@ node(NODE_LABEL){
         source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner
-        sudo cp /proc/sys/kernel/yama/ptrace_scope ptrace_scope.bk
+        sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
         cd ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu
         XCCL_EANBLE=$(python -c "import torch;print(torch.distributed.is_xccl_available())")
@@ -251,7 +251,7 @@ node(NODE_LABEL){
         fi
         python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log
         cd ${WORKSPACE}
-        sudo cp ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
+        sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
     }
     
