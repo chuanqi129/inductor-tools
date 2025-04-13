@@ -228,7 +228,7 @@ node(NODE_LABEL){
         cd pytorch
         pip install -r requirements.txt
         current_commit=$(git rev-parse HEAD)
-        WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log
+        WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
         pip install --force-reinstall dist/*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
         '''
@@ -249,7 +249,7 @@ node(NODE_LABEL){
             echo -e "[ERROR] XCCL is not enabled"
             exit 1
         fi
-        python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log
+        python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
         cd ${WORKSPACE}
         sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
