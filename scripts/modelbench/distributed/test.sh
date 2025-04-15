@@ -24,9 +24,9 @@ pip install -e .
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora
 tune run --nproc_per_node 4 lora_finetune_distributed --config llama3_1/8B_lora device=xpu dtype=bf16
 #meta-llama/Meta-Llama-3.1-8B-Instruct qlora
-tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3_1/8B_qlora_single_device  device=xpu dtype=bf16
+tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3_1/8B_qlora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 #meta-llama/Meta-Llama-3-8B-Instruct dora
-tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3/8B_dora  device=xpu dtype=bf16
+tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3/8B_dora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
 #meta-llama/Meta-Llama-3.2-1B-Instruct knowledge_distillation
 tune run --nnodes 1 --nproc_per_node 2 knowledge_distillation_distributed --config llama3_2/8B_to_1B_KD_lora_distributed  device=xpu
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora dpo
