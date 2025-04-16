@@ -199,9 +199,10 @@ node(NODE_LABEL){
         // }
         sh'''
             #!/usr/bin/env bash
+            
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
-            ${conda_path}/conda activate ${conda_name}
+            source ${conda_path}/activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
@@ -220,7 +221,7 @@ node(NODE_LABEL){
         #!/bin/sh
         
         set -xe
-        source ${conda_path}/activate activate ${conda_name}
+        source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         export USE_XCCL=1
         cd pytorch
