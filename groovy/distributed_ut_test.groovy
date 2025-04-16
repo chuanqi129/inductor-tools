@@ -200,11 +200,9 @@ node(NODE_LABEL){
         sh'''
             #!/bin/bash
             
-            echo $PATH
-            source
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
-            source ${conda_path}/activate ${conda_name}
+            . ${conda_path}/activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
@@ -223,8 +221,9 @@ node(NODE_LABEL){
         #!/bin/bash
         
         set -xe
-        source ${conda_path}/activate ${conda_name}
-        source scripts/modelbench/distributed/env.sh
+        . ${conda_path}/activate ${conda_name}
+        . scripts/modelbench/distributed/env.sh
+        which mpiexec
         export USE_XCCL=1
         cd pytorch
         pip install -r requirements.txt
@@ -241,8 +240,8 @@ node(NODE_LABEL){
         #!/bin/bash
         
         set -xe
-        source ${conda_path}/activate ${conda_name}
-        source scripts/modelbench/distributed/env.sh
+        . ${conda_path}/activate ${conda_name}
+        . scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
