@@ -22,23 +22,23 @@ pip install -e .
 cd ../torchtune
 pip install -e .
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora
-tune run --nproc_per_node 4 lora_finetune_distributed --config llama3_1/8B_lora device=xpu dtype=bf16
+tune run --nproc_per_node 4 lora_finetune_distributed --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 #meta-llama/Meta-Llama-3.1-8B-Instruct qlora
 tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3_1/8B_qlora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 #meta-llama/Meta-Llama-3-8B-Instruct dora
 tune run --nnodes 1 --nproc_per_node 2 lora_finetune_distributed --config llama3/8B_dora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
 #meta-llama/Meta-Llama-3.2-1B-Instruct knowledge_distillation
-tune run --nnodes 1 --nproc_per_node 2 knowledge_distillation_distributed --config llama3_2/8B_to_1B_KD_lora_distributed  device=xpu
+tune run --nnodes 1 --nproc_per_node 2 knowledge_distillation_distributed --config llama3_2/8B_to_1B_KD_lora_distributed device=xpu
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora dpo
-tune run --nnodes 1 --nproc_per_node 4 lora_dpo_distributed --config llama3_1/8B_lora_dpo  device=xpu dtype=bf16
+tune run --nnodes 1 --nproc_per_node 4 lora_dpo_distributed --config llama3_1/8B_lora_dpo  device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256
 #meta-llama/Meta-Llama-3.1-8B-Instruct full dpo
-tune run --nnodes 1 --nproc_per_node 8 full_dpo_distributed --config llama3_1/8B_full_dpo  device=xpu dtype=bf16
+tune run --nnodes 1 --nproc_per_node 8 full_dpo_distributed --config llama3_1/8B_full_dpo  device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 #remove https://github.com/zxd1997066/torchtune/blob/benchmark/recipes/configs/llama3_1/8B_full.yaml#L22-L23
-tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 #TP
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
-tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 #DDP
 wget https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models/raw/master/resnet50/main.py
 mpiexec -np 8 -ppn 8 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl
