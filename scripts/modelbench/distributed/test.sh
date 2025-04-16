@@ -5,7 +5,7 @@ pip install -r requirements.txt
 cd Llama3
 git clone https://github.com/huggingface/accelerate.git
 cd accelerate
-#change self.backend = "xccl" in https://github.com/huggingface/accelerate/blob/main/src/accelerate/state.py#L198
+
 pip install -e .
 export CCL_PROCESS_LAUNCHER=none
 export TORCH_LLM_ALLREDUCE=1
