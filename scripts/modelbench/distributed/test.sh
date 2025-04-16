@@ -11,9 +11,9 @@ export CCL_PROCESS_LAUNCHER=none
 export TORCH_LLM_ALLREDUCE=1
 export model="meta-llama/Meta-Llama-3-8B"
 #full fine-tuning
-accelerate launch --config_file "fsdp_config.yaml" llama3_ft.py --model_name_or_path ${model} --use_flashattn False --bf16 True --max_seq_length 128 --output_dir="output" --evaluation_strategy="epoch" --learning_rate=1e-3 --gradient_accumulation_steps=1 --per_device_train_batch_size=8 --per_device_eval_batch_size=8 --num_train_epochs=1 --save_steps=500 --logging_steps=1 --save_total_limit=8
+accelerate launch --config_file "fsdp_config.yaml" llama3_ft.py --model_name_or_path ${model} --use_flashattn False --bf16 True --max_seq_length 128 --output_dir="output" --learning_rate=1e-3 --gradient_accumulation_steps=1 --per_device_train_batch_size=8 --per_device_eval_batch_size=8 --num_train_epochs=1 --save_steps=500 --logging_steps=1 --save_total_limit=8
 #LoRA fine-tuning
-accelerate launch --config_file "fsdp_config.yaml" llama3_ft.py --model_name_or_path ${model} --use_flashattn False --bf16 True --use_peft True --max_seq_length 128 --output_dir="output" --evaluation_strategy="epoch" --learning_rate=1e-3 --gradient_accumulation_steps=1 --per_device_train_batch_size=8 --per_device_eval_batch_size=8 --num_train_epochs=1 --save_steps=500 --logging_steps=1 --save_total_limit=8 
+accelerate launch --config_file "fsdp_config.yaml" llama3_ft.py --model_name_or_path ${model} --use_flashattn False --bf16 True --use_peft True --max_seq_length 128 --output_dir="output" --learning_rate=1e-3 --gradient_accumulation_steps=1 --per_device_train_batch_size=8 --per_device_eval_batch_size=8 --num_train_epochs=1 --save_steps=500 --logging_steps=1 --save_total_limit=8 
 #FSDP2
 git clone -b benchmark https://github.com/zxd1997066/torchtune.git
 git clone https://github.com/pytorch/ao.git
