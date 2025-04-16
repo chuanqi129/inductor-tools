@@ -243,7 +243,7 @@ node(NODE_LABEL){
         set -xe
         . ${conda_path}/activate ${conda_name}
         . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
-        pip install pytest pytest-timeout xmlrunner
+        pip install pytest pytest-timeout xmlrunner unittest-xml-reporting
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
         cd ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu
