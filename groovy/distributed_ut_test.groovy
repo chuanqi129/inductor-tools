@@ -174,6 +174,8 @@ if ('torchtune_modeldir' in params) {
 }
 echo "torchtune_modeldir: $torchtune_modeldir"
 
+env.http_proxy=""
+env.https_proxy=""
 env.LOG_DIR = 'distributed_log'
 
 node(NODE_LABEL){
