@@ -199,7 +199,7 @@ node(NODE_LABEL){
         // }
         sh'''
             #!/bin/bash
-            
+            git clone -b xiangdong/torchlib https://github.com/chuanqi129/inductor-tools.git inductor-tools
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
             . ${conda_path}/activate ${conda_name}
@@ -222,7 +222,7 @@ node(NODE_LABEL){
         
         set -xe
         . ${conda_path}/activate ${conda_name}
-        . scripts/modelbench/distributed/env.sh
+        . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
         which mpiexec
         export USE_XCCL=1
         cd pytorch
@@ -241,7 +241,7 @@ node(NODE_LABEL){
         
         set -xe
         . ${conda_path}/activate ${conda_name}
-        . scripts/modelbench/distributed/env.sh
+        . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
