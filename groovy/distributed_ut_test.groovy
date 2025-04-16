@@ -197,7 +197,7 @@ node(NODE_LABEL){
         //         userRemoteConfigs: scm.userRemoteConfigs
         //     ])
         // }
-        sh'''
+        bash'''
             #!/usr/bin/env bash
             
             mkdir -p ${WORKSPACE}/${LOG_DIR}
@@ -217,8 +217,8 @@ node(NODE_LABEL){
    
     stage("Build Pytorch XPU"){
         echo 'Building PyTorch......'
-        sh '''
-        #!/bin/sh
+        bash '''
+        #!/bin/bash
         
         set -xe
         source ${conda_path}/activate ${conda_name}
@@ -235,8 +235,8 @@ node(NODE_LABEL){
 
     stage("Run Torch XPU Distributed UT"){
         echo "Running distributed UT"
-        sh '''
-        #!/bin/sh
+        bash '''
+        #!/bin/bash
         
         set -xe
         source ${conda_path}/activate ${conda_name}
