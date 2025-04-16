@@ -184,6 +184,7 @@ node(NODE_LABEL){
         sh'''
         export http_proxy=""
         export https_proxy=""
+        env
         '''
         // TODO: implement report_only logic
         deleteDir()
