@@ -201,7 +201,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
-            source ${conda_path}/activate ${conda_name}
+            source activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
@@ -220,7 +220,7 @@ node(NODE_LABEL){
         set -xe
         conda remove --all -y -n ${conda_name} || \
                 rm -rf $(dirname ${CONDA_EXE})/../envs/${conda_name}
-        source ${conda_path}/activate ${conda_name}
+        source activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         export USE_XCCL=1
         cd pytorch
@@ -236,7 +236,7 @@ node(NODE_LABEL){
         echo "Running distributed UT"
         sh '''
         set -xe
-        source ${conda_path}/activate ${conda_name}
+        source activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
