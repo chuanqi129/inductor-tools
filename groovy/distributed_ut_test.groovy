@@ -228,6 +228,7 @@ node(NODE_LABEL){
         cd pytorch
         pip install -r requirements.txt
         current_commit=$(git rev-parse HEAD)
+        export USE_KINETO=OFF 
         WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
         pip install --force-reinstall dist/*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
