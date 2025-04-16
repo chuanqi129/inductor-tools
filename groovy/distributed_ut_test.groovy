@@ -218,6 +218,8 @@ node(NODE_LABEL){
         echo 'Building PyTorch......'
         sh '''
         set -xe
+        conda remove --all -y -n ${conda_name} || \
+                rm -rf $(dirname ${CONDA_EXE})/../envs/${conda_name}
         source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         export USE_XCCL=1
