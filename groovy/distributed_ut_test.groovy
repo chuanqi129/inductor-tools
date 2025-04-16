@@ -7,15 +7,6 @@ if ('NODE_LABEL' in params) {
 }
 echo "NODE_LABEL: $NODE_LABEL"
 
-env.NODE_PROXY = 'http://proxy.ims.intel.com:911'
-if ('NODE_PROXY' in params) {
-    echo "NODE_PROXY in params"
-    if (params.NODE_PROXY != '') {
-        env.NODE_PROXY = params.NODE_PROXY
-    }
-}
-echo "NODE_PROXY: $NODE_PROXY"
-
 env.modelids = 'meta-llama/Llama-2-7b-hf'
 if ('modelids' in params) {
     echo "modelids in params"
