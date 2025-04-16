@@ -198,7 +198,7 @@ node(NODE_LABEL){
         //     ])
         // }
         sh'''
-            #!/usr/bin/env bash
+            #!/bin/bash
             
             echo $PATH
             source
