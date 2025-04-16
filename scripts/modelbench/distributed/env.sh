@@ -1,3 +1,5 @@
+#!/bin/bash
+
 . /opt/intel/oneapi/compiler/latest/env/vars.sh
 . /opt/intel/oneapi/umf/latest/env/vars.sh
 . /opt/intel/oneapi/pti/latest/env/vars.sh
