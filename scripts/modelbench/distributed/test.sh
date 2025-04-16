@@ -35,7 +35,7 @@ tune run --nnodes 1 --nproc_per_node 4 lora_dpo_distributed --config llama3_1/8B
 tune run --nnodes 1 --nproc_per_node 8 full_dpo_distributed --config llama3_1/8B_full_dpo  device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 #remove https://github.com/zxd1997066/torchtune/blob/benchmark/recipes/configs/llama3_1/8B_full.yaml#L22-L23
-tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
 #TP
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
