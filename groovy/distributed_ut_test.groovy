@@ -199,7 +199,9 @@ node(NODE_LABEL){
         // }
         sh'''
             #!/usr/bin/env bash
+            
             echo $PATH
+            source
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
             source ${conda_path}/activate ${conda_name}
