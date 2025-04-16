@@ -201,7 +201,7 @@ node(NODE_LABEL){
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
             ${conda_path}/conda create -n ${conda_name} python=3.10 cmake=3.28 ninja -y
-            conda activate ${conda_name}
+            ${conda_path}/conda activate ${conda_name}
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
@@ -217,10 +217,10 @@ node(NODE_LABEL){
     stage("Build Pytorch XPU"){
         echo 'Building PyTorch......'
         sh '''
+        #!/bin/sh
+        
         set -xe
-        conda remove --all -y -n ${conda_name} || \
-                rm -rf $(dirname ${CONDA_EXE})/../envs/${conda_name}
-        conda activate ${conda_name}
+        source ${conda_path}/activate activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         export USE_XCCL=1
         cd pytorch
@@ -235,8 +235,10 @@ node(NODE_LABEL){
     stage("Run Torch XPU Distributed UT"){
         echo "Running distributed UT"
         sh '''
+        #!/bin/sh
+        
         set -xe
-        conda activate ${conda_name}
+        source ${conda_path}/activate ${conda_name}
         source scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
