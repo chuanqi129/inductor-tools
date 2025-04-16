@@ -188,15 +188,15 @@ node(NODE_LABEL){
         '''
         // TODO: implement report_only logic
         deleteDir()
-        retry(3){
-            checkout([
-                $class: 'GitSCM',
-                branches: scm.branches,
-                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-                extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
-                userRemoteConfigs: scm.userRemoteConfigs
-            ])
-        }
+        // retry(3){
+        //     checkout([
+        //         $class: 'GitSCM',
+        //         branches: scm.branches,
+        //         doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+        //         extensions: scm.extensions + [cloneOption(depth: 1, honorRefspec: true, noTags: true, reference: '', shallow: true, timeout: 10)],
+        //         userRemoteConfigs: scm.userRemoteConfigs
+        //     ])
+        // }
         sh'''
             #!/usr/bin/env bash
             mkdir -p ${WORKSPACE}/${LOG_DIR}
