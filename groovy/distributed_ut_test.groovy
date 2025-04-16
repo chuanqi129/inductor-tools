@@ -181,6 +181,10 @@ env.LOG_DIR = 'distributed_log'
 node(NODE_LABEL){
     stage("Prepare Stock Pytorch"){
         println('prepare......')
+        sh'''
+        export http_proxy=""
+        export https_proxy=""
+        '''
         // TODO: implement report_only logic
         deleteDir()
         retry(3){
