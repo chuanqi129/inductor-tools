@@ -1,6 +1,6 @@
 #FSDP
-git clone https://github.com/intel-innersource/frameworks.ai.pytorch.ipex-gpu.git
-cd frameworks.ai.pytorch.ipex-gpu/examples/gpu/llm/fine-tuning
+git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
+cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
 cd Llama3
 git clone https://github.com/huggingface/accelerate.git
