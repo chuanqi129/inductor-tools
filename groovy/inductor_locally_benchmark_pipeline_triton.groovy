@@ -9,10 +9,10 @@ env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 if (env.precision == "float32") {
     env.labelName = "inductor-icx-local-tas"
-} else if (env.precision == 'amp-gnr-sh') {
+} else if (env.precision == 'amp') {
     env.precision = 'amp'
     env.labelName = "amp-gnr-triton"
-} else if (env.precision == 'amp-fp16-gnr-sh') {
+} else if (env.precision == 'amp-fp16') {
     env.precision = 'amp_fp16'
     env.labelName = "amp-gnr-triton"
 }
