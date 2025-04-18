@@ -40,4 +40,4 @@ apt install -y \
 # apt update
 # apt-get install -y libze-intel-gpu1 libze1 intel-opencl-icd clinfo
 # apt-get install -y libze-dev intel-ocloc
-pip install torch==2.8.0.dev20250411+xpu torchaudio torchvision --pre --index-url https://download.pytorch.org/whl/nightly/xpu
+pip install torch torchaudio torchvision --pre --index-url https://download.pytorch.org/whl/nightly/xpu
