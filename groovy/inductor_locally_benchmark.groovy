@@ -125,7 +125,7 @@ node(us_node){
                     if [ "${TORCH_COMMIT}" == "nightly" ];then
                         # clone pytorch repo
                         cd ${WORKSPACE}
-                        git clone -b ${TORCH_COMMIT} ${TORCH_REPO}
+                        git clone -b ${TORCH_COMMIT} ${TORCH_REPO} pytorch
                         cd pytorch
                         main_commit=`git log -n 1 --pretty=format:"%s" -1 | cut -d '(' -f2 | cut -d ')' -f1`
                         git checkout ${main_commit} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
@@ -133,7 +133,7 @@ node(us_node){
                     else
                         # clone pytorch repo
                         cd ${WORKSPACE}
-                        git clone ${TORCH_REPO}
+                        git clone ${TORCH_REPO} pytorch
                         cd pytorch
                         git checkout ${TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
                         result=${PIPESTATUS[0]}
