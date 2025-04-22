@@ -64,7 +64,7 @@ bash run_benchmark_ds.sh
 tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
-tune run lora_finetune_single_device --config llama3/8B_dora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
-tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256
-tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
+tune run lora_finetune_single_device --config llama3/8B_dora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
+tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256
+tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_distributed device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
  
