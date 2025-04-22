@@ -67,7 +67,7 @@ ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 RUN pip install intel-openmp mpmath==1.3.0
-RUN git clone ${PT_REPO} && \
+RUN git clone ${PT_REPO} pytorch && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd ..
 ARG TORCH_VISION_COMMIT=default
