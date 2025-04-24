@@ -232,6 +232,9 @@ node(NODE_LABEL){
         WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
         pip install --force-reinstall dist/*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
+        TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
+        TRITON_COMMIT_ID="85788e6d28f5eff57fb3af10757e257e5442659f"
+        pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
         '''
     }
 
