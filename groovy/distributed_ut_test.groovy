@@ -232,9 +232,10 @@ node(NODE_LABEL){
         WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
         pip install --force-reinstall dist/*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
-        TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
-        TRITON_COMMIT_ID="85788e6d28f5eff57fb3af10757e257e5442659f"
-        pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
+        pip install /home/sdp/xiangdong/triton-3.3.0+git85788e6d-cp310-cp310-linux_x86_64.whl
+        # TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
+        # TRITON_COMMIT_ID="85788e6d28f5eff57fb3af10757e257e5442659f"
+        # pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
         '''
     }
 
@@ -256,6 +257,7 @@ node(NODE_LABEL){
             exit 1
         fi
         python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
+        cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/distributed ${WORKSPACE}/${LOG_DIR}/
         cd ${WORKSPACE}
         sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
