@@ -257,7 +257,7 @@ node(NODE_LABEL){
             exit 1
         fi
         python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
-        cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/distributed ${WORKSPACE}/${LOG_DIR}/
+        cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu/*.xml ${WORKSPACE}/${LOG_DIR}/
         cd ${WORKSPACE}
         sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
