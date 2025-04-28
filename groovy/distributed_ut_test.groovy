@@ -225,8 +225,10 @@ node(NODE_LABEL){
         . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
         which mpiexec
         export USE_XCCL=1
+        export USE_ONEMKL=1
         cd pytorch
         pip install -r requirements.txt
+        pip install mkl-static mkl-include
         current_commit=$(git rev-parse HEAD)
         export USE_KINETO=OFF 
         WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
