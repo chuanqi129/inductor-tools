@@ -99,5 +99,5 @@ tune run full_finetune_single_device --config phi3/mini_full_low_memory device=c
 tune run full_finetune_single_device --config phi3/mini_full_low_memory device=cpu dtype=$dtype max_steps_per_epoch=$iter optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=1024 enable_activation_offloading=False compile=True 2>&1 | tee torchtune_log/Phi-3-mini-4k-instruct_full_compile.log
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
-    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=1024 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300_compile.log
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300_compile.log
 fi
