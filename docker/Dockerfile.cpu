@@ -53,7 +53,6 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         pkg-config \
         pybind11 \
         pyyaml \
-        setuptools \
         jemalloc \
         openssl \ 
         setuptools==75.8.2 \
