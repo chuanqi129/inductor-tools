@@ -56,7 +56,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         setuptools \
         jemalloc \
         openssl \ 
-        pip==24.3.1 \
+        setuptools==75.8.2 \
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
