@@ -52,7 +52,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         pkg-config \
         pybind11 \
         pyyaml \
-        setuptools \
+        setuptools==75.8.2 \
         openssl \      
         weasyprint && \
     /opt/conda/bin/conda clean -ya && \
