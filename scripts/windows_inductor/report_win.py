@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description="Generate report")
 parser.add_argument(
     "-s",
     "--suite",
-    default=["huggingface","timm_models","torchbench"],
+    default=["huggingface", "timm_models", "torchbench"],
     nargs="*",
     type=str,
     help="model suite name",
@@ -1445,11 +1445,11 @@ def summary_conclusion(scenario, excel):
         sheet_names.sort()
         print(f"Merge excel as below:\n{sheet_names}")
         print("\n")
-        features = [[]] * 21
+        features = np.empty((0, 21))
         for sheet_name in sheet_names:
             df_sheet = df[sheet_name]
             df_sheet = df_sheet.values
-            features = np.hstack((features, df_sheet))
+            features = np.hstack((features, df_sheet)) if features.size else df_sheet
 
         if len(sheet_names) == 1:
             print("sheet not merge")
@@ -1462,8 +1462,11 @@ def summary_conclusion(scenario, excel):
                 features[:, 4:5] = features[:, 14:15]
         else:
             print("3 sheets merge")
-            features[:, 4:5] = features[:, 24:25]
+            features = np.hstack((features, df_sheet)) if features.size else df_sheet
+            features[:, 4] = features[:, 24]
+            features[:, 7] = features[:, 27]
             features[:, 6:7] = features[:, 16:17]
+            features[:, 9:10] = features[:, 19:20]
 
         df_concat = StyleFrame(pd.DataFrame(features).iloc[:, :10])
         for i in range(10):
@@ -1494,8 +1497,12 @@ def summary_conclusion(scenario, excel):
         else:
             print("3 sheets merge")
             features[:, 3:4] = features[:, 21:22]
+            features[:, 6:7] = features[:, 24:25]
             features[:, 5:6] = features[:, 14:15]
+            features[:, 8:9] = features[:, 17:18]
 
+        dd=pd.DataFrame(features)
+        dd.to_csv("inductor_log/Acc_Summary.csv", index=False)
         df_concat = StyleFrame(pd.DataFrame(features).iloc[:, :9])
         for i in range(10):
             df_concat.set_column_width(i, 22)
