@@ -10,6 +10,7 @@ properties([
         choice(name: 'precision', choices: ['float32'], description: ''),
         string(name: 'recipients', defaultValue: 'chuanqi.wang@intel.com;yucheng.liu@intel.com;leslie.fang@intel.com;xu.han@intel.com;lifeng.a.wang@intel.com', description: '', trim: true),
         string(name: 'http_proxy', defaultValue: 'http://proxy.ims.intel.com:911', description: '', trim: true),
+        choice(name: 'refer_build', choices: ['lastSuccessfulBuild', '0'], description: 'choose 0 when you need only this round report'),
     ])
 ])
 
@@ -70,14 +71,27 @@ node(NODE_LABEL) {
     }
 
     stage('generate the report'){
-        stage('generate the report'){
-        pwsh """
-        \$env:HTTP_PROXY = "${http_proxy}"
-        \$env:HTTPS_PROXY = "${http_proxy}"
-        conda run -n $conda_env_name pip install styleframe
-        conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite
-        """
-    }
+        if(refer_build != '0') {
+            copyArtifacts(
+                projectName: currentBuild.projectName,
+                selector: specific("${refer_build}"),
+                fingerprintArtifacts: true,
+                target: "refer",
+            )
+            pwsh """
+            \$env:HTTP_PROXY = "${http_proxy}"
+            \$env:HTTPS_PROXY = "${http_proxy}"
+            conda run -n $conda_env_name pip install styleframe
+            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite -r refer
+            """
+        }else{     
+            pwsh """
+            \$env:HTTP_PROXY = "${http_proxy}"
+            \$env:HTTPS_PROXY = "${http_proxy}"
+            conda run -n $conda_env_name pip install styleframe
+            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite
+            """
+        }
         archiveArtifacts artifacts: 'inductor_log/Inductor_E2E_Test_Report.xlsx', fingerprint: true
     }
 
