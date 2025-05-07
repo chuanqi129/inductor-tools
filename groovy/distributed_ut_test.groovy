@@ -233,11 +233,15 @@ node(NODE_LABEL){
         export USE_KINETO=OFF 
         WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
         pip install --force-reinstall dist/*.whl
+        python -m pip install patchelf
+        rm -rf ./tmp
+        bash third_party/torch-xpu-ops/.github/scripts/rpath.sh ${WORKSPACE}/pytorch/dist/torch*.whl
+        cp ${WORKSPACE}/pytorch/tmp/torch*.whl ${WORKSPACE}/${LOG_DIR}/
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
-        pip install /home/sdp/xiangdong/triton-3.3.0+git85788e6d-cp310-cp310-linux_x86_64.whl
-        # TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
-        # TRITON_COMMIT_ID="85788e6d28f5eff57fb3af10757e257e5442659f"
-        # pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
+        # pip install /home/sdp/xiangdong/triton-3.3.0+git85788e6d-cp310-cp310-linux_x86_64.whl
+        TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
+        TRITON_COMMIT_ID="bdd0656ba4fa55c8ee7a58bcbfe2c265a530d52d"
+        pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
         '''
     }
 
