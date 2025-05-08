@@ -264,6 +264,8 @@ node(NODE_LABEL){
         fi
         python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
         cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu/*.xml ${WORKSPACE}/${LOG_DIR}/
+        pip install junitparser
+        python ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/.github/scripts/check-ut.py ${WORKSPACE}/${LOG_DIR}/*.xml 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/test_summary.log
         cd ${WORKSPACE}
         sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
