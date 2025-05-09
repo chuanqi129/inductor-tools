@@ -3,6 +3,7 @@ source /opt/xpu-build/bin/activate
 pip install -U pip wheel setuptools
 export USE_XCCL=1
 export USE_ONEMKL=1
+export USE_STATIC_MKL=1
 cd /var/lib/jenkins/workspace/pytorch/
 pip install -r requirements.txt
 pip install mkl-static mkl-include
