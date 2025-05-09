@@ -83,7 +83,7 @@ tune run full_finetune_single_device --config phi3/mini_full_low_memory device=x
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
     tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_qlora_300.log
-    tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full_300.log
+    tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 optimizer._component_=torchao.optim.AdamWFp8 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_full_300.log
     tune run lora_finetune_single_device --config llama3_1/8B_lora_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora_300.log
     tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=xpu dtype=$dtype max_steps_per_epoch=300 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3.1-8B-Instruct_lora_dpo_300.log
 fi
