@@ -178,9 +178,40 @@ env.http_proxy=""
 env.https_proxy=""
 env.LOG_DIR = 'distributed_log'
 
+def cleanup(){
+    try {
+        retry(3){
+            sh'''
+                #!/usr/bin/env bash
+                docker_ps=`docker ps -a -q`
+                if [ -n "${docker_ps}" ];then
+                    docker stop ${docker_ps}
+                fi
+                docker container prune -f
+                docker system prune -f
+
+                docker pull ${BASE_IMAGE}
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    ${BASE_IMAGE} /bin/bash -c "chmod -R 777 /root/workspace"
+            '''
+        }
+        deleteDir()
+    } catch(e) {
+        echo "==============================================="
+        echo "ERROR: Exception caught in cleanup()           "
+        echo "ERROR: ${e}"
+        echo "==============================================="
+        echo "Error while doing cleanup"
+    }
+}
+
 node(NODE_LABEL){
     stage("Prepare Stock Pytorch"){
         println('prepare......')
+        cleanup()
         sh'''
         export http_proxy=""
         export https_proxy=""
@@ -218,27 +249,28 @@ node(NODE_LABEL){
     stage("Build Pytorch XPU"){
         echo 'Building PyTorch......'
         sh '''
-        #!/bin/bash
-        
+        #!/bin/bash     
         set -xe
-        . ${conda_path}/activate ${conda_name}
-        . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
+        docker run --device=/dev/mem --device=/dev/dri \
+            --group-add video --group-add 110 --ulimit stack=10485760:83886080 \
+            --ulimit core=0 --security-opt seccomp=unconfined --cap-add=SYS_PTRACE \
+            --shm-size=8g --tty --detach --name xccl_ut --privileged --net host \ 
+            -v ${WORKSPACE}:/var/lib/jenkins/workspace \
+            -v ${WORKSPACE}/pytorch:/var/lib/jenkins/workspace/pytorch \
+            -v ${WORKSPACE}/${LOG_DIR}:/var/lib/jenkins/workspace/${LOG_DIR} \
+            -w /var/lib/jenkins/workspace pytorch/manylinux2_28-builder:xpu-main   
+        docker cp ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/update_dle.sh xccl_ut:/var/lib/jenkins/workspace
+        docker cp ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/build.sh xccl_ut:/var/lib/jenkins/workspace
+        docker exec -i xccl_ut bash -c "bash update_dle.sh "
+        docker exec -i xccl_ut bash -c "bash build.sh "
+        source ${conda_path}/activate ${conda_name}
+        source ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
         which mpiexec
-        export USE_XCCL=1
-        export USE_ONEMKL=1
         cd pytorch
         pip install -r requirements.txt
         pip install mkl-static mkl-include
-        current_commit=$(git rev-parse HEAD)
-        export USE_KINETO=OFF 
-        WERROR=1 python setup.py bdist_wheel 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_${current_commit}_build.log >/dev/null
-        pip install --force-reinstall dist/*.whl
-        python -m pip install patchelf
-        rm -rf ./tmp
-        bash third_party/torch-xpu-ops/.github/scripts/rpath.sh ${WORKSPACE}/pytorch/dist/torch*.whl
-        cp ${WORKSPACE}/pytorch/tmp/torch*.whl ${WORKSPACE}/${LOG_DIR}/
+        pip install --force-reinstall tmp/torch*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
-        # pip install /home/sdp/xiangdong/triton-3.3.0+git85788e6d-cp310-cp310-linux_x86_64.whl
         TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
         TRITON_COMMIT_ID="bdd0656ba4fa55c8ee7a58bcbfe2c265a530d52d"
         pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
@@ -251,8 +283,8 @@ node(NODE_LABEL){
         #!/bin/bash
         
         set -xe
-        . ${conda_path}/activate ${conda_name}
-        . ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
+        source ${conda_path}/activate ${conda_name}
+        source ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
         pip install pytest pytest-timeout xmlrunner unittest-xml-reporting
         sudo cp /proc/sys/kernel/yama/ptrace_scope ${WORKSPACE}/ptrace_scope.bk
         sudo echo "0"|sudo tee /proc/sys/kernel/yama/ptrace_scope
