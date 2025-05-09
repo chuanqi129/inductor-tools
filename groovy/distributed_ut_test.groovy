@@ -189,6 +189,12 @@ def cleanup(){
                 fi
                 docker container prune -f
                 docker system prune -f
+
+                docker run -t \
+                    -u root \
+                    -v ${WORKSPACE}:/root/workspace \
+                    --privileged \
+                    pytorch/manylinux2_28-builder:xpu-main /bin/bash -c "chmod -R 777 /root/workspace"
             '''
         }
         deleteDir()
