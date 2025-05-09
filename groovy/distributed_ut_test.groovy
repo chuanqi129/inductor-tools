@@ -254,7 +254,7 @@ node(NODE_LABEL){
         docker run --device=/dev/mem --device=/dev/dri \
             --group-add video --group-add 110 --ulimit stack=10485760:83886080 \
             --ulimit core=0 --security-opt seccomp=unconfined --cap-add=SYS_PTRACE \
-            --shm-size=8g --tty --detach --name xccl_ut --privileged --net host \ 
+            --shm-size=8g --tty --detach --name xccl_ut --privileged --net host \
             -v ${WORKSPACE}:/var/lib/jenkins/workspace \
             -v ${WORKSPACE}/pytorch:/var/lib/jenkins/workspace/pytorch \
             -v ${WORKSPACE}/${LOG_DIR}:/var/lib/jenkins/workspace/${LOG_DIR} \
