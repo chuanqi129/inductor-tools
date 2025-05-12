@@ -76,7 +76,7 @@ cd /home/sdp/xiangdong/
 bash run_benchmark_ds.sh 2>&1 | tee ${LOG_DIR}/gpt-j-6B_ds.log
 #PP
 #torchtune single device
-tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.prototype.low_bit_optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_single.log
+tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_single.log
 tune run lora_finetune_single_device --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3/8B_dora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
