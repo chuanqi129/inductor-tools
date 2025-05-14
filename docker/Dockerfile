@@ -66,7 +66,7 @@ ARG PT_REPO=https://github.com/pytorch/pytorch
 ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
-RUN pip install intel-openmp
+RUN pip install intel-openmp mpmath==1.3.0
 RUN git clone ${PT_REPO} && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd ..
@@ -96,7 +96,7 @@ ARG TORCH_BENCH_COMMIT=default
 ARG TRANSFORMERS_VERSION=default
 ARG HF_HUB_TOKEN=hf_xxx
 ENV HUGGING_FACE_HUB_TOKEN ${HF_HUB_TOKEN}
-RUN git clone https://github.com/pytorch/benchmark.git && \
+RUN git clone https://github.com/zxd1997066/benchmark.git && \
     cd benchmark && if [ "${TORCH_BENCH_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/torchbench.txt`; else git checkout ${TORCH_BENCH_COMMIT}; fi && pip install --no-deps -r requirements.txt && \
     pip install --no-cache Jinja2==3.1.2 markupsafe==2.0.1 beartype==0.15.0 mpmath==1.3.0 botocore && \
     if [ -f 'torchbenchmark/models/sam_fast/requirements.txt' ]; then sed -i '/github/d' torchbenchmark/models/sam_fast/requirements.txt; fi && \
