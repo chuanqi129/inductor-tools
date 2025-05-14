@@ -67,7 +67,7 @@ run_crash_test() {
     # TORCHINDUCTOR_CPP_WRAPPER=1 TORCHINDUCTOR_FREEZING=1 python run_benchmark.py cpu -m $MODEL --torchdynamo inductor --quantize --launcher --launcher-args="--throughput-mode" -b 128 --metrics throughputs 2>&1 | tee ./crash.log
     if [ $? -eq 0 ]; then
         # acc_status=`tail -n 1 ./crash.log | grep int8 | wc -l`
-	# acc_status=`cat ./crash.log | grep "eval_accuracy" | wc -l`
+	# acc_status=`cat ./crash.log | grep "densenet121 int8" | wc -l`
  	acc_status=`cat ./crash.log | grep "Done" | wc -l`
         perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
         echo $acc_status
