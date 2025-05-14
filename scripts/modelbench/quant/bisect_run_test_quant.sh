@@ -68,7 +68,7 @@ run_crash_test() {
     if [ $? -eq 0 ]; then
         # acc_status=`tail -n 1 ./crash.log | grep int8 | wc -l`
 	# acc_status=`cat ./crash.log | grep "densenet121 int8" | wc -l`
- 	acc_status=`cat ./crash.log | grep "Done" | wc -l`
+ 	acc_status=`cat ./crash.log | grep "densenet121 int8" | wc -l`
         perf_status=`tail -n 1 ./crash.log | grep $MODEL | awk -F, '{print $3}'`
         echo $acc_status
         echo $perf_status
