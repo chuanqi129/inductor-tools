@@ -157,8 +157,8 @@ def run_model(model_name, args):
 
 if __name__ == "__main__":
     # model_list=["alexnet","densenet121","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
-    model_list=["alexnet","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
-    # model_list=["alexnet"]
+    # model_list=["alexnet","mnasnet1_0","mobilenet_v2","mobilenet_v3_large","resnet152","resnet18","resnet50","resnext50_32x4d","shufflenet_v2_x1_0","squeezenet1_1","vgg16"]
+    model_list=["densenet121"]
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
