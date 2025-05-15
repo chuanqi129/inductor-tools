@@ -46,7 +46,7 @@ def log2df(acc):
     accuracy = []
     with open(acc, 'r') as file:
         for line in file:
-            if 'int8' in line or 'fp32' in line:
+            if 'int8:' in line or 'fp32' in line:
                 model.append(line.split(' ')[0])
                 accuracy.append(float(line.split(' ')[5]))
     model_acc = {'model':model, 'accuracy':accuracy}
