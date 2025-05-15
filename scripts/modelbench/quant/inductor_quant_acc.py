@@ -86,7 +86,8 @@ def run_model(model_name, args):
         for i, (images, _) in enumerate(cal_loader):
             exported_model = torch.export.export_for_training(
                 model,
-                (images,)
+                (images,),
+                strict=True
             ).module()
             if i==10: break
         quantizer = xiq.X86InductorQuantizer()
