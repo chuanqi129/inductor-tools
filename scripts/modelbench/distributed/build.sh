@@ -7,13 +7,12 @@ export USE_STATIC_MKL=1
 cd /var/lib/jenkins/workspace/pytorch/
 pip install -r requirements.txt
 pip install mkl-static mkl-include
-export USE_KINETO=OFF
 source /opt/intel/oneapi/compiler/latest/env/vars.sh
 source /opt/intel/oneapi/umf/latest/env/vars.sh
 source /opt/intel/oneapi/pti/latest/env/vars.sh
 source /opt/intel/oneapi/ccl/latest/env/vars.sh
 source /opt/intel/oneapi/mpi/latest/env/vars.sh
-source /opt/intel/oneapi/mkl/latest/env/vars.sh
+source /opt/rh/gcc-toolset-11/enable
 WERROR=1 python setup.py bdist_wheel 2>&1 | tee /var/lib/jenkins/workspace/distributed_log/pytorch_build.log >/dev/null
 python -m pip install patchelf
 rm -rf ./tmp
