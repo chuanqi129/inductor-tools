@@ -257,10 +257,8 @@ node(NODE_LABEL){
             -v ${WORKSPACE}:/var/lib/jenkins/workspace \
             -v ${WORKSPACE}/pytorch:/var/lib/jenkins/workspace/pytorch \
             -v ${WORKSPACE}/${LOG_DIR}:/var/lib/jenkins/workspace/${LOG_DIR} \
-            -w /var/lib/jenkins/workspace pytorch/manylinux2_28-builder:xpu-main   
-        docker cp ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/update_dle.sh xccl_ut:/var/lib/jenkins/workspace
+            -w /var/lib/jenkins/workspace pytorch/manylinux2_28-builder:xpu-main 
         docker cp ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/build.sh xccl_ut:/var/lib/jenkins/workspace
-        docker exec -i xccl_ut bash -c "bash update_dle.sh "
         docker exec -i xccl_ut bash -c "bash build.sh "
         source ${conda_path}/activate ${conda_name}
         source ${WORKSPACE}/inductor-tools/scripts/modelbench/distributed/env.sh
@@ -271,7 +269,7 @@ node(NODE_LABEL){
         pip install --force-reinstall tmp/torch*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
         TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
-        TRITON_COMMIT_ID="bdd0656ba4fa55c8ee7a58bcbfe2c265a530d52d"
+        TTRITON_COMMIT_ID="$(<.ci/docker/ci_commit_pins/triton-xpu.txt)"
         pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
         '''
     }
