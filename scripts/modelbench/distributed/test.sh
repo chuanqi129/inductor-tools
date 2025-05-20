@@ -1,10 +1,10 @@
 #FSDP
 export LOG_DIR = "/home/sdp/xiangdong/2025ww17_e2e"
-#git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
+git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
 cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
 cd Llama3
-#git clone https://github.com/huggingface/accelerate.git
+git clone https://github.com/huggingface/accelerate.git
 cd accelerate
 pip install -e .
 export CCL_PROCESS_LAUNCHER=none
@@ -64,14 +64,14 @@ torchrun --nproc-per-node 4 pippy_gpt2.py
 # torchrun --nproc-per-node 2 pippy_llama.py
 #Deepspeed
 #Deepspeed build need IPEX, but you can uninstall IPEX after installing Deepspeed
-#https://github.com/ys950902/DeepSpeed/blob/sy/xccl_enable/accelerator/xpu_accelerator.py#L309-L317 no DpcppBuildExtension in torch.utils.cpp_extension
-# git clone -b sy/xccl_enable https://github.com/ys950902/DeepSpeed.git
-# cd DeepSpeed/
+https://github.com/ys950902/DeepSpeed/blob/sy/xccl_enable/accelerator/xpu_accelerator.py#L309-L317 no DpcppBuildExtension in torch.utils.cpp_extension
+git clone -b sy/xccl_enable https://github.com/ys950902/DeepSpeed.git
+cd DeepSpeed/
 pip install py-cpuinfo
-# pip install -e .
+pip install -e .
 pip install SentencePiece
-# git clone https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models.git
-# cd frameworks.ai.pytorch.gpu-models/LLM/generation
+git clone https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models.git
+cd frameworks.ai.pytorch.gpu-models/LLM/generation
 cd /home/sdp/xiangdong/
 bash run_benchmark_ds.sh 2>&1 | tee ${LOG_DIR}/gpt-j-6B_ds.log
 #PP
