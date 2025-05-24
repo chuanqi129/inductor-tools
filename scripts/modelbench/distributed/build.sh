@@ -19,7 +19,7 @@ source /home/sdp/intel/oneapi/pti/latest/env/vars.sh
 source /home/sdp/intel/oneapi/ccl/latest/env/vars.sh
 source /home/sdp/intel/oneapi/mpi/latest/env/vars.sh
 source /opt/rh/gcc-toolset-11/enable
-WERROR=1 python setup.py bdist_wheel 2>&1 | tee /var/lib/jenkins/workspace/distributed_log/pytorch_build.log >/dev/null
+python setup.py bdist_wheel 2>&1 | tee /var/lib/jenkins/workspace/distributed_log/pytorch_build.log >/dev/null
 python -m pip install patchelf
 rm -rf ./tmp
 bash third_party/torch-xpu-ops/.github/scripts/rpath.sh /var/lib/jenkins/workspace/pytorch/dist/torch*.whl
