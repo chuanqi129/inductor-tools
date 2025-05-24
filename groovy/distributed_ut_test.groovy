@@ -294,12 +294,12 @@ node(NODE_LABEL){
         PSM3_NIC=mlx5_0 python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
         cd ${WORKSPACE}/${LOG_DIR}/
         gh --repo https://github.com/intel/torch-xpu-ops.git issue view 1624  --json body -q .body | sed '/^$/d' > Known_issue.log || true
-        # cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu/*.xml ${WORKSPACE}/${LOG_DIR}/ || true
-        cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/distributed/ ${WORKSPACE}/${LOG_DIR}/
-        # cp ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/.github/scripts/ut_result_check.sh ./ || true
-        # bash ut_result_check.sh 'pytorch_distributed' || true
+        cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/xpu/*.xml ${WORKSPACE}/${LOG_DIR}/ || true
+        #cp -r ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/test/distributed/ ${WORKSPACE}/${LOG_DIR}/
+        cp ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/.github/scripts/ut_result_check.sh ./ || true
+        bash ut_result_check.sh 'pytorch_distributed' || true
         pip install junitparser
-        # python ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/.github/scripts/check-ut.py ${WORKSPACE}/${LOG_DIR}/*.xml 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/test_summary.log
+        python ${WORKSPACE}/pytorch/third_party/torch-xpu-ops/.github/scripts/check-ut.py ${WORKSPACE}/${LOG_DIR}/*.xml 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/test_summary.log || true
         cd ${WORKSPACE}
         sudo cp ${WORKSPACE}/ptrace_scope.bk /proc/sys/kernel/yama/ptrace_scope
         '''
