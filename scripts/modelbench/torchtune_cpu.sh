@@ -100,6 +100,6 @@ tune run full_finetune_single_device --config phi3/mini_full_low_memory device=c
 if [[ $dtype == 'bf16' ]]; then
     #meta-llama/Meta-Llama-3.1-8B-Instruct qlora finetune 300 step
     numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True shuffle=False seed=123 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_qlora_300_compile.log
-    # numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.optim.AdamW8bit max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_full_300_compile.log
+    numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=cpu dtype=$dtype optimizer._component_=torchao.optim.AdamW8bit max_steps_per_epoch=300 dataset.packed=True tokenizer.max_seq_len=256 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_full_300_compile.log
     # numactl -C ${cpu_allowed_list} --membind=${mem_allowed_list} tune run lora_dpo_single_device --config llama3_1/8B_lora_dpo_single_device device=cpu dtype=$dtype max_steps_per_epoch=300 compile=True 2>&1 | tee torchtune_log/Meta-Llama-3-8B-Instruct_lora_dpo_300_compile.log
 fi
