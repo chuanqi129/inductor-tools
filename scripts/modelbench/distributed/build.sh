@@ -16,8 +16,9 @@ source /opt/intel/oneapi/pti/latest/env/vars.sh
 # source /home/sdp/intel/oneapi/compiler/latest/env/vars.sh
 # source /home/sdp/intel/oneapi/umf/latest/env/vars.sh
 # source /home/sdp/intel/oneapi/pti/latest/env/vars.sh
-source /home/sdp/intel/oneapi/ccl/latest/env/vars.sh
-source /home/sdp/intel/oneapi/mpi/latest/env/vars.sh
+# source /home/sdp/intel/oneapi/ccl/latest/env/vars.sh
+# source /home/sdp/intel/oneapi/mpi/latest/env/vars.sh
+source /home/sdp/xiangdong/libraries.performance.communication.oneccl-release-ccl_2021.16-gold/build/_install/env/vars.sh
 source /opt/rh/gcc-toolset-11/enable
 python setup.py bdist_wheel 2>&1 | tee /var/lib/jenkins/workspace/distributed_log/pytorch_build.log >/dev/null
 python -m pip install patchelf
