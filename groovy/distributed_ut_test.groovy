@@ -278,7 +278,8 @@ node(NODE_LABEL){
         pip install --force-reinstall tmp/torch*.whl
         git clone https://github.com/pytorch/vision && cd vision && python setup.py install && cd ..
         TRITON_REPO="https://github.com/intel/intel-xpu-backend-for-triton"
-        TRITON_COMMIT_ID="$(<.ci/docker/ci_commit_pins/triton-xpu.txt)"
+        # TRITON_COMMIT_ID="$(<.ci/docker/ci_commit_pins/triton-xpu.txt)"
+        TRITON_COMMIT_ID="bdd0656b"
         pip install --force-reinstall "git+${TRITON_REPO}@${TRITON_COMMIT_ID}#subdirectory=python"
         '''
     }
