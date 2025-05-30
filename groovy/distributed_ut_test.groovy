@@ -236,6 +236,13 @@ node(NODE_LABEL){
             git clone ${pt_repo} pytorch
             cd pytorch && git checkout ${pt_branch}
             git submodule sync && git submodule update --init --recursive
+            rm -rf third_party/fbgemm
+            cd third_party
+            git clone https://github.com/pytorch/FBGEMM.git fbgemm
+            cd fbgemm/
+            git checkout 157e88b750c452bef2ab4653fe9d1eeb151ce4c3
+            git submodule sync && git submodule update --init --recursive
+            cd ${WORKSPACE}/pytorch
             sed -i "s/checkout --quiet \${TORCH_XPU_OPS_COMMIT}/log -n 1/g" caffe2/CMakeLists.txt
             rm -rf third_party/torch-xpu-ops
             cd third_party
