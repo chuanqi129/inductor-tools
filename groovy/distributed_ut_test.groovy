@@ -301,6 +301,7 @@ node(NODE_LABEL){
             echo -e "[ERROR] XCCL is not enabled"
             exit 1
         fi
+        pip install hypothesis==6.131.27
         PSM3_NIC=mlx5_0 python run_distributed_local.py 2>&1 | tee ${WORKSPACE}/${LOG_DIR}/pytorch_distributed_test.log >/dev/null
         cd ${WORKSPACE}/${LOG_DIR}/
         gh --repo https://github.com/intel/torch-xpu-ops.git issue view 1624  --json body -q .body | sed '/^$/d' > Known_issue.log || true
