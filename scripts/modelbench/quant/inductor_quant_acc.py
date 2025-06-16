@@ -101,7 +101,7 @@ def run_model(model_name, args):
     if args.is_qat:
         print("using qat")
         for i, (images, _) in enumerate(cal_loader):
-            exported_model = export_for_training(model, (images,)).module()
+            exported_model = export_for_training(model, (images,), strict=True).module()
             if i == 10:
                 break
         quantizer = xiq.X86InductorQuantizer()
@@ -148,7 +148,7 @@ def run_model(model_name, args):
         example_inputs = (x.to(args.device),)
 
         with torch.no_grad():
-            exported_model = export_for_training(model, example_inputs).module()
+            exported_model = export_for_training(model, example_inputs, strict=True).module()
             quantizer = None
             if args.device == "xpu":
                 quantizer = xpuiq.XPUInductorQuantizer()
