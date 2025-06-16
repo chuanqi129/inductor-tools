@@ -36,7 +36,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         astunparse \
         cffi \
         cython \
-        cmake=3.26 \
+        cmake=3.27 \
         mamba=1.5.8 \
         dataclasses \
         future \
