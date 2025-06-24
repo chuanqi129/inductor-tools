@@ -12,28 +12,28 @@ TIMEFORMAT=%R
 
 # run mnist
 mkdir -p "${RESULT_DIR}/mnist"
-pushd "${EXAMPLES_DIR}/mnist" || exit
+cd "${EXAMPLES_DIR}/mnist" || exit
 LOG_FILE=${RESULT_DIR}/mnist/result.log
 exec_time=$({ time python main.py --epochs 3 >"${LOG_FILE}" 2>&1; } 2>&1)
-echo "mnist elapsed time: $exec_time s" | tee -a "${LOG_FILE}"
+echo "mnist elapsed time: ${exec_time}s" | tee -a "${LOG_FILE}"
 
 # run mnist-hogwild
 mkdir -p ${RESULT_DIR}/mnist_hogwild
-pushd "${EXAMPLES_DIR}/mnist_hogwild" || exit
+cd "${EXAMPLES_DIR}/mnist_hogwild" || exit
 LOG_FILE=${RESULT_DIR}/mnist_hogwild/result.log
 exec_time=$({ time python main.py --epochs 3 >"${LOG_FILE}" 2>&1; } 2>&1)
-echo "mnist-hogwild elapsed time: $exec_time s" | tee -a "${LOG_FILE}"
+echo "mnist-hogwild elapsed time: ${exec_time}s" | tee -a "${LOG_FILE}"
 
 # run CPU WLM LSTM
 mkdir -p ${RESULT_DIR}/wlm_cpu_lstm
-pushd "${EXAMPLES_DIR}/word_language_model" || exit
+cd "${EXAMPLES_DIR}/word_language_model" || exit
 LOG_FILE=${RESULT_DIR}/wlm_cpu_lstm/result.log
 exec_time=$({ time python main.py --epochs 3 --model LSTM >"${LOG_FILE}" 2>&1; } 2>&1)
-echo "WLM LSTM elapsed time: $exec_time s" | tee -a "${LOG_FILE}"
+echo "WLM LSTM elapsed time: ${exec_time}s" | tee -a "${LOG_FILE}"
 
 # run CPU WLM Transformer
 mkdir -p ${RESULT_DIR}/wlm_cpu_trans
-pushd "${EXAMPLES_DIR}/word_language_model" || exit
+cd "${EXAMPLES_DIR}/word_language_model" || exit
 LOG_FILE=${RESULT_DIR}/wlm_cpu_trans/result.log
 exec_time=$({ time python main.py --epochs 3 --model Transformer >"${LOG_FILE}" 2>&1; } 2>&1)
-echo "WLM Transformer elapsed time: $exec_time s" | tee -a "${LOG_FILE}"
+echo "WLM Transformer elapsed time: ${exec_time}s" | tee -a "${LOG_FILE}"
