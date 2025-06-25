@@ -7,7 +7,7 @@ env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
-if (env.precision == "float32") {
+if (env.precision == 'float32') {
     env.labelName = "inductor-icx-local-tas"
 } else if (env.precision == 'amp-gnr-sh') {
     env.precision = 'amp'
@@ -97,8 +97,9 @@ node("inductor_image"){
                 git clone ${target_TORCH_REPO} target_pytorch
                 cd ${WORKSPACE}/target_pytorch
                 git checkout ${target_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                result=${PIPESTATUS[0]}
-                if [ "${result}" = "0" ]; then
+                result=$?
+                
+                if [ "${result}" -eq 0 ]; then
                     echo "<br><br>[INFO] Target torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
                     echo "<br><br>[ERROR] Target torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
@@ -109,8 +110,8 @@ node("inductor_image"){
                 git clone ${baseline_TORCH_REPO} baseline_pytorch
                 cd ${WORKSPACE}/baseline_pytorch
                 git checkout ${baseline_TORCH_COMMIT} 2>&1 | tee -a ${WORKSPACE}/torch_clone.log
-                result=${PIPESTATUS[0]}
-                if [ "${result}" = "0" ]; then
+                result=$?
+                if [ "${result}" -eq 0 ]; then
                     echo "<br><br>[INFO] Baseline torch repo and commit is correct.<br><br>" | tee -a ${WORKSPACE}/torch_clone.log
                 else
                     echo "<br><br>[ERROR] Baseline torch repo and commit is wrong!<br><br>" | tee -a ${WORKSPACE}/torch_clone.log

@@ -122,7 +122,7 @@ node(us_node){
                 sh'''
                     #!/usr/bin/env bash
                     echo "Job URL: ${BUILD_URL}/console .<br>" | tee ${WORKSPACE}/torch_clone.log
-                    if [ "${TORCH_COMMIT}" == "nightly" ];then
+                    if [ "${TORCH_COMMIT}" = "nightly" ];then
                         # clone pytorch repo
                         cd ${WORKSPACE}
                         git clone -b ${TORCH_COMMIT} ${TORCH_REPO} pytorch
@@ -285,11 +285,11 @@ node(NODE_LABEL){
                 docker cp scripts/modelbench/version_collect.sh inductor_test:/workspace/pytorch
                 docker exec -i inductor_test bash -c "bash version_collect.sh ${LOG_DIR} $DYNAMO_BENCH"
 
-                if [ $test_mode == "inference" ]; then
+                if [ $test_mode = "inference" ]; then
                     docker exec -i inductor_test bash -c "bash inductor_test.sh $THREADS $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend inference $suite ${test_ENV} $extra_param "
-                elif [ $test_mode == "training_full" ]; then
+                elif [ $test_mode = "training_full" ]; then
                     docker exec -i inductor_test bash -c "bash inductor_test.sh multiple $CHANNELS $precision $shape ${LOG_DIR} $WRAPPER $HF_TOKEN $backend training $suite ${test_ENV} $extra_param"
-                elif [ $test_mode == "training" ]; then
+                elif [ $test_mode = "training" ]; then
                     docker exec -i inductor_test bash -c "bash inductor_train.sh $CHANNELS $precision ${LOG_DIR} ${test_ENV} $extra_param"
                 fi
                 docker exec -i inductor_test bash -c "chmod 777 -R /workspace/pytorch/${LOG_DIR}"
@@ -355,10 +355,10 @@ node(NODE_LABEL){
                     #!/usr/bin/env bash
                     docker_image_tag=`cat ${WORKSPACE}/raw_log/docker_image_tag.log`
                     cd ${WORKSPACE}
-                    if [ "${precision}" == "amp_fp16" ];then
+                    if [ "${precision}" = "amp_fp16" ];then
                         export precision='amp'
                     fi
-                    if [ "${backend}" == "triton_cpu" ];then
+                    if [ "${backend}" = "triton_cpu" ];then
                         export backend='inductor'
                     fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
@@ -384,10 +384,10 @@ node(NODE_LABEL){
                     #!/usr/bin/env bash
                     docker_image_tag=`cat ${WORKSPACE}/raw_log/docker_image_tag.log`
                     cd ${WORKSPACE}
-                    if [ "${precision}" == "amp_fp16" ];then
+                    if [ "${precision}" = "amp_fp16" ];then
                         export precision='amp'
                     fi
-                    if [ "${backend}" == "triton_cpu" ];then
+                    if [ "${backend}" = "triton_cpu" ];then
                         export backend='inductor'
                     fi
                     cp scripts/modelbench/report.py ${WORKSPACE}
