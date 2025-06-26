@@ -74,6 +74,12 @@ pip install -e .
 pip install SentencePiece
 bash run_benchmark_ds.sh 2>&1 | tee ${LOG_DIR}/gpt-j-6B_ds.log
 #PP
+#GPT2ForSequenceClassification
+torchrun --nproc-per-node 4 pippy_gpt2.py
+#meta-llama/Llama-2-7b-chat-hf
+# pip uninstall trl
+# pip install transformers==4.36.2
+# torchrun --nproc-per-node 2 pippy_llama.py
 #torchtune single device
 tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_single.log
 tune run lora_finetune_single_device --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
