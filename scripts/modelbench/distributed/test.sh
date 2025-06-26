@@ -54,7 +54,8 @@ tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full 
 tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_2c.log
 #DDP
 wget https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models/raw/master/resnet50/main.py
-mpiexec -np 8 -ppn 8 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp.log
+mpiexec -np 4 -ppn 4 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp.log
+python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 2>&1 | tee ${LOG_DIR}/resnet50_single.log
 #PP
 #GPT2ForSequenceClassification
 torchrun --nproc-per-node 4 pippy_gpt2.py
@@ -64,15 +65,13 @@ torchrun --nproc-per-node 4 pippy_gpt2.py
 # torchrun --nproc-per-node 2 pippy_llama.py
 #Deepspeed
 #Deepspeed build need IPEX, but you can uninstall IPEX after installing Deepspeed
-https://github.com/ys950902/DeepSpeed/blob/sy/xccl_enable/accelerator/xpu_accelerator.py#L309-L317 no DpcppBuildExtension in torch.utils.cpp_extension
-git clone -b sy/xccl_enable https://github.com/ys950902/DeepSpeed.git
+#or try latest Deepspeed
+#https://github.com/zxd1997066/DeepSpeed/blob/xccl_0.16.3/accelerator/xpu_accelerator.py#L309-L317 no DpcppBuildExtension in torch.utils.cpp_extension
+git clone -b xccl_0.16.3 https://github.com/zxd1997066/DeepSpeed.git
 cd DeepSpeed/
 pip install py-cpuinfo
 pip install -e .
 pip install SentencePiece
-git clone https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models.git
-cd frameworks.ai.pytorch.gpu-models/LLM/generation
-cd /home/sdp/xiangdong/
 bash run_benchmark_ds.sh 2>&1 | tee ${LOG_DIR}/gpt-j-6B_ds.log
 #PP
 #torchtune single device
