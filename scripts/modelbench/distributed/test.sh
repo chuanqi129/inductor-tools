@@ -48,10 +48,10 @@ tune run --nnodes 1 --nproc_per_node 2 full_dpo_distributed --config llama3_1/8B
 tune run --nnodes 1 --nproc_per_node 4 full_dpo_distributed --config llama3_1/8B_full_dpo device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_dpo_4c.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
 #remove https://github.com/zxd1997066/torchtune/blob/benchmark/recipes/configs/llama3_1/8B_full.yaml#L22-L23
-tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c.log
+tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c.log
 #TP
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
-tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_2c.log
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_2c.log
 #DDP
 wget https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models/raw/master/resnet50/main.py
 mpiexec -np 4 -ppn 4 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp.log
@@ -81,7 +81,7 @@ torchrun --nproc-per-node 4 pippy_gpt2.py
 # pip install transformers==4.36.2
 # torchrun --nproc-per-node 2 pippy_llama.py
 #torchtune single device
-tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.optim.AdamWFp8 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_single.log
+tune run full_finetune_single_device --config llama3_1/8B_full_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 optimizer._component_=torchao.optim.AdamW8bit seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_single.log
 tune run lora_finetune_single_device --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3_1/8B_qlora_single_device device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512
 tune run lora_finetune_single_device --config llama3/8B_dora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=256
