@@ -3,6 +3,7 @@ export LOG_DIR = "/home/sdp/xiangdong/2025ww17_e2e"
 git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
 cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
+pip install transformers==4.52.4 accelerate==1.8.1
 cd Llama3
 git clone https://github.com/huggingface/accelerate.git
 cd accelerate
