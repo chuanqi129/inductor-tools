@@ -15,11 +15,19 @@ for i in $(seq 1 $ngpu); do
     fi
     cd actions-runner-${card_num}
     if [ -f svc.sh ]; then
-        sudo ./svc.sh stop
-        sudo ./svc.sh uninstall
-    fi
-    ./config.sh remove --token $TOKEN
-    if [ $? -eq 0 ]; then
+        runner_running=$(sudo ./svc.sh status | grep -c "active (running)")
+        if [ $runner_running -eq 0 ]; then
+            sudo ./svc.sh stop
+            sudo ./svc.sh uninstall
+            ./config.sh remove --token $TOKEN
+            ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.idc.xpu
+            echo "ZE_AFFINITY_MASK=$card_num" >> .env
+            sudo ./svc.sh install $USER
+            sudo ./svc.sh start
+        else
+            echo "Runner is already running, skipping reconfiguration for card ${card_num}."
+        fi
+    else
         ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.idc.xpu
         echo "ZE_AFFINITY_MASK=$card_num" >> .env
         sudo ./svc.sh install $USER
