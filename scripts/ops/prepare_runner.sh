@@ -16,11 +16,12 @@ for i in $(seq 1 $ngpu); do
     cd actions-runner-${card_num}
     if [ -f svc.sh ]; then
         runner_running=$(sudo ./svc.sh status | grep -c "active (running)")
-        if [ $runner_running -eq 0 ]; then
+        runner_reconnect=$(sudo ./svc.sh status | tail -n 2 | grep -c "Reconnected")
+        if [[ $runner_running -eq 0 || $runner_reconnect -eq 2 ]]; then
             sudo ./svc.sh stop
             sudo ./svc.sh uninstall
             ./config.sh remove --token $TOKEN
-            ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.idc.xpu
+            ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.ril.xpu,linux.idc.xpu
             echo "ZE_AFFINITY_MASK=$card_num" >> .env
             sudo ./svc.sh install $USER
             sudo ./svc.sh start
@@ -28,7 +29,7 @@ for i in $(seq 1 $ngpu); do
             echo "Runner is already running, skipping reconfiguration for card ${card_num}."
         fi
     else
-        ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.idc.xpu
+        ./config.sh --unattended --url https://github.com/pytorch --token $TOKEN --name `hostname`_pvc_card_${card_num} --runnergroup linux.idc.xpu.group --labels linux.ril.xpu,linux.idc.xpu
         echo "ZE_AFFINITY_MASK=$card_num" >> .env
         sudo ./svc.sh install $USER
         sudo ./svc.sh start
