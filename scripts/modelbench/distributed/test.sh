@@ -5,9 +5,9 @@ cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
 pip install transformers==4.52.4 accelerate==1.8.1
 cd Llama3
-git clone https://github.com/huggingface/accelerate.git
-cd accelerate
-pip install -e .
+# git clone https://github.com/huggingface/accelerate.git
+# cd accelerate
+# pip install -e .
 export CCL_PROCESS_LAUNCHER=none
 export TORCH_LLM_ALLREDUCE=1
 export model="meta-llama/Meta-Llama-3-8B"
