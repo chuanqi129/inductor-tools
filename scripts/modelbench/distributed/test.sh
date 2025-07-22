@@ -19,7 +19,7 @@ accelerate launch --config_file "fsdp_config.yaml" llama3_ft.py --model_name_or_
 git clone -b benchmark https://github.com/zxd1997066/torchtune.git
 git clone https://github.com/pytorch/ao.git
 cd ao
-pip install -e .
+python setup.py install
 cd ../torchtune
 pip install -e .
 #meta-llama/Meta-Llama-3.1-8B-Instruct lora
