@@ -1,6 +1,6 @@
 param (
     [string]$log_dir = "C:\inductor_cpu_ut_log",
-    [string]$envName = "pt_bd"
+    [string]$envName = "pt_nightly"
 )
 
 $env:TORCHINDUCTOR_WINDOWS_TESTS = 1
