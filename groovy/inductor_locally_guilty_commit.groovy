@@ -5,7 +5,7 @@ env.BASE_IMAGE= 'ubuntu:22.04'
 env.LOG_DIR = 'inductor_log'
 if (env.NODE_LABEL == "0") {
     if (env.precision == "float32") {
-        env.NODE_LABEL = "inductor-icx-local"
+        env.NODE_LABEL = "inductor_gnr_801097"
     } else if (env.precision == 'amp') {
         env.NODE_LABEL = "inductor-gnr-local"
     }else if (env.precision == 'amp_fp16') {
