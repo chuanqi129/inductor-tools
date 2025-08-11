@@ -1,13 +1,13 @@
 #FSDP
-export LOG_DIR = "/home/sdp/xiangdong/2025ww17_e2e"
+mkdir distributed_e2e
+export LOG_DIR="distributed_e2e"
 git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
 cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
 pip install transformers==4.52.4 accelerate==1.8.1
 cd Llama3
-# git clone https://github.com/huggingface/accelerate.git
-# cd accelerate
-# pip install -e .
+export CCL_SEND=direct
+export CCL_RECV=direct
 export CCL_PROCESS_LAUNCHER=none
 export TORCH_LLM_ALLREDUCE=1
 export model="meta-llama/Meta-Llama-3-8B"
@@ -27,8 +27,6 @@ cd /home/sdp/xiangdong/torchtune/
 tune download meta-llama/Llama-3.2-1B-Instruct --output-dir /tmp/Llama-3.2-1B-Instruct
 tune download meta-llama/Meta-Llama-3.1-8B-Instruct --output-dir /tmp/Meta-Llama-3.1-8B-Instruct
 tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /tmp/Meta-Llama-3-8B-Instruct
-export CCL_SEND=direct
-export CCL_RECV=direct
 tune run --nproc_per_node 4 lora_finetune_distributed --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_lora_4c.log
 tune run --nproc_per_node 2 lora_finetune_distributed --config llama3_1/8B_lora device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_lora_2c.log
 #FSDP2
@@ -48,14 +46,20 @@ tune run --nnodes 1 --nproc_per_node 4 lora_dpo_distributed --config llama3_1/8B
 tune run --nnodes 1 --nproc_per_node 2 full_dpo_distributed --config llama3_1/8B_full_dpo device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_dpo_2c.log
 tune run --nnodes 1 --nproc_per_node 4 full_dpo_distributed --config llama3_1/8B_full_dpo device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 tokenizer.max_seq_len=256 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_dpo_4c.log
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
-#remove https://github.com/zxd1997066/torchtune/blob/benchmark/recipes/configs/llama3_1/8B_full.yaml#L22-L24
-tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c.log
 #TP
 #meta-llama/Meta-Llama-3.1-8B-Instruct full finetune
-tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_2c.log
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_2c_tp.log
+tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c_tp.log
+#remove https://github.com/zxd1997066/torchtune/blob/benchmark/recipes/configs/llama3_1/8B_full.yaml#L22-L24
+sed -i '22s/^/#/' recipes/configs/llama3_1/8B_full.yaml
+sed -i '22s/^/#/' recipes/configs/llama3_1/8B_full.yaml
+sed -i '22s/^/#/' recipes/configs/llama3_1/8B_full.yaml
+tune run --nproc_per_node 2 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c_fsdp2.log
+tune run --nproc_per_node 4 full_finetune_distributed --config llama3_1/8B_full device=xpu dtype=bf16 max_steps_per_epoch=10 seed=123 dataset.packed=True tokenizer.max_seq_len=512 optimizer._component_=torchao.optim.AdamW8bit 2>&1 | tee ${LOG_DIR}/Meta-Llama-3.1-8B-Instruct_full_4c_fsdp2.log
 #DDP
 wget https://github.com/zxd1997066/frameworks.ai.pytorch.gpu-models/raw/master/resnet50/main.py
-mpiexec -np 4 -ppn 4 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp.log
+mpiexec -np 4 -ppn 4 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp_4c.log
+mpiexec -np 2 -ppn 2 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 --dist-backend xccl 2>&1 | tee ${LOG_DIR}/resnet50_ddp_2c.log
 python main.py -a resnet50 -b 256 --xpu 0 --dummy --num-iterations 20 -j 12 --bf16 1 --bucket-cap 200 --disable-broadcast-buffers --large-first-bucket --use-gradient-as-bucket-view --seed 123 2>&1 | tee ${LOG_DIR}/resnet50_single.log
 #PP
 #GPT2ForSequenceClassification
