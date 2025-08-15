@@ -29,6 +29,9 @@ export HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
 # fix issue: AttributeError: module 'importlib.resources' has no attribute 'files'
 pip uninstall networkx -y && pip install networkx
 
+#fix issue: ModuleNotFoundError: No module named 'soxr'
+pip install soxr
+
 # skip sam & nanogpt_generate for stable results
 # skip llama_v2_7b_16h due to OOM
 sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x llama_v2_7b_16h"' benchmarks/dynamo/runner.py
