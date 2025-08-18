@@ -102,8 +102,7 @@ RUN git clone https://github.com/pytorch/benchmark.git && \
     if [ -f 'torchbenchmark/models/sam_fast/requirements.txt' ]; then sed -i '/github/d' torchbenchmark/models/sam_fast/requirements.txt; fi && \
     python install.py --continue_on_fail && cd .. && \
     echo ${TRANSFORMERS_VERSION} && if [ "${TRANSFORMERS_VERSION}" = "default" ]; then \
-        export TRANSFORMERS_COMMIT=`cat /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface.txt`; \
-        pip install --force-reinstall git+https://github.com/huggingface/transformers@${TRANSFORMERS_COMMIT}; \
+        pip install -r /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface-requirements.txt; \
     else \
         pip install --force-reinstall transformers==${TRANSFORMERS_VERSION}; \
     fi && \
