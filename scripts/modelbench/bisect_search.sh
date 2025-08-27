@@ -61,6 +61,7 @@ if [ "$SCENARIO" == "performance" ] && ([ "$KIND" == "drop" ] || [ "$KIND" == "i
     # cd audio && git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt` && pip uninstall torchaudio -y && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     pip install -r /workspace/pytorch/.ci/docker/ci_commit_pins/huggingface-requirements.txt && cd /workspace/pytorch
     pip install numpy==1.26.4
+    cd /workspace/pytorch
     detected_value=$(bash ./inductor_single_run.sh $THREADS $MODE $SCENARIO $SUITE $MODEL $PRECISION $CHANNELS $SHAPE $WRAPPER $BS $BACKEND | tail -n 1 | awk -F, '{print $5}')
     current_perf=$(echo $detected_value | awk '{ printf "%.5f", $1/1000 }')
     echo "Current performance: $current_perf s" >> ${LOG_DIR}/perf_drop.log
