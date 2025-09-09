@@ -32,6 +32,8 @@ pip uninstall networkx -y && pip install networkx
 # skip sam & nanogpt_generate for stable results
 # skip llama_v2_7b_16h due to OOM
 sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x llama_v2_7b_16h"' benchmarks/dynamo/runner.py
+# skip dla102 due to timeout, takes total ~10h
+sed -i '/skip_str = " ".join(skip_tests)/a\    skip_str += " -x dla102"' benchmarks/dynamo/runner.py
 
 if [[ ${TEST_MODE} == "training_full" ]]; then
     # skip hf_GPT2_large, cuz it will OOM after using jemalloc
