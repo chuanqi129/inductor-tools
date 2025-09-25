@@ -1,4 +1,4 @@
-NODE_LABEL = 'yudongsi-mlt-ace'
+NODE_LABEL = 'SRF-146'
 if ('NODE_LABEL' in params) {
     echo "NODE_LABEL in params"
     if (params.NODE_LABEL != '') {
@@ -639,3 +639,4 @@ node(NODE_LABEL){
         }//training training_full
     }//email
 }
+
