@@ -59,11 +59,15 @@ known_failures ={
 }
 
 new_performance_regression=pd.DataFrame()
+new_performance_regression_eager=pd.DataFrame()
 new_performance_regression_model_list=pd.DataFrame()
+new_performance_regression_model_list_eager=pd.DataFrame()
 new_failures=pd.DataFrame()
 new_failures_model_list=pd.DataFrame()
 new_performance_improvement=pd.DataFrame()
+new_performance_improvement_eager=pd.DataFrame()
 new_performance_improvement_model_list=pd.DataFrame()
+new_performance_improvement_model_list_eager=pd.DataFrame()
 new_fixed_failures=pd.DataFrame()
 new_fixed_failures_model_list=pd.DataFrame()
 target_thread_failures=pd.DataFrame()
@@ -603,26 +607,44 @@ def process(input, thread):
         data.apply_style_by_indexes(indexes_to_style=data[data['batch_size_new'] == 0], styler_obj=red_style)
         data.apply_style_by_indexes(indexes_to_style=data[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))],styler_obj=regression_style)
         global new_performance_regression
+        global new_performance_regression_eager
         global new_performance_regression_model_list
+        global new_performance_regression_model_list_eager
         regression = data.loc[(data['Inductor Ratio(old/new)'] > 0) & (data['Inductor Ratio(old/new)'] < (1 - args.threshold))]
+        regression_eager = data.loc[(data['Eager Ratio(old/new)'] > 0) & (data['Eager Ratio(old/new)'] < (1 - args.threshold))]
         regression = regression.copy()
+        regression_eager = regression_eager.copy()
         regression.insert(2, 'thread', thread)
+        regression_eager.insert(2, 'thread', thread)
         new_performance_regression = pd.concat([new_performance_regression,regression])
+        new_performance_regression_eager = pd.concat([new_performance_regression_eager,regression])
         model_list = get_perf_model_list(regression, thread, 'drop')
+        model_list_eager = get_perf_model_list(regression_eager, thread, 'drop')
         if not model_list.empty:
             new_performance_regression_model_list = pd.concat([new_performance_regression_model_list, model_list])
+        if not model_list_eager.empty:
+            new_performance_regression_model_list_eager = pd.concat([new_performance_regression_model_list_eager, model_list_eager])
         data.apply_style_by_indexes(indexes_to_style=data[data['Inductor Ratio(old/new)'] > (1 + args.threshold)],styler_obj=improve_style)
         data.set_row_height(rows=data.row_indexes, height=15)
 
         global new_performance_improvement
+        global new_performance_improvement_eager
         global new_performance_improvement_model_list
+        global new_performance_improvement_model_list_eager
         improvement = data.loc[(data['Inductor Ratio(old/new)'] > (1 + args.threshold))]
+        improvement_eager = data.loc[(data['Eager Ratio(old/new)'] > (1 + args.threshold))]
         improvement = improvement.copy()
+        improvement_eager = improvement_eager.copy()
         improvement.insert(2, 'thread', thread)
+        improvement_eager.insert(2, 'thread', thread)
         new_performance_improvement = pd.concat([new_performance_improvement, improvement])
+        new_performance_improvement_eager = pd.concat([new_performance_improvement_eager, improvement_eager])
         model_list = get_perf_model_list(improvement, thread, 'improve')
+        model_list_eager = get_perf_model_list(improvement_eager, thread, 'improve')
         if not model_list.empty:
             new_performance_improvement_model_list = pd.concat([new_performance_improvement_model_list, model_list])
+        if not model_list_eager.empty:
+            new_performance_improvement_model_list_eager = pd.concat([new_performance_improvement_model_list_eager, model_list_eager])
     else:
         data_new=input[['suite','name','batch_size','speedup','abs_latency','compilation_latency']].rename(columns={'name':'name','batch_size':'batch_size','speedup':'speedup',"abs_latency":'inductor',"compilation_latency":'compilation_latency'})
         data_new['inductor']=data_new['inductor'].astype(float).div(1000)
@@ -926,8 +948,10 @@ def html_generate(html_off):
                     failures_html = "<p>Single-thread Failures</p>" + st_failures
                     summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
+            perf_regression_eager= new_performance_regression_eager.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
             perf_improvement = new_performance_improvement.to_html(classes="table",index = False)
+            perf_improvement_eager = new_performance_improvement_eager.to_html(classes="table",index = False)
             fixed_failures = new_fixed_failures.to_html(classes="table",index = False)
             with open(args.target+'/inductor_log/inductor_model_bench.html',mode = "a") as f, \
                 open(args.target+'/inductor_log/inductor_perf_regression.html',mode = "a") as perf_f, \
@@ -939,10 +963,12 @@ def html_generate(html_off):
                         "<p>SW info</p>" + swinfo + \
                         failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
-                        "<p>new_perf_regression</p>" + perf_regression + \
+                        "<p>new_perf_regression_inductor</p>" + perf_regression + \
+                        "<p>new_perf_regression_eager</p>" + perf_regression_eager + \
                         "<p>new_failures</p>" + failures_regression + \
                         "<h3><font color='#00dd00'>Improvement</font></h3>" + \
-                        "<p>new_perf_improvement</p>" + perf_improvement + \
+                        "<p>new_perf_improvement_inductor</p>" + perf_improvement + \
+                        "<p>new_perf_improvement_eager</p>" + perf_improvement_eager + \
                         "<p>new_fixed_failures</p>" + fixed_failures + \
                         f"<p>image: docker pull gar-registry.caas.intel.com/pytorch/pt_inductor:{args.image_tag}</p>" + html_tail())
                 perf_f.write(f"<p>new_perf_regression in {str((datetime.now() - timedelta(days=2)).date())}</p>" + \
