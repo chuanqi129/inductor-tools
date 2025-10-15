@@ -1,19 +1,3 @@
-// set parameters
-properties([
-    parameters([
-        string(name: 'NODE_LABEL', defaultValue: 'clx137', description: '', trim: true),
-        booleanParam(name: 'create_conda_env', defaultValue: true, description: ''),
-        string(name: 'conda_env_name', defaultValue: 'pt_win', description: '', trim: true),
-        choice(name: 'compiler', choices: ['msvc', 'icc'], description: ''),
-        choice(name: 'wrapper', choices: ['cpp', 'default'], description: ''),
-        choice(name: 'suite', choices: ['all', 'torchbench', 'huggingface', 'timm_models'], description: ''),
-        choice(name: 'precision', choices: ['float32'], description: ''),
-        string(name: 'recipients', defaultValue: 'chuanqi.wang@intel.com;yucheng.liu@intel.com;leslie.fang@intel.com;xu.han@intel.com;lifeng.a.wang@intel.com', description: '', trim: true),
-        string(name: 'http_proxy', defaultValue: 'http://proxy.ims.intel.com:911', description: '', trim: true),
-        choice(name: 'refer_build', choices: ['lastSuccessfulBuild', '0'], description: 'choose 0 when you need only this round report'),
-    ])
-])
-
 node(NODE_LABEL) {
     stage("download the repositories") {
         deleteDir()
