@@ -9,6 +9,13 @@ $env:TORCHINDUCTOR_WINDOWS_TESTS = 1
 Write-Output "Activating conda environment: $envName"
 conda activate $envName
 
+
+$line = (pip list | Select-String "torch ").Line
+$pt_nightly = [regex]::Match($line, "dev(\d+)").Groups[1].Value
+Write-Host $pt_nightly
+
+$log_dir = Join-Path -Path $log_dir -ChildPath $pt_nightly
+
 function Test_inductor {
     param (
         [string]$logDir
@@ -39,10 +46,6 @@ function Test_inductor_cpp_wrapper {
 
     pytest -v test/inductor/test_torchinductor.py `
         2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torchinductor.log"
-
-    # AssertionError: Torch not compiled with CUDA enabled
-    # pytest -v test/inductor/test_max_autotune.py `
-    #     2>&1 | Tee-Object -FilePath "$logDir\cpp_test_test_max_autotune.log"
 
     pytest -v test/inductor/test_cpu_repro.py `
         2>&1 | Tee-Object -FilePath "$logDir\cpp_test_cpu_repro.log"
