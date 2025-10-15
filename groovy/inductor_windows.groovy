@@ -68,7 +68,7 @@ node(NODE_LABEL) {
             conda run -n $conda_env_name pip install styleframe
             conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite -r refer
             """
-        }else{     
+        } else {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"

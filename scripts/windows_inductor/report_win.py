@@ -1501,7 +1501,7 @@ def summary_conclusion(scenario, excel):
             features[:, 5:6] = features[:, 14:15]
             features[:, 8:9] = features[:, 17:18]
 
-        dd=pd.DataFrame(features)
+        dd = pd.DataFrame(features)
         dd.to_csv("inductor_log/Acc_Summary.csv", index=False)
         df_concat = StyleFrame(pd.DataFrame(features).iloc[:, :9])
         for i in range(10):
