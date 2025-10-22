@@ -150,17 +150,18 @@ def main(log_dir):
         sys.exit(1)
 
     # the name of the subdir under log_dir is the PyTorch nightly wheel version
-    nightly_version = [
-        d for d in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, d))
-    ][0]
-    print(nightly_version)
+    subdirs = [d for d in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, d))]
+    if not subdirs:
+        print(f"Error: No nightly version directories found in '{log_dir}'.")
+        sys.exit(1)
+    nightly_version = subdirs[0]
 
     log_dir = os.path.join(log_dir, nightly_version)
     log_files = [f for f in os.listdir(log_dir) if f.endswith(".log")]
     if not log_files:
         print(f"Warning: No .log files found in directory '{log_dir}'.")
         print("Generating an empty report...")
-        generate_html_report([])
+        generate_html_report([], nightly_version)
         return
 
     print(f"Found {len(log_files)} .log file(s) in '{log_dir}': {log_files}")

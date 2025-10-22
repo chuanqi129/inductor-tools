@@ -41,14 +41,14 @@ function Test_inductor_cpp_wrapper {
     $env:TORCHINDUCTOR_WINDOWS_TESTS = 1
     $env:TORCHINDUCTOR_CPP_WRAPPER = 1
 
-    # pytest -v test/inductor/test_torchinductor_opinfo.py -k 'linalg or to_sparse' `
-    #     2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torchinductor_opinfo.log"
+    pytest -v test/inductor/test_torchinductor_opinfo.py -k 'linalg or to_sparse' `
+        2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torchinductor_opinfo.log"
 
-    # pytest -v test/inductor/test_torchinductor.py `
-    #     2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torchinductor.log"
+    pytest -v test/inductor/test_torchinductor.py `
+        2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torchinductor.log"
 
-    # pytest -v test/inductor/test_cpu_repro.py `
-    #     2>&1 | Tee-Object -FilePath "$logDir\cpp_test_cpu_repro.log"
+    pytest -v test/inductor/test_cpu_repro.py `
+        2>&1 | Tee-Object -FilePath "$logDir\cpp_test_cpu_repro.log"
 
     pytest -v test/test_torch.py -k 'take' `
         2>&1 | Tee-Object -FilePath "$logDir\cpp_test_torch.log"
@@ -63,5 +63,5 @@ if (Test-Path -Path $log_dir) {
 New-Item -ItemType Directory -Path $log_dir
 Write-Output "The log directory is: $log_dir"
 
-# Test_inductor -logDir $log_dir
+Test_inductor -logDir $log_dir
 Test_inductor_cpp_wrapper -logDir $log_dir
