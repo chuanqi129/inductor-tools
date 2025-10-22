@@ -56,8 +56,7 @@ if [[ $BACKEND == "aot_inductor" ]]; then
     Flag_extra+="--freezing "
 elif [[ $BACKEND == "aot_max_autotune" ]]; then
     # Workaround for test with runner.py
-    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor ",' runner.py
-    sed -i "s/torch._inductor.aoti_compile_and_package(ep)/torch._inductor.aoti_compile_and_package(ep, inductor_configs={'max_autotune': True})/" common.py
+    sed -i '/"inference": {/a \ \ \ \ \ \ \ \ "aot_inductor": "--inference -n50 --export-aot-inductor --inductor-compile-mode=max-autotune",' benchmarks/dynamo/runner.py
     BACKEND=aot_inductor
     echo "Setting freezing for inductor backend by default."
     export TORCHINDUCTOR_FREEZING=1
