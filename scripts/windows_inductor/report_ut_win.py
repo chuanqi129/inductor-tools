@@ -1,4 +1,4 @@
-# parse_test_logs.py
+# report_ut_win.py
 import os
 import re
 import sys
@@ -150,7 +150,9 @@ def main(log_dir):
         sys.exit(1)
 
     # the name of the subdir under log_dir is the PyTorch nightly wheel version
-    subdirs = [d for d in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, d))]
+    subdirs = [
+        d for d in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, d))
+    ]
     if not subdirs:
         print(f"Error: No nightly version directories found in '{log_dir}'.")
         sys.exit(1)
@@ -185,7 +187,7 @@ def main(log_dir):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python parse_test_logs.py <log_dir>")
+        print("Usage: python report_ut_win.py <log_dir>")
         sys.exit(1)
 
     ut_log_dir = sys.argv[1]

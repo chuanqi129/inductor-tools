@@ -56,7 +56,7 @@ function Test_inductor_cpp_wrapper {
 }
 
 
-Write-Output "Running the CPU UT onw windows"
+Write-Output "Running the CPU UT on windows"
 if (Test-Path -Path $log_dir) {
     Remove-Item -Recurse -Force -Path $log_dir
 }
