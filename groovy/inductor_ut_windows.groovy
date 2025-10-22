@@ -37,4 +37,27 @@ node(NODE_LABEL) {
         archiveArtifacts artifacts: 'inductor_log/**', fingerprint: true
     }
 
+    stage('generate the report'){
+        def workspaceDir = env.WORKSPACE
+        stage('generate the report'){
+        pwsh """
+        \$env:HTTP_PROXY = "${http_proxy}"
+        \$env:HTTPS_PROXY = "${http_proxy}"
+        Set-Location ${workspaceDir}
+        conda run -n $conda_env_name python.exe ${workspaceDir}/scripts/windows_inductor/report_ut_win.py ${workspaceDir}/inductor_log
+        """
+    }
+        archiveArtifacts artifacts: 'ut_test_failure_report.html', fingerprint: true
+    }
+
+    stage('send email'){
+        emailext(
+            
+            subject: 'Inductor CPU UT Report on Windows',
+            mimeType: "text/html",
+            to: params.recipients,
+            body: '${FILE,path="ut_test_failure_report.html"}'
+        )
+    }
+
 }
