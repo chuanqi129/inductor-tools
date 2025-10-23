@@ -7,24 +7,7 @@ env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
-if (env.precision == 'float32') {
-    env.labelName = "inductor-icx-local-tas"
-} else if (env.precision == 'amp-gnr-sh') {
-    env.precision = 'amp'
-    env.labelName = "inductor-gnr-local-tas-sh"
-} else if (env.precision == 'amp-gnr-us') {
-    env.precision = 'amp'
-    env.labelName = "inductor-gnr-local-tas-us"
-} else if (env.precision == 'amp-fp16-gnr-sh') {
-    env.precision = 'amp_fp16'
-    env.labelName = "inductor-gnr-local-tas-sh"
-} else if (env.precision == 'amp-fp16-gnr-us') {
-    env.precision = 'amp_fp16'
-    env.labelName = "inductor-gnr-local-tas-us"
-} else if (env.precision == 'amp-spr') {
-    env.precision = 'amp'
-    env.labelName = "inductor-spr-local-tas"
-}
+env.labelName = "gnr801096"
 
 def getAvailableNode(String labelName) {
     Label label = Jenkins.instance.getLabel(labelName)
