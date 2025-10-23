@@ -4,7 +4,7 @@ import hudson.model.Label
 def str_list = ['target', 'baseline']
 def maxRetries = 3
 env.benchmark_job = 'inductor_locally_benchmark'
-env.result_compare_job = 'inductor_job_result_compare'
+env.result_compare_job = 'inductor_job_result_compare_lifeng'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 env.labelName = "gnr801096"
