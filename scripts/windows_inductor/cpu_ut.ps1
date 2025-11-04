@@ -10,7 +10,7 @@ Write-Output "Activating conda environment: $envName"
 conda activate $envName
 
 
-$line = (pip list | Select-String "torch ").Line
+$line = (python -m pip list | Select-String "torch ").Line
 $pt_nightly = [regex]::Match($line, "dev(\d+)").Groups[1].Value
 Write-Host $pt_nightly
 
