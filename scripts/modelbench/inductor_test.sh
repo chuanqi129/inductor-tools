@@ -101,13 +101,6 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
         sed -i 's/importlib.resources/importlib_resources/g' "/opt/conda/lib/python3.8/site-packages/triton/backends/cpu/driver.py"
     fi
 
-    # build sleef
-    export TRITON_CPU_USE_SLEEF="/workspace/pytorch/sleef/build/lib/"
-    cd /workspace/pytorch
-    git clone --depth 1 https://github.com/shibatch/sleef.git
-    cd sleef && mkdir build
-    cmake -S . -B build
-    cmake --build build -j --clean-first
     cd /workspace/pytorch
     export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
 fi
