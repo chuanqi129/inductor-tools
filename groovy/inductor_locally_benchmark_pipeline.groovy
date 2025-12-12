@@ -9,7 +9,7 @@ env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
 env.labelName = "gnr801096"
 if (env.precision == 'float32') {
-    env.labelName = "inductor-icx-local-tas"
+    env.labelName = "inductor-gnr-local-tas-us"
 } else {
     env.labelName = "gnr801096"
 }
