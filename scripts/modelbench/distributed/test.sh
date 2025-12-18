@@ -4,7 +4,7 @@ export LOG_DIR="distributed_e2e"
 git clone -b release/xpu/2.6.10 https://github.com/intel/intel-extension-for-pytorch.git ipex
 cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
-pip install transformers==4.52.4 accelerate==1.8.1
+pip install transformers==4.52.4 accelerate==1.8.1 datasets==2.20.0
 cd Llama3
 export CCL_SEND=direct
 export CCL_RECV=direct
