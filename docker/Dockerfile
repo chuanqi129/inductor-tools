@@ -88,8 +88,6 @@ RUN git clone https://github.com/pytorch/vision.git && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/audio.git && \
     cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
-    # Workaround for https://github.com/pytorch/audio/issues/2784
-    sed -i "3 i link_directories(/opt/conda/lib)" CMakeLists.txt && \
     python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_COMMIT=default
