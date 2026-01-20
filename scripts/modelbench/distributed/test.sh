@@ -6,8 +6,6 @@ cd ipex/examples/gpu/llm/fine-tuning
 pip install -r requirements.txt
 pip install transformers==4.52.4 accelerate==1.8.1 datasets==2.20.0
 cd Llama3
-export CCL_SEND=direct
-export CCL_RECV=direct
 export CCL_PROCESS_LAUNCHER=none
 export TORCH_LLM_ALLREDUCE=1
 export model="meta-llama/Meta-Llama-3-8B"
