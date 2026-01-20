@@ -63,7 +63,7 @@ def getJobParameters(String test_str, String availableComputer) {
 node("inductor_image"){
     deleteDir()
     retry(maxRetries){
-        sleep(60)
+        sleep(30)
         checkout([
             $class: 'GitSCM',
             branches: scm.branches,
@@ -147,7 +147,7 @@ node("inductor_image"){
 node(report_node){
     deleteDir()
     retry(maxRetries){
-        sleep(60)
+        sleep(30)
         checkout([
             $class: 'GitSCM',
             branches: scm.branches,
@@ -161,7 +161,7 @@ node(report_node){
         stage("Build target images") {
             retry(maxRetries){
                 unstash 'docker_image_tag_target'
-                sleep(60)
+                sleep(30)
                 def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_target.log''').toString().trim().replaceAll("\n","")
                 def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
                         [$class: 'StringParameterValue', name: 'PT_REPO', value: "${target_TORCH_REPO}"],
@@ -200,7 +200,7 @@ node(report_node){
         stage("Build baseline images") {
             retry(maxRetries){
                 unstash 'docker_image_tag_baseline'
-                sleep(60)
+                sleep(30)
                 def DOCKER_TAG = sh(returnStdout:true,script:'''cat ${WORKSPACE}/docker_image_tag_baseline.log''').toString().trim().replaceAll("\n","")
                 def image_build_job = build job: 'inductor_images_local_py310', propagate: false, parameters: [             
                         [$class: 'StringParameterValue', name: 'PT_REPO', value: "${baseline_TORCH_REPO}"],
