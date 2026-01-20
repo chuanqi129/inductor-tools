@@ -1,5 +1,6 @@
 import hudson.model.Computer
 import hudson.model.Label
+import java.util.Collections 
 
 def str_list = ['target', 'baseline']
 def maxRetries = 3
@@ -17,9 +18,11 @@ if (env.precision == 'float32') {
 def getAvailableNode(String labelName) {
     Label label = Jenkins.instance.getLabel(labelName)
     
-    // Get computers by label
-    Collection<Computer> computers = label.getNodes().collect { it.toComputer() }
-    
+    // Get computers by label and shuffle them to randomize selection
+    def computersList = label.getNodes().collect { it.toComputer() }
+    Collections.shuffle(computersList) 
+    Collection<Computer> computers = computersList
+
     String availableComputer = null
     for (Computer computer : computers) {
       if (computer.isOnline() && computer.isIdle()) {
