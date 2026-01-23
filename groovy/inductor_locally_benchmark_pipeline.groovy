@@ -8,12 +8,12 @@ env.benchmark_job = 'inductor_locally_benchmark'
 env.result_compare_job = 'inductor_job_result_compare_lifeng'
 env.target_job_selector = 'None'
 env.baseline_job_selector = 'None'
-env.labelName = "gnr801096"
-if (env.precision == 'float32') {
-    env.labelName = "inductor-gnr-local-tas-us"
-} else {
-    env.labelName = "gnr801096"
-}
+env.labelName = "onednn"
+// if (env.precision == 'float32') {
+//     env.labelName = "inductor-gnr-local-tas-us"
+// } else {
+//     env.labelName = "gnr801096"
+// }
 
 def getAvailableNode(String labelName) {
     Label label = Jenkins.instance.getLabel(labelName)
