@@ -11,6 +11,7 @@ $envList = conda env list | Select-String -SimpleMatch -Pattern " $envName "
 if ($envList) {
     Write-Output "Environment $envName exists. Removing it..."
     conda env remove -y -n $envName
+    Start-Sleep -Seconds 10
 }
 conda create -y -n $envName python=$pythonVersion
 
