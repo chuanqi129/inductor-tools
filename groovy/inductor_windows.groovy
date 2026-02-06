@@ -44,7 +44,8 @@ node(NODE_LABEL) {
         \$env:HTTP_PROXY = "${http_proxy}"
         \$env:HTTPS_PROXY = "${http_proxy}"
         New-Item -ItemType SymbolicLink -Path "${workspaceDir}\\benchmark" -Target "C:\\benchmark"
-        Set-Location pytorch
+        Set-PSDebug -Trace 1
+        Set-Location "${workspaceDir}\\pytorch"
         cmd.exe "/K" (
             '"C:/Program Files (x86)/Intel/oneAPI/setvars.bat" ' +
             '&& pwsh -File ../scripts/windows_inductor/dynamo_test.ps1 -dir ${logsDir} ' +
