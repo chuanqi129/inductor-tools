@@ -1,8 +1,10 @@
 param (
     [string]$envName = "pt_win",
     [string]$pythonVersion = "3.10",
-    [string]$benchmarkLocation = "c:\benchmark"
+    [string]$benchmarkLocation = "C:\benchmark"
 )
+
+Set-PSDebug -Trace 1
 
 $env:DISTUTILS_USE_SDK = 1
 
