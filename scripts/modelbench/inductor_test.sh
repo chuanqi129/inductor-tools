@@ -87,9 +87,9 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     cd /workspace
     git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
     cd triton-cpu
-    pip install ninja cmake wheel
     git submodule sync && git submodule update --init --recursive
-    pip install -e python
+    pip install -r python/requirements.txt
+    pip install -e .
 
     # Python <= 3.8 has issue:
     # AttributeError: module 'importlib.resources' has no attribute 'files'
