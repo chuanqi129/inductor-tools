@@ -28,6 +28,16 @@ else {
     $suite_list = @($suite)
 }
 
+if ($precision -eq "float32") {
+    $dt_flag = "--float32"
+}
+elseif ($precision -eq "amp") {
+    $dt_flag = "--amp"
+}
+elseif ($precision -eq "amp_fp16") {
+    $dt_flag = "--amp --amp-dtype float16"
+}
+
 # Activate the new environment
 Write-Output "Activating conda environment: $envName"
 conda activate $envName
@@ -39,8 +49,8 @@ function Test-torchbench {
 
     # Torchbench performance test
     python benchmarks/dynamo/torchbench.py `
-        --performance --float32 -dcpu `
-        --output=$logDir\inductor_torchbench_float32_inference_cpu_performance.csv `
+        --performance $dt_flag -dcpu `
+        --output=$logDir\inductor_torchbench_${precision}_inference_cpu_performance.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llava -x simple_gpt_tp_manual -x stable_diffusion `
@@ -54,8 +64,8 @@ function Test-torchbench {
 
     # Torchbench accuracy test
     python benchmarks/dynamo/torchbench.py `
-        --accuracy --float32 -dcpu `
-        --output=$logDir\inductor_torchbench_float32_inference_cpu_accuracy.csv `
+        --accuracy $dt_flag -dcpu `
+        --output=$logDir\inductor_torchbench_${precision}_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llava -x simple_gpt_tp_manual -x stable_diffusion `
@@ -76,8 +86,8 @@ function Test-huggingface {
 
     # Huggingface performance test
     python benchmarks/dynamo/huggingface.py `
-        --performance --float32 -dcpu `
-        --output=$logDir\inductor_huggingface_float32_inference_cpu_performance.csv `
+        --performance $dt_flag -dcpu `
+        --output=$logDir\inductor_huggingface_${precision}_inference_cpu_performance.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llama_v2_7b_16h `
@@ -86,8 +96,8 @@ function Test-huggingface {
 
     # Huggingface accuracy test
     python benchmarks/dynamo/huggingface.py `
-        --accuracy --float32 -dcpu `
-        --output=$logDir\inductor_huggingface_float32_inference_cpu_accuracy.csv `
+        --accuracy $dt_flag -dcpu `
+        --output=$logDir\inductor_huggingface_${precision}_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llama_v2_7b_16h `
@@ -99,13 +109,14 @@ function Test-huggingface {
 
 function Test-timm_models {
     param (
-        [string]$logDir
+        [string]$logDir,
+        [string]$precision
     )
 
     # Timm_models performance test
     python benchmarks/dynamo/timm_models.py `
-        --performance --float32 -dcpu `
-        --output=$logDir\inductor_timm_models_float32_inference_cpu_performance.csv `
+        --performance $dt_flag -dcpu `
+        --output=$logDir\inductor_timm_models_${precision}_inference_cpu_performance.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llava -x simple_gpt_tp_manual -x stable_diffusion `
@@ -119,8 +130,8 @@ function Test-timm_models {
 
     # Timm_models accuracy test
     python benchmarks/dynamo/timm_models.py `
-        --accuracy --float32 -dcpu `
-        --output=$logDir\inductor_timm_models_float32_inference_cpu_accuracy.csv `
+        --accuracy $dt_flag -dcpu `
+        --output=$logDir\inductor_timm_models_${precision}_inference_cpu_accuracy.csv `
         --inference -n50 --inductor `
         --timeout 9000 --freezing --dashboard `
         -x llama_v2_7b_16h `
