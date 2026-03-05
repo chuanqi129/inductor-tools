@@ -13,6 +13,7 @@ if ($envList) {
     conda env remove -y -n $envName
     Start-Sleep -Seconds 10
 }
+Remove-Item -Recurse -Force "C:\ProgramData\miniforge3\envs\$envName"
 conda create -y -n $envName python=$pythonVersion
 
 # Activate the new environment
