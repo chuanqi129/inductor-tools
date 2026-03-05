@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "-p",
     "--precision",
-    default=["amp_fp16", "float32"],
+    default=["amp","amp_fp16", "float32"],
     nargs="*",
     type=str,
     help="precision",

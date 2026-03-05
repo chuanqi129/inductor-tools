@@ -7,6 +7,8 @@ param (
     [string]$precision = "float32"
 )
 
+Set-PSDebug -Trace 1
+
 $env:TORCHINDUCTOR_FREEZING = 1
 
 if ($wrapper -eq "cpp") {
@@ -109,8 +111,7 @@ function Test-huggingface {
 
 function Test-timm_models {
     param (
-        [string]$logDir,
-        [string]$precision
+        [string]$logDir
     )
 
     # Timm_models performance test
