@@ -125,21 +125,28 @@ def build_report(root: str, pass_values: set) -> Dict[str, Any]:
 
     for path in sorted(find_log_files(root)):
         suite, precision = suite_precision_from_path(root, path)
-        report.setdefault(suite, {}).setdefault(precision, {
-            "accuracy": [],
-            "performance": [],
-        })
+        report.setdefault(suite, {}).setdefault(
+            precision,
+            {
+                "accuracy": [],
+                "performance": [],
+            },
+        )
 
         if path.endswith(ACCURACY_SUFFIX):
-            report[suite][precision]["accuracy"].append({
-                "path": path,
-                "summary": parse_accuracy_file(path, pass_values),
-            })
+            report[suite][precision]["accuracy"].append(
+                {
+                    "path": path,
+                    "summary": parse_accuracy_file(path, pass_values),
+                }
+            )
         elif path.endswith(PERF_SUFFIX):
-            report[suite][precision]["performance"].append({
-                "path": path,
-                "summary": parse_performance_file(path),
-            })
+            report[suite][precision]["performance"].append(
+                {
+                    "path": path,
+                    "summary": parse_performance_file(path),
+                }
+            )
 
     return report
 
@@ -231,7 +238,9 @@ def print_report(
                         name = row.get("name", "")
                         speedup = row.get("speedup", "")
                         abs_latency = row.get("abs_latency", "")
-                        print(f"        {name}: abs_latency={abs_latency}, speedup={speedup}")
+                        print(
+                            f"        {name}: abs_latency={abs_latency}, speedup={speedup}"
+                        )
         print("")
 
 
@@ -249,23 +258,27 @@ def build_excel_frames(
         for precision, data in suite_data.items():
             acc = data["accuracy"]
             perf = data["performance"]
-            acc_summary_rows.append({
-                "source": source_label,
-                "suite": suite,
-                "precision": precision,
-                "pass_rate": acc["pass_rate"],
-                "passed": acc["passed"],
-                "total": acc["total"],
-                "status_counts": json.dumps(acc["status_counts"], sort_keys=True),
-            })
-            perf_summary_rows.append({
-                "source": source_label,
-                "suite": suite,
-                "precision": precision,
-                "geo_mean": perf["geo_mean"],
-                "count": perf["count"],
-                "excluded": perf["excluded"],
-            })
+            acc_summary_rows.append(
+                {
+                    "source": source_label,
+                    "suite": suite,
+                    "precision": precision,
+                    "pass_rate": acc["pass_rate"],
+                    "passed": acc["passed"],
+                    "total": acc["total"],
+                    "status_counts": json.dumps(acc["status_counts"], sort_keys=True),
+                }
+            )
+            perf_summary_rows.append(
+                {
+                    "source": source_label,
+                    "suite": suite,
+                    "precision": precision,
+                    "geo_mean": perf["geo_mean"],
+                    "count": perf["count"],
+                    "excluded": perf["excluded"],
+                }
+            )
 
             acc_entries = report[suite][precision].get("accuracy", [])
             perf_entries = report[suite][precision].get("performance", [])
@@ -273,32 +286,36 @@ def build_excel_frames(
             for entry in acc_entries:
                 filename = os.path.basename(entry["path"])
                 for row in entry["summary"]["rows"]:
-                    acc_detail_rows.append({
-                        "source": source_label,
-                        "suite": suite,
-                        "precision": precision,
-                        "file": filename,
-                        "dev": row.get("dev", ""),
-                        "name": row.get("name", ""),
-                        "batch_size": row.get("batch_size", ""),
-                        "accuracy": row.get("accuracy", ""),
-                    })
+                    acc_detail_rows.append(
+                        {
+                            "source": source_label,
+                            "suite": suite,
+                            "precision": precision,
+                            "file": filename,
+                            "dev": row.get("dev", ""),
+                            "name": row.get("name", ""),
+                            "batch_size": row.get("batch_size", ""),
+                            "accuracy": row.get("accuracy", ""),
+                        }
+                    )
 
             for entry in perf_entries:
                 filename = os.path.basename(entry["path"])
                 for row in entry["summary"]["rows"]:
-                    perf_detail_rows.append({
-                        "source": source_label,
-                        "suite": suite,
-                        "precision": precision,
-                        "file": filename,
-                        "dev": row.get("dev", ""),
-                        "name": row.get("name", ""),
-                        "batch_size": row.get("batch_size", ""),
-                        "abs_latency": row.get("abs_latency", ""),
-                        "speedup": row.get("speedup", ""),
-                        "compilation_latency": row.get("compilation_latency", ""),
-                    })
+                    perf_detail_rows.append(
+                        {
+                            "source": source_label,
+                            "suite": suite,
+                            "precision": precision,
+                            "file": filename,
+                            "dev": row.get("dev", ""),
+                            "name": row.get("name", ""),
+                            "batch_size": row.get("batch_size", ""),
+                            "abs_latency": row.get("abs_latency", ""),
+                            "speedup": row.get("speedup", ""),
+                            "compilation_latency": row.get("compilation_latency", ""),
+                        }
+                    )
 
     return (
         pd.DataFrame(acc_summary_rows),
@@ -325,15 +342,26 @@ def write_excel(
     )
 
     if summary_ref and report_ref:
-        acc_summary_ref_df, perf_summary_ref_df, acc_detail_ref_df, perf_detail_ref_df = build_excel_frames(
+        (
+            acc_summary_ref_df,
+            perf_summary_ref_df,
+            acc_detail_ref_df,
+            perf_detail_ref_df,
+        ) = build_excel_frames(
             summary_ref,
             report_ref,
             source_label="inductor_log_ref",
         )
-        acc_summary_df = pd.concat([acc_summary_df, acc_summary_ref_df], ignore_index=True)
-        perf_summary_df = pd.concat([perf_summary_df, perf_summary_ref_df], ignore_index=True)
+        acc_summary_df = pd.concat(
+            [acc_summary_df, acc_summary_ref_df], ignore_index=True
+        )
+        perf_summary_df = pd.concat(
+            [perf_summary_df, perf_summary_ref_df], ignore_index=True
+        )
         acc_detail_df = pd.concat([acc_detail_df, acc_detail_ref_df], ignore_index=True)
-        perf_detail_df = pd.concat([perf_detail_df, perf_detail_ref_df], ignore_index=True)
+        perf_detail_df = pd.concat(
+            [perf_detail_df, perf_detail_ref_df], ignore_index=True
+        )
 
     with pd.ExcelWriter(path) as writer:
         acc_summary_df.to_excel(writer, sheet_name="acc_summary", index=False)
@@ -393,13 +421,12 @@ def main() -> None:
     if args.excel:
         write_excel(args.excel, summary, report, summary_ref, report_ref)
 
-
     print_report(summary, report, args.details, args.rows)
-    
+
     if args.root_ref:
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print(f"Reference Data from: {args.root_ref}")
-        print("="*50 + "\n")
+        print("=" * 50 + "\n")
         print_report(summary_ref, report_ref, args.details, args.rows)
 
 
