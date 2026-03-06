@@ -66,24 +66,22 @@ node(NODE_LABEL) {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            conda run -n $conda_env_name pip install styleframe
-            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite -r refer
+            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py --root inductor_log --root_ref refer --excel Inductor_${precision}_E2E_Test_Report.xlsx
             """
         } else {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            conda run -n $conda_env_name pip install styleframe
-            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win.py -p $precision -m inference -sc accuracy performance -s $suite
+            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py --excel Inductor_${precision}_E2E_Test_Report.xlsx
             """
         }
-        archiveArtifacts artifacts: 'inductor_log/Inductor_E2E_Test_Report.xlsx', fingerprint: true
+        archiveArtifacts artifacts: 'Inductor_${precision}_E2E_Test_Report.xlsx', fingerprint: true
     }
 
     stage('send email'){
         emailext body: 'Please check the attachment for the inductor report.',
-            subject: "[Regular Weekly]-Windows-Inductor-Test-${env.compiler}-${env.wrapper}-Report",
+            subject: "[Regular Weekly]-Windows-Inductor-Test-${env.compiler}-${env.wrapper}-${precision}-Report",
             to: params.recipients,
-            attachmentsPattern: 'inductor_log/Inductor_E2E_Test_Report.xlsx'
+            attachmentsPattern: 'inductor_log/Inductor_${precision}_E2E_Test_Report.xlsx'
     }
 }
