@@ -37,8 +37,10 @@ elseif ($precision -eq "amp") {
     $dt_flag = "--amp"
 }
 elseif ($precision -eq "amp_fp16") {
-    $dt_flag = "--amp --amp-dtype float16"
+    $dt_flag = @("--amp", "--amp-dtype", "float16")
 }
+
+Write-Host "Debug: Running with flag: $dt_flag"
 
 # Activate the new environment
 Write-Output "Activating conda environment: $envName"
