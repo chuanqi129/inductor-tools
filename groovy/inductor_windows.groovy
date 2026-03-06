@@ -75,13 +75,13 @@ node(NODE_LABEL) {
             conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py --excel Inductor_${precision}_E2E_Test_Report.xlsx
             """
         }
-        archiveArtifacts artifacts: 'Inductor_${precision}_E2E_Test_Report.xlsx', fingerprint: true
+        archiveArtifacts artifacts: "Inductor_${precision}_E2E_Test_Report.xlsx", fingerprint: true
     }
 
     stage('send email'){
         emailext body: 'Please check the attachment for the inductor report.',
             subject: "[Regular Weekly]-Windows-Inductor-Test-${env.compiler}-${env.wrapper}-${precision}-Report",
             to: params.recipients,
-            attachmentsPattern: 'inductor_log/Inductor_${precision}_E2E_Test_Report.xlsx'
+            attachmentsPattern: "Inductor_${precision}_E2E_Test_Report.xlsx"
     }
 }
