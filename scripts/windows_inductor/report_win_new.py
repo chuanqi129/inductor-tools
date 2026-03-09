@@ -291,7 +291,6 @@ def build_excel_frames(
                             "source": source_label,
                             "suite": suite,
                             "precision": precision,
-                            "file": filename,
                             "dev": row.get("dev", ""),
                             "name": row.get("name", ""),
                             "batch_size": row.get("batch_size", ""),
@@ -307,7 +306,6 @@ def build_excel_frames(
                             "source": source_label,
                             "suite": suite,
                             "precision": precision,
-                            "file": filename,
                             "dev": row.get("dev", ""),
                             "name": row.get("name", ""),
                             "batch_size": row.get("batch_size", ""),
@@ -317,12 +315,40 @@ def build_excel_frames(
                         }
                     )
 
+    # Create DataFrames
+    acc_summary_df = pd.DataFrame(acc_summary_rows)
+    perf_summary_df = pd.DataFrame(perf_summary_rows)
+    acc_detail_df = pd.DataFrame(acc_detail_rows)
+    perf_detail_df = pd.DataFrame(perf_detail_rows)
+    
+    # Convert numeric columns to proper types to avoid "numbers stored as text" warning
+    if not acc_detail_df.empty and "batch_size" in acc_detail_df.columns:
+        acc_detail_df["batch_size"] = pd.to_numeric(acc_detail_df["batch_size"], errors="coerce")
+    
+    if not perf_detail_df.empty:
+        numeric_cols = ["batch_size", "abs_latency", "speedup", "compilation_latency"]
+        for col in numeric_cols:
+            if col in perf_detail_df.columns:
+                perf_detail_df[col] = pd.to_numeric(perf_detail_df[col], errors="coerce")
+    
     return (
-        pd.DataFrame(acc_summary_rows),
-        pd.DataFrame(perf_summary_rows),
-        pd.DataFrame(acc_detail_rows),
-        pd.DataFrame(perf_detail_rows),
+        acc_summary_df,
+        perf_summary_df,
+        acc_detail_df,
+        perf_detail_df,
     )
+
+
+def auto_adjust_column_widths(worksheet: Any, dataframe: Any, center_format: Any) -> None:
+    """Auto-adjust column widths based on content length and apply center alignment."""
+    for idx, col in enumerate(dataframe.columns):
+        # Get the maximum length of the column name and column values
+        max_len = len(str(col))
+        for value in dataframe[col].astype(str):
+            max_len = max(max_len, len(value))
+        # Set column width with some padding (max 50 to avoid extremely wide columns)
+        adjusted_width = min(max_len + 2, 50)
+        worksheet.set_column(idx, idx, adjusted_width, center_format)
 
 
 def write_excel(
@@ -363,11 +389,37 @@ def write_excel(
             [perf_detail_df, perf_detail_ref_df], ignore_index=True
         )
 
-    with pd.ExcelWriter(path) as writer:
+    with pd.ExcelWriter(path, engine='xlsxwriter') as writer:
+        # Get the xlsxwriter workbook and create a format for center alignment
+        workbook = writer.book
+        center_format = workbook.add_format({'align': 'center', 'valign': 'vcenter'})
+        header_format = workbook.add_format({
+            'align': 'center',
+            'valign': 'vcenter',
+            'bold': True,
+        })
+        
+        # Write data to sheets
         acc_summary_df.to_excel(writer, sheet_name="acc_summary", index=False)
         perf_summary_df.to_excel(writer, sheet_name="perf_summary", index=False)
         acc_detail_df.to_excel(writer, sheet_name="acc_details", index=False)
         perf_detail_df.to_excel(writer, sheet_name="perf_details", index=False)
+        
+        # Apply formatting and auto-adjust column widths for each sheet
+        for sheet_name, df in [
+            ("acc_summary", acc_summary_df),
+            ("perf_summary", perf_summary_df),
+            ("acc_details", acc_detail_df),
+            ("perf_details", perf_detail_df),
+        ]:
+            worksheet = writer.sheets[sheet_name]
+            
+            # Format header row
+            for col_num, value in enumerate(df.columns.values):
+                worksheet.write(0, col_num, value, header_format)
+            
+            # Auto-adjust column widths with center alignment
+            auto_adjust_column_widths(worksheet, df, center_format)
 
 
 def main() -> None:
@@ -395,11 +447,6 @@ def main() -> None:
         help="Include per-model rows in text output",
     )
     parser.add_argument(
-        "--strict-accuracy",
-        action="store_true",
-        help="Only count 'pass' as pass (exclude pass_due_to_skip)",
-    )
-    parser.add_argument(
         "--excel",
         type=str,
         default="",
@@ -407,7 +454,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    pass_values = {"pass"} if args.strict_accuracy else PASS_VALUES_DEFAULT
+    pass_values = PASS_VALUES_DEFAULT
 
     report = build_report(args.root, pass_values)
     summary = summarize_report(report)

@@ -56,6 +56,12 @@ node(NODE_LABEL) {
     }
 
     stage('generate the report'){
+        pwsh """
+        \$env:HTTP_PROXY = "${http_proxy}"
+        \$env:HTTPS_PROXY = "${http_proxy}"
+        conda run -n $conda_env_name pip install openpyxl xlsxwriter
+        """
+
         if(refer_build != '0') {
             copyArtifacts(
                 projectName: currentBuild.projectName,
