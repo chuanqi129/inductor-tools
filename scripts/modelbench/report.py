@@ -143,7 +143,7 @@ def update_passrate_csv(df, target_path, backend):
         name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
-        new_df.loc[backend][suite_name] = passrate_str_new
+        new_df.loc[backend, suite_name] = passrate_str_new
     new_df.to_csv(target_path + '/passrate_new.csv')
 
 def update_passrate(reference):
@@ -404,7 +404,7 @@ def get_failures(target_path, thread_mode, backend_pattern):
     failures = failures.rename(columns={'speedup': 'perf'})
     failures = failures[['suite', 'name', 'accuracy', 'perf']]
     failures.replace(failure_msg_list, [0]*len(failure_msg_list), inplace=True)
-    failures['accuracy'].replace('pass', 1, inplace=True)
+    failures['accuracy'] = failures['accuracy'].replace('pass', 1)
     failures.loc[(failures['perf'] > 0), ['perf']] = 1
     failures.fillna(2, inplace=True)
     failures.replace([0, 1, 2],["X", "√", "N/A"],inplace=True)
