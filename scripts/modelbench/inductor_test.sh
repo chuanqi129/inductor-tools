@@ -85,13 +85,13 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     sed -i '2a import torch._inductor.config\ntorch._inductor.config.cpu_backend="triton"' benchmarks/dynamo/timm_models.py
     #pip install --force-reinstall "git+https://github.com/triton-lang/triton-cpu#subdirectory=python"
     cd /workspace
-    git clone --depth 1 https://github.com/triton-lang/triton-cpu.git
+    git clone https://github.com/triton-lang/triton-cpu.git
     cd triton-cpu
-
+    git checkout e60f448f8f197073b75d6d3e77347414a5db3ee7
     pip install ninja cmake wheel
     git submodule sync && git submodule update --init --recursive
     pip install -r python/requirements.txt # build-time dependencies
-    pip install -e .
+    pip install -e python
 
 
     # Python <= 3.8 has issue:
