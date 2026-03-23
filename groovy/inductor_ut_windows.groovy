@@ -26,6 +26,7 @@ node(NODE_LABEL) {
         \$env:HTTPS_PROXY = "${http_proxy}"
         Set-Location C:/pytorch
         git checkout nightly
+        git submodule sync && git submodule update --init --recursive
         git pull
         Copy-Item -Path "${workspaceDir}/scripts/windows_inductor/cpu_ut.ps1" -Destination "."
 
@@ -53,7 +54,8 @@ node(NODE_LABEL) {
             subject: 'Inductor CPU UT Report on Windows',
             mimeType: "text/html",
             to: params.recipients,
-            body: '${FILE,path="ut_test_failure_report.html"}'
+            body: '${FILE,path="ut_test_failure_report.html"}' +
+                  "<p><strong>Please refer to the Jenkins build for the details:</strong> <a href=\"${env.BUILD_URL}\">${env.BUILD_URL}</a></p>"
         )
     }
 

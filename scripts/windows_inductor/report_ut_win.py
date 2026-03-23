@@ -35,15 +35,16 @@ def parse_log_file(filepath):
 
     for match in matches:
         time_taken, file_path, class_name, test_name = match
+        log_basename = os.path.basename(filepath)
+        wrapper_type = "cpp wrapper" if log_basename.startswith("cpp") else "default wrapper"
         failed_tests.append(
             {
                 "file": file_path,
                 "class": class_name,
                 "test": test_name,
                 "time": float(time_taken),
-                "log_file": os.path.basename(
-                    filepath
-                ),  # Record which log file it came from
+                "log_file": log_basename,  # Record which log file it came from
+                "wrapper": wrapper_type,
             }
         )
 
@@ -115,6 +116,7 @@ def generate_html_report(
         <thead>
             <tr>
                 <th>Index</th>
+                <th>Wrapper</th>
                 <th>Test File</th>
                 <th>Test Method</th>
             </tr>
@@ -126,6 +128,7 @@ def generate_html_report(
         html_content += f"""
             <tr>
                 <td>{i}</td>
+                <td>{test['wrapper']}</td>
                 <td>{test['file']}</td>
                 <td class="test-name">{test['test']}</td>
             </tr>"""
