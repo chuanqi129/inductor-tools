@@ -121,7 +121,7 @@ def generate_html_report(
 </head>
 <body>
     <h1>Inductor UT Test Failure Report on Windows</h1>
-    <p><strong>PyTorch Nightly Wheel:</strong> {nightly_version}</p>
+    <p><strong>PyTorch Nightly Wheel:</strong> {escape(nightly_version)}</p>
     {build_url_section}
     <p><strong>Total Failures:</strong> {len(all_failed_tests)}</p>
     <table>
@@ -140,9 +140,9 @@ def generate_html_report(
         html_content += f"""
             <tr>
                 <td>{i}</td>
-                <td>{test['wrapper']}</td>
-                <td>{test['file']}</td>
-                <td class="test-name">{test['test']}</td>
+                <td>{escape(test['wrapper'])}</td>
+                <td>{escape(test['file'])}</td>
+                <td class="test-name">{escape(test['test'])}</td>
             </tr>"""
 
     html_content += """
