@@ -14,7 +14,7 @@ def parse_log_file(filepath):
 
     Returns:
         list: A list of dictionaries containing failed test information.
-              Each dictionary has keys: 'file', 'class', 'test', 'time', 'log_file'.
+              Each dictionary has keys: 'file', 'class', 'test', 'time', 'log_file', 'wrapper'.
     """
     failed_tests = []
     print(f"Parsing log file: {filepath}")
