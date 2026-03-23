@@ -3,6 +3,7 @@ import os
 import re
 import sys
 from html import escape
+from urllib.parse import urlparse
 
 
 def parse_log_file(filepath):
@@ -73,10 +74,16 @@ def generate_html_report(
 
     build_url_section = ""
     if build_url:
-        safe_url = escape(build_url)
-        build_url_section = (
-            f'<p><strong>Jenkins Build:</strong> <a href="{safe_url}">{safe_url}</a></p>'
-        )
+        parsed = urlparse(build_url)
+        if parsed.scheme in ("http", "https"):
+            safe_url = escape(build_url)
+            build_url_section = (
+                f'<p><strong>Jenkins Build:</strong> <a href="{safe_url}">{safe_url}</a></p>'
+            )
+        else:
+            build_url_section = (
+                f'<p><strong>Jenkins Build:</strong> {escape(build_url)}</p>'
+            )
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
