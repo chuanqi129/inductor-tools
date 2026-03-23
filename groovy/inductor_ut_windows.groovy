@@ -26,8 +26,9 @@ node(NODE_LABEL) {
         \$env:HTTPS_PROXY = "${http_proxy}"
         Set-Location C:/pytorch
         git checkout nightly
-        git submodule sync && git submodule update --init --recursive
+        git submodule sync
         git pull
+        git submodule update --init --recursive
         Copy-Item -Path "${workspaceDir}/scripts/windows_inductor/cpu_ut.ps1" -Destination "."
 
         cmd.exe "/K" (
