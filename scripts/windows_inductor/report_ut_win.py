@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+from html import escape
 
 
 def parse_log_file(filepath):
@@ -53,7 +54,10 @@ def parse_log_file(filepath):
 
 
 def generate_html_report(
-    all_failed_tests, nightly_version, output_filename="ut_test_failure_report.html"
+    all_failed_tests,
+    nightly_version,
+    build_url="",
+    output_filename="ut_test_failure_report.html",
 ):
     """
     Generates an HTML report based on the list of failed tests.
@@ -66,6 +70,13 @@ def generate_html_report(
 
     # Sort by time taken in descending order (optional)
     # all_failed_tests.sort(key=lambda x: x['time'], reverse=True)
+
+    build_url_section = ""
+    if build_url:
+        safe_url = escape(build_url)
+        build_url_section = (
+            f'<p><strong>Jenkins Build:</strong> <a href="{safe_url}">{safe_url}</a></p>'
+        )
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -111,6 +122,7 @@ def generate_html_report(
 <body>
     <h1>Inductor UT Test Failure Report on Windows</h1>
     <p><strong>PyTorch Nightly Wheel:</strong> {nightly_version}</p>
+    {build_url_section}
     <p><strong>Total Failures:</strong> {len(all_failed_tests)}</p>
     <table>
         <thead>
@@ -160,13 +172,14 @@ def main(log_dir):
         print(f"Error: No nightly version directories found in '{log_dir}'.")
         sys.exit(1)
     nightly_version = subdirs[0]
+    build_url = os.getenv("BUILD_URL", "")
 
     log_dir = os.path.join(log_dir, nightly_version)
     log_files = [f for f in os.listdir(log_dir) if f.endswith(".log")]
     if not log_files:
         print(f"Warning: No .log files found in directory '{log_dir}'.")
         print("Generating an empty report...")
-        generate_html_report([], nightly_version)
+        generate_html_report([], nightly_version, build_url)
         return
 
     print(f"Found {len(log_files)} .log file(s) in '{log_dir}': {log_files}")
@@ -180,12 +193,12 @@ def main(log_dir):
     if not all_failed_tests:
         print("\nNo failed test cases were found.")
         print("Generating an empty report...")
-        generate_html_report([], nightly_version)
+        generate_html_report([], nightly_version, build_url)
     else:
         print(
             f"\nIn total, parsed {len(all_failed_tests)} failed test cases from {len(log_files)} log files."
         )
-        generate_html_report(all_failed_tests, nightly_version)
+        generate_html_report(all_failed_tests, nightly_version, build_url)
 
 
 if __name__ == "__main__":

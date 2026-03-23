@@ -55,8 +55,7 @@ node(NODE_LABEL) {
             subject: 'Inductor CPU UT Report on Windows',
             mimeType: "text/html",
             to: params.recipients,
-            body: '${FILE,path="ut_test_failure_report.html"}' +
-                  "<p><strong>Please refer to the Jenkins build for the details:</strong> <a href=\"${env.BUILD_URL}\">${env.BUILD_URL}</a></p>"
+            body: '${FILE,path="ut_test_failure_report.html"}'
         )
     }
 
