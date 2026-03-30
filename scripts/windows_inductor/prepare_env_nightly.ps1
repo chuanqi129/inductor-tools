@@ -26,13 +26,16 @@ conda activate $envName
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
 
 if (Test-Path $benchmarkLocation) {
-    Write-Output "Directory $benchmarkLocation exists. Using it directly..."
+    Write-Output "Directory $benchmarkLocation exists. Pulling latest code..."
     Set-Location $benchmarkLocation
-    git pull
+    git fetch --depth=1 origin main
+    git reset --hard origin/main
 } else {
     Write-Output "Directory $benchmarkLocation does not exist. Cloning repository..."
     git clone --depth=1 https://github.com/pytorch/benchmark.git $benchmarkLocation
 }
+
+pip install openpyxl xlsxwriter
 
 Set-Location $benchmarkLocation
 pip install --no-deps -r requirements.txt
