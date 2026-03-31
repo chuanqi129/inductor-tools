@@ -56,6 +56,7 @@ node(NODE_LABEL) {
     }
 
     stage('generate the report'){
+        def conda_exe = "C:\\Users\\Administrator\\miniforge3\\condabin\\conda.bat"
         pwsh """
         \$env:HTTP_PROXY = "${http_proxy}"
         \$env:HTTPS_PROXY = "${http_proxy}"
@@ -71,13 +72,17 @@ node(NODE_LABEL) {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py --root inductor_log --root_ref refer --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
+            "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
+                --root inductor_log `
+                --root_ref refer `
+                --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
             """
         } else {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            conda run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
+            "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
+                --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
             """
         }
         archiveArtifacts artifacts: "Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx", fingerprint: true
