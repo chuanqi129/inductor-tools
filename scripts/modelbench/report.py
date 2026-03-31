@@ -131,6 +131,7 @@ def percentage(part, whole, decimals=2):
 
 def update_passrate_csv(df, target_path, backend):
     new_df = df.copy()
+    eager_df = df.copy()
     precision = "amp" if args.precision == "amp_fp16" else args.precision
     for suite_name in suite_list:
         passrate_str = new_df.loc[backend][suite_name]
@@ -142,9 +143,13 @@ def update_passrate_csv(df, target_path, backend):
         acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
         name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
+        perc_eager = int(percentage(len(acc_df['name']), len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
+        passrate_str_eager = '{0}%, {1}/{2}'.format(perc_eager, len(acc_df['name']), len(name_union_df))
         new_df.loc[backend][suite_name] = passrate_str_new
+        eager_df.loc[backend][suite_name] = passrate_str_eager
     new_df.to_csv(target_path + '/passrate_new.csv')
+    eager_df.to_csv(target_path + '/passrate_eager.csv')
 
 def update_passrate(reference):
     if reference is not None:
@@ -258,6 +263,93 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
             summary.iloc[3:4,2]=target
         sf = StyleFrame(summary)
     for i in range(1, len(data)+1):
+        sf.set_column_width(i, 18)
+    sf.to_excel(sheet_name=sheet_name,excel_writer=excel)
+
+def update_eager_passrate(excel, reference, target, passrate_file, sheet_name):
+    if args.suite == 'all':
+        data = {
+            'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Date':[' ', ' ', ' ', ' '],
+            'Compiler':['eager', 'eager', 'eager', 'eager'],
+            'torchbench':[' ', ' ', ' ', ' '],
+            'huggingface':[' ', ' ', ' ', ' '],
+            'timm_models ':[' ', ' ', ' ', ' ']
+        }
+        data_target = {
+            'Test Scenario':['Single Socket Multi-Threads','Single Core Single-Thread'], 
+            'Comp Item':['Pass Rate','Pass Rate'],
+            'Date':[' ', ' '],
+            'Compiler':['eager', 'eager'],
+            'torchbench':[' ', ' '],
+            'huggingface':[' ', ' '],
+            'timm_models ':[' ', ' ']
+        }
+    else:
+        data = {
+            'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Date':[' ', ' ', ' ', ' '],
+            'Compiler':['eager', 'eager', 'eager', 'eager'],
+            args.suite:[' ', ' ', ' ', ' ']
+        }
+        data_target = {
+            'Test Scenario':['Single Socket Multi-Threads','Single Core Single-Thread'], 
+            'Comp Item':['Pass Rate','Pass Rate'],
+            'Date':[' ', ' '],
+            'Compiler':['eager', 'eager'],
+            args.suite:[' ', ' ']
+        }
+
+    if reference is not None:
+        summary=pd.DataFrame(data)
+        target_indexes = []
+        if args.mode == "multiple" or args.mode == 'all':
+            reference_mt_pr_data=pd.read_csv(reference_mt+'/'+passrate_file,index_col=0)
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
+            if args.suite == 'all':
+                summary.iloc[0:1,4:7]=reference_mt_pr_data.iloc[0:1,1:7]
+                summary.iloc[1:2,4:7]=target_mt_pr_data.iloc[0:1,1:7]
+            else:
+                summary.iloc[0,4]=reference_mt_pr_data.iloc[0,1]
+                summary.iloc[1,4]=target_mt_pr_data.iloc[0,1]
+            summary.iloc[0:1,2]=reference
+            summary.iloc[1:2,2]=target
+            target_indexes.append(1)
+        if args.mode == "single" or args.mode == 'all':
+            reference_st_pr_data=pd.read_csv(reference_st+'/'+passrate_file,index_col=0)
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
+            if args.suite == 'all':
+                summary.iloc[2:3,4:7]=reference_st_pr_data.iloc[0:1,1:7]
+                summary.iloc[3:4,4:7]=target_st_pr_data.iloc[0:1,1:7]
+            else:
+                summary.iloc[2,4]=reference_st_pr_data.iloc[0,1]
+                summary.iloc[3,4]=target_st_pr_data.iloc[0,1]
+            summary.iloc[2:3,2]=reference
+            summary.iloc[3:4,2]=target
+            target_indexes.append(3)
+        sf = StyleFrame(summary)
+        if target_indexes:
+            sf.apply_style_by_indexes(sf.index[target_indexes], styler_obj=target_style)
+    else:
+        summary=pd.DataFrame(data_target)
+        if args.mode == "multiple" or args.mode == 'all':
+            target_mt_pr_data=pd.read_csv(target_mt+'/'+passrate_file,index_col=0)
+            if args.suite == 'all':
+                summary.iloc[0:1,4:7]=target_mt_pr_data.iloc[0:1,1:7]
+            else:
+                summary.iloc[0,4]=target_mt_pr_data.iloc[0,1]
+            summary.iloc[0:1,2]=target
+        if args.mode == "single" or args.mode == 'all':
+            target_st_pr_data=pd.read_csv(target_st+'/'+passrate_file,index_col=0)
+            if args.suite == 'all':
+                summary.iloc[1:2,4:7]=target_st_pr_data.iloc[0:1,1:7]
+            else:
+                summary.iloc[1,4]=target_st_pr_data.iloc[0,1]
+            summary.iloc[1:2,2]=target
+        sf = StyleFrame(summary)
+    for i in range(1, len(summary.columns)+1):
         sf.set_column_width(i, 18)
     sf.to_excel(sheet_name=sheet_name,excel_writer=excel)
 
@@ -915,12 +1007,12 @@ def html_generate(html_off):
     if not html_off:
         try:
             if args.mode == 'all':
-                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6])
+                content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,6,7])
             else:
                 if target_thread_failures.empty:
-                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3])
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,3,4])
                 else:
-                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4])
+                    content = pd.read_excel('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite),sheet_name=[0,1,2,4,5])
             summary= pd.DataFrame(content[0]).to_html(classes="table",index = False)
             swinfo= pd.DataFrame(content[1]).to_html(classes="table",index = False)
 
@@ -931,22 +1023,27 @@ def html_generate(html_off):
                     "<p>Multi-threads Failures</p>" + mt_failures + \
                     "<p>Single-thread Failures</p>" + st_failures
                 summary_new = pd.DataFrame(content[6]).to_html(classes="table",index = False)
+                summary_eager = pd.DataFrame(content[7]).to_html(classes="table",index = False)
             elif args.mode == 'multiple':
                 if target_thread_failures.empty:
                     failures_html = "<p>Multi-threads Failures</p>" + "None"
                     summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                    summary_eager = pd.DataFrame(content[4]).to_html(classes="table",index = False)
                 else:
                     mt_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
                     failures_html = "<p>Multi-threads Failures</p>" + mt_failures
                     summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
+                    summary_eager = pd.DataFrame(content[5]).to_html(classes="table",index = False)
             elif args.mode == 'single':
                 if target_thread_failures.empty:
                     failures_html = "<p>Single-thread Failures</p>" + "None"
                     summary_new = pd.DataFrame(content[3]).to_html(classes="table",index = False)
+                    summary_eager = pd.DataFrame(content[4]).to_html(classes="table",index = False)
                 else:
                     st_failures= pd.DataFrame(content[2]).to_html(classes="table",index = False)
                     failures_html = "<p>Single-thread Failures</p>" + st_failures
                     summary_new = pd.DataFrame(content[4]).to_html(classes="table",index = False)
+                    summary_eager = pd.DataFrame(content[5]).to_html(classes="table",index = False)
             perf_regression= new_performance_regression.to_html(classes="table",index = False)
             perf_regression_eager= new_performance_regression_eager.to_html(classes="table",index = False)
             failures_regression= new_failures.to_html(classes="table",index = False)
@@ -958,8 +1055,9 @@ def html_generate(html_off):
                 open(args.target+'/inductor_log/inductor_failures.html',mode = "a") as failure_f, \
                 open(args.target+'/inductor_log/inductor_perf_improvement.html',mode = "a") as perf_boost_f, \
                 open(args.target+'/inductor_log/inductor_fixed_failures.html',mode = "a") as fixed_failure_f:
-                f.write(html_head() + "<p>Summary</p>" + summary + \
-                        "<p>Summary (exclude model_fail_to_load and eager_fail_to_run)</p>" + summary_new + \
+                f.write(html_head() + "<p>Summary Eager</p>" + summary_eager + \
+                    "<p>Summary Inductor</p>" + summary + \
+                    "<p>Summary New (exclude model_fail_to_load and eager_fail_to_run)</p>" + summary_new + \
                         "<p>SW info</p>" + swinfo + \
                         failures_html + \
                         "<h3><font color='#ff0000'>Regression</font></h3>" + \
@@ -1023,6 +1121,7 @@ def generate_report(excel, reference, target):
         update_failures(excel, target_st, reference_st, 'single')
     update_details(excel)
     update_summary(excel, reference, target, 'passrate_new.csv', 'Summary New')
+    update_eager_passrate(excel, reference, target, 'passrate_eager.csv', 'Summary Eager')
     generate_model_list()
     if args.cppwrapper_gm:
         update_cppwrapper_gm(excel,reference,target)
@@ -1063,6 +1162,7 @@ if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
     excel_postprocess(excel, 'Summary')
+    excel_postprocess(excel, 'Summary Eager')
     excel_postprocess(excel, 'Summary New')
     html_generate(args.html_off)     
     update_issue_commits(args.precision)
