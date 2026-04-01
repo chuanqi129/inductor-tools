@@ -185,7 +185,7 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         }
         data_target = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
             'torchbench':[' ', ' ', ' ', ' '],
@@ -202,7 +202,7 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         }
         data_target = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
             args.suite:[' ', ' ', ' ', ' ']
@@ -270,8 +270,8 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
 def update_eager_passrate(excel, reference, target, passrate_file, sheet_name):
     if args.suite == 'all':
         data = {
-            'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Test Scenario':['Single Socket Multi-Threads',' ','Single Core Single-Thread',' '], 
+            'Comp Item':['Pass Rate', ' ',' ',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['eager', 'eager', 'eager', 'eager'],
             'torchbench':[' ', ' ', ' ', ' '],
@@ -290,7 +290,7 @@ def update_eager_passrate(excel, reference, target, passrate_file, sheet_name):
     else:
         data = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Comp Item':['Pass Rate', ' ',' ',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['eager', 'eager', 'eager', 'eager'],
             args.suite:[' ', ' ', ' ', ' ']
