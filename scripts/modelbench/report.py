@@ -271,7 +271,7 @@ def update_eager_passrate(excel, reference, target, passrate_file, sheet_name):
     if args.suite == 'all':
         data = {
             'Test Scenario':['Single Socket Multi-Threads',' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ',' ',' '],
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['eager', 'eager', 'eager', 'eager'],
             'torchbench':[' ', ' ', ' ', ' '],
@@ -290,7 +290,7 @@ def update_eager_passrate(excel, reference, target, passrate_file, sheet_name):
     else:
         data = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ',' ',' '],
+            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['eager', 'eager', 'eager', 'eager'],
             args.suite:[' ', ' ', ' ', ' ']
@@ -1163,7 +1163,6 @@ if __name__ == '__main__':
     excel = StyleFrame.ExcelWriter('{0}/inductor_log/{1} Dashboard Regression Check {0} {2}.xlsx'.format(args.target, args.backend, args.suite))
     generate_report(excel, args.reference, args.target)
     excel_postprocess(excel, 'Summary')
-    excel_postprocess(excel, 'Summary Eager')
     excel_postprocess(excel, 'Summary New')
     html_generate(args.html_off)     
     update_issue_commits(args.precision)
