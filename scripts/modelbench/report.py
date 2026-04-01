@@ -144,9 +144,9 @@ def update_passrate_csv(df, target_path, backend):
         acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
         name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
-        perc_eager = int(percentage(len(acc_df['name']), len(name_union_df), decimals=0))
+        perc_eager = int(percentage(len(name_union_df), total_num, decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
-        passrate_str_eager = '{0}%, {1}/{2}'.format(perc_eager, len(acc_df['name']), total_num)
+        passrate_str_eager = '{0}%, {1}/{2}'.format(perc_eager, len(name_union_df), total_num)
         new_df.loc[backend][suite_name] = passrate_str_new
         eager_df.loc[backend][suite_name] = passrate_str_eager
     new_df.to_csv(target_path + '/passrate_new.csv')
@@ -185,7 +185,7 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         }
         data_target = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
             'torchbench':[' ', ' ', ' ', ' '],
@@ -202,7 +202,7 @@ def update_summary(excel, reference, target, passrate_file, sheet_name):
         }
         data_target = {
             'Test Scenario':['Single Socket Multi-Threads', ' ','Single Core Single-Thread',' '], 
-            'Comp Item':['Pass Rate', ' ','Pass Rate',' '],
+            'Comp Item':['Pass Rate', 'Geomean Speedup','Pass Rate','Geomean Speedup'],
             'Date':[' ', ' ', ' ', ' '],
             'Compiler':['inductor', 'inductor', 'inductor', 'inductor'],
             args.suite:[' ', ' ', ' ', ' ']
