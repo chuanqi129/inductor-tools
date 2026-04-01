@@ -136,6 +136,7 @@ def update_passrate_csv(df, target_path, backend):
     for suite_name in suite_list:
         passrate_str = new_df.loc[backend][suite_name]
         passed_num = int(passrate_str.split(', ')[1].split('/')[0])
+        total_num = int(passrate_str.split(', ')[1].split('/')[1])
         perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
         acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
         perf_df = pd.read_csv(perf_path)
@@ -145,7 +146,7 @@ def update_passrate_csv(df, target_path, backend):
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
         perc_eager = int(percentage(len(acc_df['name']), len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
-        passrate_str_eager = '{0}%, {1}/{2}'.format(perc_eager, len(acc_df['name']), len(name_union_df))
+        passrate_str_eager = '{0}%, {1}/{2}'.format(perc_eager, len(acc_df['name']), total_num)
         new_df.loc[backend][suite_name] = passrate_str_new
         eager_df.loc[backend][suite_name] = passrate_str_eager
     new_df.to_csv(target_path + '/passrate_new.csv')
