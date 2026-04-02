@@ -96,6 +96,11 @@ def run_model(model_name, args):
     quant_top1 = AverageMeter("Acc@1", ":6.2f")
     quant_top5 = AverageMeter("Acc@5", ":6.2f")
     x = torch.randn(50, 3, 224, 224).contiguous(memory_format=torch.channels_last)
+
+    if args.dtype != "float32":
+        dtype = getattr(torch, args.dtype)
+        x = x.to(dtype)
+        model = model.to(dtype)
     example_inputs = (x,)
 
     # Calibration
@@ -171,6 +176,9 @@ def run_model(model_name, args):
     with torch.no_grad():
         for i, (images, target) in enumerate(val_loader):
             images = images.to(args.device)
+            if args.dtype != "float32":
+                dtype = getattr(torch, args.dtype)
+                images = images.to(dtype)
             target = target.to(args.device)
             quant_output = optimized_model(images)
             quant_acc1, quant_acc5 = accuracy(quant_output, target, topk=(1, 5))
@@ -245,6 +253,11 @@ if __name__ == "__main__":
         "--model_list",
         default=None,
         help="Models list, such as: alexnet,resnet50 which split with ,",
+    )
+    parser.add_argument(
+        "--dtype",
+        default="float32",
+        help="Data type for pt2e, such as: float32,float16",
     )
     args = parser.parse_args()
     for model in model_list if args.model_list is None else args.model_list.split(","):
