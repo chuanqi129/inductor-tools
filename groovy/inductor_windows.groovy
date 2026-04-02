@@ -72,7 +72,7 @@ node(NODE_LABEL) {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
+            & "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
                 --root inductor_log `
                 --root_ref refer `
                 --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
@@ -81,7 +81,7 @@ node(NODE_LABEL) {
             pwsh """
             \$env:HTTP_PROXY = "${http_proxy}"
             \$env:HTTPS_PROXY = "${http_proxy}"
-            "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
+            & "${conda_exe}" run -n $conda_env_name python.exe scripts/windows_inductor/report_win_new.py `
                 --excel Inductor_E2E_${compiler}_${precision}_Test_Report.xlsx
             """
         }
