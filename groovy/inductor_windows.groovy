@@ -55,14 +55,25 @@ node(NODE_LABEL) {
         archiveArtifacts artifacts: 'inductor_log/**', fingerprint: true
     }
 
-    stage('generate the report'){
-        def conda_exe = "C:\\Users\\Administrator\\miniforge3\\condabin\\conda.bat"
-        pwsh """
-        \$env:HTTP_PROXY = "${http_proxy}"
-        \$env:HTTPS_PROXY = "${http_proxy}"
-        """
+    stage('generate the report') {
+        def conda_exe = pwsh(
+            script: '''
+            \$paths = @(
+                "C:\\Users\\Administrator\\miniforge3\\condabin\\conda.bat",
+                "C:\\ProgramData\\miniforge3\\condabin\\conda.bat"
+            )
+            foreach (\$p in \$paths) {
+                if (Test-Path \$p) {
+                    Write-Output \$p
+                    return
+                }
+            }
+            throw ("conda.bat not found. Searched paths: " + (\$paths -join ", "))
+        ''',
+            returnStdout: true,
+        ).trim()
 
-        if(refer_build != '0') {
+        if (refer_build != '0') {
             copyArtifacts(
                 projectName: currentBuild.projectName,
                 selector: specific("${refer_build}"),
