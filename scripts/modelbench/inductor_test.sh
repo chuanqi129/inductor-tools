@@ -87,22 +87,17 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     cd /workspace
     git clone https://github.com/triton-lang/triton-cpu.git
     cd triton-cpu
-    git checkout e60f448f8f197073b75d6d3e77347414a5db3ee7
-    pip install ninja cmake wheel
-    git submodule sync && git submodule update --init --recursive
-    pip install -r python/requirements.txt # build-time dependencies
-    pip install -e python
+    pip install -r python/requirements.txt
+    pip install -e .
 
-
-    # Python <= 3.8 has issue:
-    # AttributeError: module 'importlib.resources' has no attribute 'files'
-    full_version=$(python --version 2>&1 | cut -d' ' -f2)
-    major_version=$(echo $full_version | cut -d'.' -f1)
-    minor_version=$(echo $full_version | cut -d'.' -f2)
-    if [ "$major_version" -eq 3 ] && [ "$minor_version" -eq 8 ]; then
-        echo "Python 3.8 is installed."
-        sed -i 's/importlib.resources/importlib_resources/g' "/opt/conda/lib/python3.8/site-packages/triton/backends/cpu/driver.py"
-    fi
+    # installation method for old triton 
+    # git clone https://github.com/triton-lang/triton-cpu.git
+    # cd triton-cpu
+    # git checkout e60f448f8f197073b75d6d3e77347414a5db3ee7
+    # pip install ninja cmake wheel
+    # git submodule sync && git submodule update --init --recursive
+    # pip install -r python/requirements.txt # build-time dependencies
+    # pip install -e python
 
     cd /workspace/pytorch
     export LD_PRELOAD=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}/lib/libjemalloc.so
