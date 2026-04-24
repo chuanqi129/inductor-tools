@@ -87,6 +87,7 @@ elif [[ $BACKEND == "triton_cpu" ]]; then
     cd /workspace
     git clone https://github.com/triton-lang/triton-cpu.git
     cd triton-cpu
+    git submodule sync && git submodule update --init --recursive
     pip install -r python/requirements.txt
     pip install -e .
 
