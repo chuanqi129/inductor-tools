@@ -4,14 +4,15 @@ import torch
 import torchvision.models as models
 import torch._inductor as torchinductor
 import copy
-from torch.ao.quantization.quantize_pt2e import (
+import torchao
+from torchao.quantization.pt2e.quantize_pt2e import (
     prepare_pt2e,
     convert_pt2e,
     prepare_qat_pt2e,
 )
-import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
-import torch.ao.quantization.quantizer.xpu_inductor_quantizer as xpuiq
-from torch.export import export_for_training
+import torchao.quantization.pt2e.quantizer.x86_inductor_quantizer as xiq
+import torchao.quantization.pt2e.quantizer.xpu_inductor_quantizer as xpuiq
+from torch.export import export
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
@@ -101,7 +102,7 @@ def run_model(model_name, args):
     if args.is_qat:
         print("using qat")
         for i, (images, _) in enumerate(cal_loader):
-            exported_model = export_for_training(model, (images,), strict=True).module()
+            exported_model = export(model, (images,), strict=True).module()
             if i == 10:
                 break
         quantizer = xiq.X86InductorQuantizer()
@@ -148,7 +149,7 @@ def run_model(model_name, args):
         example_inputs = (x.to(args.device),)
 
         with torch.no_grad():
-            exported_model = export_for_training(model, example_inputs, strict=True).module()
+            exported_model = export(model, example_inputs, strict=True).module()
             quantizer = None
             if args.device == "xpu":
                 quantizer = xpuiq.XPUInductorQuantizer()
@@ -164,7 +165,7 @@ def run_model(model_name, args):
             # Calibration
             prepared_model(*example_inputs)
             converted_model = convert_pt2e(prepared_model)
-            torch.ao.quantization.move_exported_model_to_eval(converted_model)
+            torchao.quantization.pt2e.move_exported_model_to_eval(converted_model)
             optimized_model = torch.compile(converted_model)
     # Benchmark
     with torch.no_grad():
