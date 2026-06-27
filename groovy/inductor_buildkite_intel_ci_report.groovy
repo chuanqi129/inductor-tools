@@ -112,7 +112,8 @@ pipeline {
                                         to: params.EMAIL_TO,
                                         from: params.EMAIL_FROM,
                                         mimeType: 'text/html; charset=UTF-8',
-                                        body: mailHtml
+                                    body: mailHtml,
+                                    attachmentsPattern: 'output/latest_summary.html'
                                 )
                         }
         }
