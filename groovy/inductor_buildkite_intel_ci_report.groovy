@@ -70,19 +70,15 @@ pipeline {
         stage('Run Analyzer And Send Mail') {
             steps {
                 script {
-                    def tlsFlag = params.SMTP_SSL ? '--smtp-ssl' : (params.SMTP_STARTTLS ? '--smtp-starttls' : '')
                     sh """
                         set -eux
                         mkdir -p \"${WORKSPACE}/output\"
 
                         python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \\
                           --days 1 \\
-                          --output-dir \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}\" \\
-                          --email-to \"${EMAIL_TO}\" \\
-                          --email-from \"${SMTP_FROM}\" \\
-                          --smtp-host \"${SMTP_HOST}\" \\
-                          --smtp-port \"${SMTP_PORT}\" \\
-                          ${tlsFlag}
+                          --output-dir \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}\"
+
+                        cp \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}/summary.html\" \"${WORKSPACE}/output/latest_summary.html\"
                     """
                 }
             }
@@ -90,9 +86,19 @@ pipeline {
     }
 
     post {
+        success {
+            emailext(
+                subject: "[DAILY] Buildkite Intel CI Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                to: params.EMAIL_TO,
+                from: params.EMAIL_FROM,
+                mimeType: 'text/html',
+                body: '${FILE,path="output/latest_summary.html"}'
+            )
+        }
         always {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/failed_jobs.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'output/latest_summary.html', allowEmptyArchive: true
         }
         failure {
             // Optional fallback notification when pipeline fails before analyzer email is sent.
