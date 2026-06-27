@@ -26,6 +26,7 @@ pipeline {
     environment {
         SMTP_FROM = "${params.EMAIL_FROM}"
         SMTP_HOST = "${params.SMTP_HOST}"
+        SMTP_PORT = "${params.SMTP_PORT ?: '587'}"
         SMTP_USERNAME = "${params.SMTP_USERNAME ?: params.EMAIL_FROM}"
         SMTP_PASSWORD = "${params.SMTP_PASSWORD}"
         BUILDKITE_TOKEN = "${params.BUILDKITE_TOKEN}"
