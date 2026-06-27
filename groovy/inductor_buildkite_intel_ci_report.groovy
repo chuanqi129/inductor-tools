@@ -87,13 +87,34 @@ pipeline {
 
     post {
         success {
-            emailext(
-                subject: "[DAILY] Buildkite Intel CI Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                to: params.EMAIL_TO,
-                from: params.EMAIL_FROM,
-                mimeType: 'text/html',
-                body: '${FILE,path="output/latest_summary.html"}'
-            )
+                        script {
+                                String reportPath = 'output/latest_summary.html'
+                                String reportHtml = fileExists(reportPath) ? readFile(file: reportPath) : '<html><body><p>Report file not found.</p></body></html>'
+                                String buildUrl = env.BUILD_URL ?: ''
+                                String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
+
+                                String mailHtml = """
+                                <html>
+                                    <body>
+                                        <p>Buildkite Intel CI daily report is ready.</p>
+                                        <p>
+                                            Jenkins Build: <a href=\"${buildUrl}\">${buildUrl}</a><br/>
+                                            Archived Report: <a href=\"${artifactUrl}\">${artifactUrl}</a>
+                                        </p>
+                                        <hr/>
+                                        ${reportHtml}
+                                    </body>
+                                </html>
+                                """.stripIndent()
+
+                                emailext(
+                                        subject: "[DAILY] Buildkite Intel CI Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                                        to: params.EMAIL_TO,
+                                        from: params.EMAIL_FROM,
+                                        mimeType: 'text/html; charset=UTF-8',
+                                        body: mailHtml
+                                )
+                        }
         }
         always {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
