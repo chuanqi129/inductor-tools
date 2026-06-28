@@ -45,23 +45,20 @@ pipeline {
         stage('Validate Inputs') {
             steps {
                 script {
+                    def missing = []
                     if (!env.BUILDKITE_TOKEN?.trim()) {
-                        error('BUILDKITE_TOKEN is empty.')
+                        missing << 'BUILDKITE_TOKEN'
                     }
                     if (!params.EMAIL_TO?.trim()) {
-                        error('EMAIL_TO is empty.')
+                        missing << 'EMAIL_TO'
                     }
-                    if (!env.SMTP_FROM?.trim()) {
-                        error('EMAIL_FROM is empty.')
+                    if (!params.EMAIL_FROM?.trim()) {
+                        missing << 'EMAIL_FROM'
                     }
-                    if (!env.SMTP_HOST?.trim()) {
-                        error('SMTP_HOST is empty.')
-                    }
-                    if (params.SMTP_STARTTLS && params.SMTP_SSL) {
-                        error('SMTP_STARTTLS and SMTP_SSL cannot both be true.')
-                    }
-                    if (env.SMTP_USERNAME?.trim() && !env.SMTP_PASSWORD?.trim()) {
-                        error('SMTP_PASSWORD is required when SMTP_USERNAME is set.')
+
+                    if (missing) {
+                        echo "Input validation failed. Missing/empty params: ${missing.join(', ')}"
+                        error("Required parameters are missing: ${missing.join(', ')}")
                     }
                 }
             }
@@ -90,19 +87,41 @@ pipeline {
                         script {
                                 String reportPath = 'output/latest_summary.html'
                                 String reportHtml = fileExists(reportPath) ? readFile(file: reportPath) : '<html><body><p>Report file not found.</p></body></html>'
+                                String embeddedReportHtml = reportHtml
+                                        .replaceAll('(?is)<style[^>]*>.*?</style>', '')
+                                        .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
                                 String buildUrl = env.BUILD_URL ?: ''
                                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
 
                                 String mailHtml = """
                                 <html>
+                                    <head>
+                                        <style>
+                                            .email-report { font-family: Arial, Helvetica, sans-serif; color: #1f2937; }
+                                            .email-report p { margin: 0 0 8px 0; line-height: 1.35; }
+                                            .email-report h1, .email-report h2, .email-report h3 { margin: 0 0 8px 0 !important; line-height: 1.2 !important; }
+                                            .email-report hr { margin: 10px 0; border: 0; border-top: 1px solid #d1d5db; }
+                                            .email-report .page { max-width: 1200px !important; padding: 8px !important; }
+                                            .email-report .hero, .email-report .section { padding: 12px !important; margin-top: 10px !important; border-radius: 8px !important; }
+                                            .email-report .metrics, .email-report .grid { gap: 8px !important; margin-top: 8px !important; }
+                                            .email-report .metric-card { padding: 10px !important; }
+                                            .email-report table { width: 100%; border-collapse: collapse !important; table-layout: fixed; margin: 6px 0 !important; font-size: 13px !important; }
+                                            .email-report th, .email-report td { padding: 6px 8px !important; border: 1px solid #d1d5db !important; vertical-align: top; line-height: 1.25 !important; word-break: break-word; }
+                                            .email-report th { background: #f3f4f6; }
+                                            .email-report .table-wrap { overflow: visible !important; }
+                                        </style>
+                                    </head>
                                     <body>
-                                        <p>Buildkite Intel CI daily report is ready.</p>
-                                        <p>
-                                            Jenkins Build: <a href=\"${buildUrl}\">${buildUrl}</a><br/>
-                                            Archived Report: <a href=\"${artifactUrl}\">${artifactUrl}</a>
-                                        </p>
-                                        <hr/>
-                                        ${reportHtml}
+                                        <div class=\"email-report\">
+                                            <p>Buildkite Intel CI daily report is ready.</p>
+                                            <hr/>
+                                            ${embeddedReportHtml}
+                                            <hr/>
+                                            <p>
+                                                Jenkins Build: <a href=\"${buildUrl}\">${buildUrl}</a><br/>
+                                                Archived Report: <a href=\"${artifactUrl}\">${artifactUrl}</a>
+                                            </p>
+                                        </div>
                                     </body>
                                 </html>
                                 """.stripIndent()
