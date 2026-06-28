@@ -87,11 +87,31 @@ pipeline {
                         script {
                                 String reportPath = 'output/latest_summary.html'
                                 String reportHtml = fileExists(reportPath) ? readFile(file: reportPath) : '<html><body><p>Report file not found.</p></body></html>'
+                                String summaryJsonPath = "output/buildkite_intel_ci_${env.BUILD_NUMBER}/summary.json"
+                                def summaryMap = [:]
+                                if (fileExists(summaryJsonPath)) {
+                                    summaryMap = new groovy.json.JsonSlurperClassic().parseText(readFile(file: summaryJsonPath)) as Map
+                                }
                                 String embeddedReportHtml = reportHtml
+                                        .replaceAll('(?is)<section\\s+class=["\']hero["\'][^>]*>.*?</section>', '')
                                         .replaceAll('(?is)<style[^>]*>.*?</style>', '')
                                         .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
                                 String buildUrl = env.BUILD_URL ?: ''
                                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
+
+                                String summaryTableHtml = """
+                                <table class=\"summary-table\">
+                                    <tr><th colspan=\"2\">Daily Summary</th></tr>
+                                    <tr><td>Window Start</td><td>${summaryMap.get('window_start', '-')}</td></tr>
+                                    <tr><td>Window End</td><td>${summaryMap.get('window_end', '-')}</td></tr>
+                                    <tr><td>Build Scope</td><td>${summaryMap.get('build_scope', '-')}</td></tr>
+                                    <tr><td>Total Builds</td><td>${summaryMap.get('total_builds', '-')}</td></tr>
+                                    <tr><td>Passed Builds</td><td>${summaryMap.get('passed_builds', '-')}</td></tr>
+                                    <tr><td>Failed Builds</td><td>${summaryMap.get('failed_builds', '-')}</td></tr>
+                                    <tr><td>Failed Job Rows</td><td>${summaryMap.get('failed_job_rows', '-')}</td></tr>
+                                    <tr><td>Log Download Errors</td><td>${summaryMap.get('log_download_errors', '-')}</td></tr>
+                                </table>
+                                """.stripIndent()
 
                                 String mailHtml = """
                                 <html>
@@ -109,12 +129,16 @@ pipeline {
                                             .email-report th, .email-report td { padding: 6px 8px !important; border: 1px solid #d1d5db !important; vertical-align: top; line-height: 1.25 !important; word-break: break-word; }
                                             .email-report th { background: #f3f4f6; }
                                             .email-report .table-wrap { overflow: visible !important; }
+                                            .email-report .summary-table { width: 100%; max-width: 760px; margin: 4px 0 10px 0 !important; table-layout: auto !important; }
+                                            .email-report .summary-table th { text-align: left; font-size: 14px; background: #e5e7eb; }
+                                            .email-report .summary-table td:first-child { width: 36%; font-weight: 600; background: #f9fafb; }
                                         </style>
                                     </head>
                                     <body>
                                         <div class=\"email-report\">
                                             <p>Buildkite Intel CI daily report is ready.</p>
                                             <hr/>
+                                            ${summaryTableHtml}
                                             ${embeddedReportHtml}
                                             <hr/>
                                             <p>
