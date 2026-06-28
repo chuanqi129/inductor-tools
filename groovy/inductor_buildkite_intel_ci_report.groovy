@@ -1,7 +1,7 @@
 @NonCPS
 Map parseSummaryJson(String jsonText) {
     def parsed = new groovy.json.JsonSlurperClassic().parseText(jsonText)
-    return (parsed instanceof Map) ? new LinkedHashMap(parsed as Map) : [:]
+    return (parsed instanceof Map) ? (parsed as Map) : [:]
 }
 
 pipeline {
