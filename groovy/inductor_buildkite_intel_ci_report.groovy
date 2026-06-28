@@ -1,3 +1,9 @@
+@org.jenkinsci.plugins.workflow.cps.NonCPS
+Map parseSummaryJson(String jsonText) {
+    def parsed = new groovy.json.JsonSlurperClassic().parseText(jsonText)
+    return (parsed instanceof Map) ? new LinkedHashMap(parsed as Map) : [:]
+}
+
 pipeline {
     agent { label params.NODE_LABEL }
 
@@ -72,7 +78,7 @@ pipeline {
                                 String summaryJsonPath = "output/buildkite_intel_ci_${env.BUILD_NUMBER}/summary.json"
                                 def summaryMap = [:]
                                 if (fileExists(summaryJsonPath)) {
-                                    summaryMap = new groovy.json.JsonSlurperClassic().parseText(readFile(file: summaryJsonPath)) as Map
+                                    summaryMap = parseSummaryJson(readFile(file: summaryJsonPath))
                                 }
                                 String embeddedReportHtml = reportHtml
                                         .replaceAll('(?is)<section\\s+class=["\']hero["\'][^>]*>.*?</section>', '')
