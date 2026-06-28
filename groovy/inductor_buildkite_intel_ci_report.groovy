@@ -7,24 +7,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '30'))
     }
 
-    triggers {
-        // Run once per day. Adjust as needed.
-        cron('H 2 * * *')
-    }
-
-    parameters {
-        string(name: 'NODE_LABEL', defaultValue: 'mlp-validate-icx24-ubuntu', description: 'Jenkins node label')
-        text(name: 'EMAIL_TO', defaultValue: 'xiangdong.zeng@intel.com', description: 'Recipients, comma-separated')
-        string(name: 'EMAIL_FROM', defaultValue: 'dgpu_validation@intel.com', description: 'Sender email address')
-        password(name: 'SMTP_PASSWORD', defaultValue: '', description: 'SMTP password')
-        password(name: 'BUILDKITE_TOKEN', defaultValue: '', description: 'Buildkite API token (bkua_...)')
-        string(name: 'SMTP_HOST', defaultValue: 'smtp.intel.com', description: 'SMTP server host')
-        string(name: 'SMTP_PORT', defaultValue: '587', description: 'SMTP server port, e.g. 587 for STARTTLS')
-        string(name: 'SMTP_USERNAME', defaultValue: '', description: 'SMTP username (if empty, EMAIL_FROM is used)')
-        booleanParam(name: 'SMTP_STARTTLS', defaultValue: true, description: 'Enable STARTTLS (usually with port 587)')
-        booleanParam(name: 'SMTP_SSL', defaultValue: false, description: 'Enable SMTP over SSL (usually with port 465)')
-    }
-
     environment {
         SMTP_FROM = "${params.EMAIL_FROM}"
         SMTP_HOST = "${params.SMTP_HOST}"
