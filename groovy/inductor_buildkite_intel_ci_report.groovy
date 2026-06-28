@@ -14,6 +14,11 @@ pipeline {
     }
 
     environment {
+        PROXY_URL = 'http://proxy-dmz.intel.com:912'
+        http_proxy = "${PROXY_URL}"
+        https_proxy = "${PROXY_URL}"
+        HTTP_PROXY = "${PROXY_URL}"
+        HTTPS_PROXY = "${PROXY_URL}"
         SMTP_FROM = "${params.EMAIL_FROM}"
         SMTP_HOST = "${params.SMTP_HOST}"
         SMTP_PORT = "${params.SMTP_PORT ?: '587'}"
@@ -23,11 +28,10 @@ pipeline {
     }
 
     stages {
-        stage('Prepare Workspace') {
+        stage('Checkout') {
             steps {
-                script {
-                    echo 'Using existing workspace checkout from Jenkins job SCM. Skipping checkout scm.'
-                }
+                deleteDir()
+                checkout scm
             }
         }
 
