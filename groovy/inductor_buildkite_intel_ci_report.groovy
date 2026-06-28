@@ -23,10 +23,11 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Prepare Workspace') {
             steps {
-                deleteDir()
-                checkout scm
+                script {
+                    echo 'Using existing workspace checkout from Jenkins job SCM. Skipping checkout scm.'
+                }
             }
         }
 
