@@ -1,4 +1,4 @@
-@org.jenkinsci.plugins.workflow.cps.NonCPS
+@NonCPS
 Map parseSummaryJson(String jsonText) {
     def parsed = new groovy.json.JsonSlurperClassic().parseText(jsonText)
     return (parsed instanceof Map) ? new LinkedHashMap(parsed as Map) : [:]
