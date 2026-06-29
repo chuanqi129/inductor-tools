@@ -227,8 +227,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--nightly-source",
-        default="scheduled",
-        help="Expected source for nightly runs. Set empty string to disable source filtering.",
+        default="scheduled,schedule",
+        help="Expected source for nightly runs. Supports comma/pipe separated values (for example: scheduled,schedule). Empty disables source filtering.",
     )
     parser.add_argument(
         "--nightly-lookback-days",
@@ -548,7 +548,12 @@ def is_target_nightly_build(build: dict[str, Any], nightly_name: str, nightly_so
 
     if nightly_source:
         source = str(build.get("source") or "").lower()
-        if source != nightly_source.lower():
+        allowed_sources = {
+            item.strip().lower()
+            for item in re.split(r"[,|]", nightly_source)
+            if item.strip()
+        }
+        if allowed_sources and source not in allowed_sources:
             return False
     return True
 
@@ -897,7 +902,13 @@ def write_html_report(
         for row in rows
     ]
 
-    nightly_section_html = ""
+    nightly_section_html = (
+        "<section class=\"section\">"
+        "<div class=\"section-header\"><h2>Nightly Delta</h2>"
+        "<span class=\"hint\">Latest vs previous scheduled nightly (Full intel CI-daily)</span></div>"
+        "<p>No nightly comparison data for this run. Check matching rules: nightly name/source/lookback.</p>"
+        "</section>"
+    )
     if nightly_comparison:
         latest = nightly_comparison.get("latest") or {}
         previous = nightly_comparison.get("previous") or {}

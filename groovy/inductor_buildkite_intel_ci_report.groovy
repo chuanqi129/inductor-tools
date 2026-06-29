@@ -66,6 +66,9 @@ pipeline {
 
                         python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \\
                           --days 1 \\
+                              --nightly-name "Full intel CI-daily" \\
+                              --nightly-source "scheduled,schedule" \\
+                              --nightly-lookback-days 30 \\
                           --output-dir \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}\"
 
                         cp \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}/summary.html\" \"${WORKSPACE}/output/latest_summary.html\"
@@ -156,6 +159,7 @@ pipeline {
         always {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/failed_jobs.*', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/nightly_comparison.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/latest_summary.html', allowEmptyArchive: true
         }
         failure {
