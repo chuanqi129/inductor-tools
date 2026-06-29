@@ -92,6 +92,9 @@ pipeline {
                                         .replaceAll('(?is)<section\\s+class=["\']hero["\'][^>]*>.*?</section>', '')
                                         .replaceAll('(?is)<style[^>]*>.*?</style>', '')
                                         .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
+                                def nightlyMatcher = (embeddedReportHtml =~ /(?is)<section\\s+class=["']section["'][^>]*>.*?<h2>\\s*Nightly Delta\\s*<\\/h2>.*?<\\/section>/)
+                                String nightlySectionHtml = nightlyMatcher.find() ? nightlyMatcher.group(0) : ''
+                                String reportWithoutNightly = nightlySectionHtml ? embeddedReportHtml.replace(nightlySectionHtml, '') : embeddedReportHtml
                                 String buildUrl = env.BUILD_URL ?: ''
                                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
 
@@ -135,7 +138,8 @@ pipeline {
                                             <p>Buildkite Intel CI daily report is ready.</p>
                                             <hr/>
                                             ${summaryTableHtml}
-                                            ${embeddedReportHtml}
+                                            ${nightlySectionHtml}
+                                            ${reportWithoutNightly}
                                             <hr/>
                                             <p>
                                                 Jenkins Build: <a href=\"${buildUrl}\">${buildUrl}</a><br/>

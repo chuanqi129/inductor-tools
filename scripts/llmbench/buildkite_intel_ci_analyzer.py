@@ -648,6 +648,7 @@ def compute_nightly_comparison(
 
     new_fail_keys = sorted(set(latest_cases.keys()) - set(previous_cases.keys()))
     new_pass_keys = sorted(set(previous_cases.keys()) - set(latest_cases.keys()))
+    unchanged_fail_keys = sorted(set(previous_cases.keys()) & set(latest_cases.keys()))
 
     first_seen_for_new_fail: dict[str, dict[str, Any]] = {}
     unresolved = set(new_fail_keys)
@@ -715,6 +716,21 @@ def compute_nightly_comparison(
                 "candidate_fix_build_url": latest.get("web_url") or "",
             }
             for key in new_pass_keys
+        ],
+        "unchanged_fails": [
+            {
+                "signature": key,
+                "suite": str(latest_cases[key].get("test_suite_name") or ""),
+                "latest_fail_reason": str(latest_cases[key].get("fail_reason") or ""),
+                "previous_fail_reason": str(previous_cases[key].get("fail_reason") or ""),
+                "latest_build_id": latest.get("number"),
+                "latest_build_url": latest.get("web_url") or "",
+                "latest_commit": latest.get("commit") or "",
+                "previous_build_id": previous.get("number"),
+                "previous_build_url": previous.get("web_url") or "",
+                "previous_commit": previous.get("commit") or "",
+            }
+            for key in unchanged_fail_keys
         ],
     }
 
@@ -921,6 +937,7 @@ def write_html_report(
             ["Previous Commit", str(previous.get("commit_id") or "")],
             ["New Fail", str(len(nightly_comparison.get("new_fails") or []))],
             ["New Pass", str(len(nightly_comparison.get("new_passes") or []))],
+            ["Unchanged Fail", str(len(nightly_comparison.get("unchanged_fails") or []))],
         ]
 
         new_fail_rows = [
@@ -953,6 +970,22 @@ def write_html_report(
             for item in (nightly_comparison.get("new_passes") or [])
         ]
 
+        unchanged_fail_rows = [
+            [
+                str(item.get("signature") or ""),
+                str(item.get("suite") or ""),
+                str(item.get("latest_fail_reason") or ""),
+                str(item.get("previous_fail_reason") or ""),
+                str(item.get("latest_commit") or ""),
+                (
+                    f'<a href="{escape(str(item.get("latest_build_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">{escape(str(item.get("latest_build_id") or ""))}</a>'
+                    if item.get("latest_build_url")
+                    else str(item.get("latest_build_id") or "")
+                ),
+            ]
+            for item in (nightly_comparison.get("unchanged_fails") or [])
+        ]
+
         nightly_section_html = f"""
         <section class=\"section\">
             <div class=\"section-header\">
@@ -971,6 +1004,10 @@ def write_html_report(
                 <div>
                     <h3>New Pass</h3>
                     {render_html_table(["Case", "Suite", "Previous Reason", "Candidate Fix Commit", "Candidate Build"], new_pass_rows, raw_html_columns={4})}
+                </div>
+                <div>
+                    <h3>Unchanged Fail</h3>
+                    {render_html_table(["Case", "Suite", "Latest Reason", "Previous Reason", "Latest Commit", "Latest Build"], unchanged_fail_rows, raw_html_columns={5})}
                 </div>
             </div>
         </section>
@@ -1299,6 +1336,7 @@ def main() -> int:
             "previous_build_id": (nightly_comparison.get("previous") or {}).get("build_id"),
             "new_fail_count": len(nightly_comparison.get("new_fails") or []),
             "new_pass_count": len(nightly_comparison.get("new_passes") or []),
+            "unchanged_fail_count": len(nightly_comparison.get("unchanged_fails") or []),
         }
     write_summary_csv(summary, output_dir / "summary.csv")
     write_csv(rows, output_dir / "failed_jobs.csv")
