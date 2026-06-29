@@ -966,11 +966,11 @@ def write_html_report(
                 </div>
                 <div>
                     <h3>New Fail</h3>
-                    {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={{4}})}
+                    {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={4})}
                 </div>
                 <div>
                     <h3>New Pass</h3>
-                    {render_html_table(["Case", "Suite", "Previous Reason", "Candidate Fix Commit", "Candidate Build"], new_pass_rows, raw_html_columns={{4}})}
+                    {render_html_table(["Case", "Suite", "Previous Reason", "Candidate Fix Commit", "Candidate Build"], new_pass_rows, raw_html_columns={4})}
                 </div>
             </div>
         </section>
