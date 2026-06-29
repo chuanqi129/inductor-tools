@@ -111,6 +111,7 @@ pipeline {
                                         .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
                                 Map nightlyParts = splitNightlySection(embeddedReportHtml)
                                 String nightlySectionHtml = String.valueOf(nightlyParts.nightly ?: '')
+                                    .replace('Nightly Delta', 'Nightly Comparison')
                                 String reportWithoutNightly = String.valueOf(nightlyParts.rest ?: embeddedReportHtml)
                                 String buildUrl = env.BUILD_URL ?: ''
                                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
@@ -152,7 +153,6 @@ pipeline {
                                     </head>
                                     <body>
                                         <div class=\"email-report\">
-                                            <h2>Nightly Delta</h2>
                                             ${nightlySectionHtml}
 
                                             <h2>Full Intel CI status</h2>
