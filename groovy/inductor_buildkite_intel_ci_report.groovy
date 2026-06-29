@@ -4,6 +4,18 @@ Map parseSummaryJson(String jsonText) {
     return (parsed instanceof Map) ? (parsed as Map) : [:]
 }
 
+@NonCPS
+Map splitNightlySection(String html) {
+    String pattern = '(?is)<section\\s+class=["\']section["\'][^>]*>.*?<h2>\\s*Nightly Delta\\s*</h2>.*?</section>'
+    def matcher = (html =~ pattern)
+    if (matcher.find()) {
+        String nightly = matcher.group(0)
+        String rest = html.replace(nightly, '')
+        return [nightly: nightly, rest: rest]
+    }
+    return [nightly: '', rest: html]
+}
+
 pipeline {
     agent { label params.NODE_LABEL }
 
@@ -92,9 +104,9 @@ pipeline {
                                         .replaceAll('(?is)<section\\s+class=["\']hero["\'][^>]*>.*?</section>', '')
                                         .replaceAll('(?is)<style[^>]*>.*?</style>', '')
                                         .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
-                                def nightlyMatcher = (embeddedReportHtml =~ /(?is)<section\\s+class=["']section["'][^>]*>.*?<h2>\\s*Nightly Delta\\s*<\\/h2>.*?<\\/section>/)
-                                String nightlySectionHtml = nightlyMatcher.find() ? nightlyMatcher.group(0) : ''
-                                String reportWithoutNightly = nightlySectionHtml ? embeddedReportHtml.replace(nightlySectionHtml, '') : embeddedReportHtml
+                                Map nightlyParts = splitNightlySection(embeddedReportHtml)
+                                String nightlySectionHtml = String.valueOf(nightlyParts.nightly ?: '')
+                                String reportWithoutNightly = String.valueOf(nightlyParts.rest ?: embeddedReportHtml)
                                 String buildUrl = env.BUILD_URL ?: ''
                                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
 
