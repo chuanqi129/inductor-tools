@@ -6,12 +6,17 @@ Map parseSummaryJson(String jsonText) {
 
 @NonCPS
 Map splitNightlySection(String html) {
-    String pattern = '(?is)<section\\s+class=["\']section["\'][^>]*>.*?<h2>\\s*Nightly Delta\\s*</h2>.*?</section>'
-    def matcher = (html =~ pattern)
-    if (matcher.find()) {
-        String nightly = matcher.group(0)
-        String rest = html.replace(nightly, '')
-        return [nightly: nightly, rest: rest]
+    String marker = '<h2>Nightly Delta</h2>'
+    int markerIndex = html.indexOf(marker)
+    if (markerIndex >= 0) {
+        int sectionStart = html.lastIndexOf('<section', markerIndex)
+        int sectionEndStart = html.indexOf('</section>', markerIndex)
+        if (sectionStart >= 0 && sectionEndStart >= 0) {
+            int sectionEnd = sectionEndStart + '</section>'.length()
+            String nightly = html.substring(sectionStart, sectionEnd)
+            String rest = html.substring(0, sectionStart) + html.substring(sectionEnd)
+            return [nightly: nightly, rest: rest]
+        }
     }
     return [nightly: '', rest: html]
 }
