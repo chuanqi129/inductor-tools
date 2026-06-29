@@ -220,6 +220,22 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Prepare email metadata and validate inputs, but do not connect to SMTP or send the message.",
     )
+    parser.add_argument(
+        "--nightly-name",
+        default="Full intel CI-daily",
+        help="Nightly build name keyword used to identify nightly runs.",
+    )
+    parser.add_argument(
+        "--nightly-source",
+        default="scheduled",
+        help="Expected source for nightly runs. Set empty string to disable source filtering.",
+    )
+    parser.add_argument(
+        "--nightly-lookback-days",
+        type=int,
+        default=14,
+        help="Look back this many days to find latest two nightly runs for delta comparison.",
+    )
     return parser.parse_args()
 
 
@@ -519,6 +535,185 @@ def build_type(build: dict[str, Any]) -> str:
     return "pr" if normalize_pull_request(build.get("pull_request")) else "merge"
 
 
+def is_target_nightly_build(build: dict[str, Any], nightly_name: str, nightly_source: str) -> bool:
+    text = " ".join(
+        [
+            str(build.get("message") or ""),
+            str(build.get("name") or ""),
+            str(build.get("title") or ""),
+        ]
+    ).lower()
+    if nightly_name and nightly_name.lower() not in text:
+        return False
+
+    if nightly_source:
+        source = str(build.get("source") or "").lower()
+        if source != nightly_source.lower():
+            return False
+    return True
+
+
+def collect_failed_rows_for_build(client: BuildkiteClient, build: dict[str, Any], output_dir: Path, prefix: str) -> list[dict[str, Any]]:
+    build_number = int(build["number"])
+    build_details = client.get_build(build_number)
+    jobs = build_details.get("jobs") or []
+    build_rows: list[dict[str, Any]] = []
+
+    for job in jobs:
+        job_state = job.get("state")
+        if job_state not in FAILED_JOB_STATES:
+            continue
+        if job.get("type") and job.get("type") != "script":
+            continue
+
+        log_analysis: dict[str, Any] | None = None
+        saved_log_path: str | None = None
+        job_uuid = job.get("uuid") or job.get("id")
+
+        if job_uuid:
+            try:
+                raw_log = client.download_job_log(build_number, str(job_uuid))
+                log_file = output_dir / "logs" / f"{prefix}_build_{build_number}_job_{job_uuid}.log"
+                log_file.write_text(raw_log, encoding="utf-8")
+                saved_log_path = str(log_file)
+                log_analysis = analyze_log(raw_log, job.get("started_at"), job.get("finished_at"))
+            except requests.RequestException as exc:
+                log_analysis = {
+                    "fail_reason": "log_download_failed",
+                    "fail_case_names": [],
+                    "specific_case_name": "",
+                    "docker_prepare_duration_seconds": None,
+                    "test_duration_seconds": None,
+                    "error_message": f"Failed to download log: {exc}",
+                }
+
+        build_rows.append(flatten_row(build_details, job, log_analysis, saved_log_path))
+
+    return collapse_build_level_failures(build_rows)
+
+
+def case_signatures(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        suite = str(row.get("test_suite_name") or "unknown")
+        specific = str(row.get("specific_case_name") or "").strip()
+        fail_cases = [item.strip() for item in str(row.get("fail_case_name") or "").split(";") if item.strip()]
+
+        keys: list[str] = []
+        if specific:
+            keys.append(f"{suite}::{specific}")
+        keys.extend(f"{suite}::{item}" for item in fail_cases)
+        if not keys:
+            fallback = str(row.get("fail_reason") or "unknown")
+            keys.append(f"{suite}::[{fallback}]")
+
+        for key in keys:
+            if key not in result:
+                result[key] = row
+    return result
+
+
+def compute_nightly_comparison(
+    client: BuildkiteClient,
+    end: datetime,
+    output_dir: Path,
+    nightly_name: str,
+    nightly_source: str,
+    lookback_days: int,
+) -> dict[str, Any] | None:
+    start = end - timedelta(days=max(1, lookback_days))
+    builds = client.list_builds(start, end)
+    candidates = [
+        build
+        for build in builds
+        if is_terminal_build(build) and is_target_nightly_build(build, nightly_name, nightly_source)
+    ]
+    candidates.sort(key=lambda item: item.get("number", 0), reverse=True)
+
+    if len(candidates) < 2:
+        return None
+
+    latest = candidates[0]
+    previous = candidates[1]
+    latest_rows = collect_failed_rows_for_build(client, latest, output_dir, "nightly_latest")
+    previous_rows = collect_failed_rows_for_build(client, previous, output_dir, "nightly_previous")
+
+    latest_cases = case_signatures(latest_rows)
+    previous_cases = case_signatures(previous_rows)
+
+    new_fail_keys = sorted(set(latest_cases.keys()) - set(previous_cases.keys()))
+    new_pass_keys = sorted(set(previous_cases.keys()) - set(latest_cases.keys()))
+
+    first_seen_for_new_fail: dict[str, dict[str, Any]] = {}
+    unresolved = set(new_fail_keys)
+    scan_builds = [
+        build
+        for build in builds
+        if (
+            normalize_pull_request(build.get("pull_request")) is None
+            and str(build.get("branch") or "") == str(latest.get("branch") or "")
+            and int(previous.get("number") or 0) < int(build.get("number") or 0) <= int(latest.get("number") or 0)
+            and is_terminal_build(build)
+        )
+    ]
+    scan_builds.sort(key=lambda item: int(item.get("number") or 0))
+
+    for build in scan_builds:
+        if not unresolved:
+            break
+        if build.get("state") not in FAIL_STATES:
+            continue
+        build_rows = collect_failed_rows_for_build(client, build, output_dir, f"nightly_scan_{build.get('number')}")
+        build_cases = set(case_signatures(build_rows).keys())
+        hit = sorted(unresolved & build_cases)
+        for key in hit:
+            first_seen_for_new_fail[key] = {
+                "build_id": build.get("number"),
+                "build_url": build.get("web_url") or "",
+                "commit_id": build.get("commit") or "",
+            }
+        unresolved -= set(hit)
+
+    return {
+        "nightly_name": nightly_name,
+        "nightly_source": nightly_source,
+        "latest": {
+            "build_id": latest.get("number"),
+            "build_url": latest.get("web_url") or "",
+            "commit_id": latest.get("commit") or "",
+            "state": latest.get("state") or "",
+        },
+        "previous": {
+            "build_id": previous.get("number"),
+            "build_url": previous.get("web_url") or "",
+            "commit_id": previous.get("commit") or "",
+            "state": previous.get("state") or "",
+        },
+        "new_fails": [
+            {
+                "signature": key,
+                "suite": str(latest_cases[key].get("test_suite_name") or ""),
+                "fail_reason": str(latest_cases[key].get("fail_reason") or ""),
+                "guilty_commit": (first_seen_for_new_fail.get(key) or {}).get("commit_id") or latest.get("commit") or "",
+                "guilty_build_id": (first_seen_for_new_fail.get(key) or {}).get("build_id") or latest.get("number"),
+                "guilty_build_url": (first_seen_for_new_fail.get(key) or {}).get("build_url") or latest.get("web_url") or "",
+            }
+            for key in new_fail_keys
+        ],
+        "new_passes": [
+            {
+                "signature": key,
+                "suite": str(previous_cases[key].get("test_suite_name") or ""),
+                "previous_fail_reason": str(previous_cases[key].get("fail_reason") or ""),
+                "candidate_fix_commit": latest.get("commit") or "",
+                "candidate_fix_build_id": latest.get("number"),
+                "candidate_fix_build_url": latest.get("web_url") or "",
+            }
+            for key in new_pass_keys
+        ],
+    }
+
+
 def ensure_output_dir(path_arg: str | None) -> Path:
     if path_arg:
         output_dir = Path(path_arg)
@@ -641,7 +836,12 @@ def render_html_table(headers: list[str], data_rows: list[list[str]], raw_html_c
     )
 
 
-def write_html_report(summary: dict[str, Any], rows: list[dict[str, Any]], path: Path) -> None:
+def write_html_report(
+    summary: dict[str, Any],
+    rows: list[dict[str, Any]],
+    path: Path,
+    nightly_comparison: dict[str, Any] | None = None,
+) -> None:
     state_counts = Counter(str(row.get("job_state") or "unknown") for row in rows)
     reason_counts = Counter(str(row.get("fail_reason") or "unknown") for row in rows)
     suite_counts = Counter(str(row.get("test_suite_name") or "unknown") for row in rows)
@@ -696,6 +896,74 @@ def write_html_report(summary: dict[str, Any], rows: list[dict[str, Any]], path:
         ]
         for row in rows
     ]
+
+    nightly_section_html = ""
+    if nightly_comparison:
+        latest = nightly_comparison.get("latest") or {}
+        previous = nightly_comparison.get("previous") or {}
+        overview_rows = [
+            ["Nightly Name", str(nightly_comparison.get("nightly_name") or "")],
+            ["Nightly Source", str(nightly_comparison.get("nightly_source") or "")],
+            ["Latest Build", str(latest.get("build_id") or "")],
+            ["Latest Commit", str(latest.get("commit_id") or "")],
+            ["Previous Build", str(previous.get("build_id") or "")],
+            ["Previous Commit", str(previous.get("commit_id") or "")],
+            ["New Fail", str(len(nightly_comparison.get("new_fails") or []))],
+            ["New Pass", str(len(nightly_comparison.get("new_passes") or []))],
+        ]
+
+        new_fail_rows = [
+            [
+                str(item.get("signature") or ""),
+                str(item.get("suite") or ""),
+                str(item.get("fail_reason") or ""),
+                str(item.get("guilty_commit") or ""),
+                (
+                    f'<a href="{escape(str(item.get("guilty_build_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">{escape(str(item.get("guilty_build_id") or ""))}</a>'
+                    if item.get("guilty_build_url")
+                    else str(item.get("guilty_build_id") or "")
+                ),
+            ]
+            for item in (nightly_comparison.get("new_fails") or [])
+        ]
+
+        new_pass_rows = [
+            [
+                str(item.get("signature") or ""),
+                str(item.get("suite") or ""),
+                str(item.get("previous_fail_reason") or ""),
+                str(item.get("candidate_fix_commit") or ""),
+                (
+                    f'<a href="{escape(str(item.get("candidate_fix_build_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">{escape(str(item.get("candidate_fix_build_id") or ""))}</a>'
+                    if item.get("candidate_fix_build_url")
+                    else str(item.get("candidate_fix_build_id") or "")
+                ),
+            ]
+            for item in (nightly_comparison.get("new_passes") or [])
+        ]
+
+        nightly_section_html = f"""
+        <section class=\"section\">
+            <div class=\"section-header\">
+                <h2>Nightly Delta</h2>
+                <span class=\"hint\">Latest vs previous scheduled nightly (Full intel CI-daily)</span>
+            </div>
+            <div class=\"grid\">
+                <div>
+                    <h3>Overview</h3>
+                    {render_html_table(["Field", "Value"], overview_rows)}
+                </div>
+                <div>
+                    <h3>New Fail</h3>
+                    {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={{4}})}
+                </div>
+                <div>
+                    <h3>New Pass</h3>
+                    {render_html_table(["Case", "Suite", "Previous Reason", "Candidate Fix Commit", "Candidate Build"], new_pass_rows, raw_html_columns={{4}})}
+                </div>
+            </div>
+        </section>
+        """
 
     html = f"""<!DOCTYPE html>
 <html lang=\"en\">
@@ -772,6 +1040,8 @@ def write_html_report(summary: dict[str, Any], rows: list[dict[str, Any]], path:
                 </div>
             </div>
         </section>
+
+        {nightly_section_html}
 
         <section class=\"section\">
             <div class=\"section-header\">
@@ -998,13 +1268,35 @@ def main() -> int:
 
         rows.extend(collapse_build_level_failures(build_rows))
 
+    nightly_comparison: dict[str, Any] | None = None
+    try:
+        nightly_comparison = compute_nightly_comparison(
+            client=client,
+            end=end,
+            output_dir=output_dir,
+            nightly_name=args.nightly_name,
+            nightly_source=args.nightly_source,
+            lookback_days=args.nightly_lookback_days,
+        )
+    except requests.RequestException as exc:
+        print(f"Nightly comparison skipped due to API error: {exc}")
+
     summary = summarize(rows, selected_builds, args, start, end)
+    if nightly_comparison:
+        summary["nightly_comparison"] = {
+            "latest_build_id": (nightly_comparison.get("latest") or {}).get("build_id"),
+            "previous_build_id": (nightly_comparison.get("previous") or {}).get("build_id"),
+            "new_fail_count": len(nightly_comparison.get("new_fails") or []),
+            "new_pass_count": len(nightly_comparison.get("new_passes") or []),
+        }
     write_summary_csv(summary, output_dir / "summary.csv")
     write_csv(rows, output_dir / "failed_jobs.csv")
     write_markdown(summary, rows, output_dir / "summary.md")
-    write_html_report(summary, rows, output_dir / "summary.html")
+    write_html_report(summary, rows, output_dir / "summary.html", nightly_comparison=nightly_comparison)
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     (output_dir / "failed_jobs.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    if nightly_comparison:
+        (output_dir / "nightly_comparison.json").write_text(json.dumps(nightly_comparison, indent=2), encoding="utf-8")
 
     email_status = "disabled"
     try:
