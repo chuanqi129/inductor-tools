@@ -63,6 +63,19 @@ FREE_MEMORY_STARTUP_RE = re.compile(
     r"ValueError:\s+Free memory on device .* on startup is less than desired GPU memory utilization",
     re.IGNORECASE,
 )
+AGENT_IO_ERROR_RE = re.compile(
+    r"error\s+starting\s+pty:.*buildkite-agent.*input/output\s+error",
+    re.IGNORECASE,
+)
+TLS_CERT_BUNDLE_RE = re.compile(
+    r"could\s+not\s+find\s+a\s+suitable\s+tls\s+ca\s+certificate\s+bundle|certifi/cacert\.pem",
+    re.IGNORECASE,
+)
+EXIT_127_RE = re.compile(r"exit\s+status\s+127|command\s+not\s+found", re.IGNORECASE)
+TRITON_CUBIN_MISSING_RE = re.compile(
+    r"cubin\s+file\s+saved\s+by\s+tritonbundler\s+not\s+found|\.zebin",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -235,6 +248,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=14,
         help="Look back this many days to find latest two nightly runs for delta comparison.",
+    )
+    parser.add_argument(
+        "--xpu-only",
+        action="store_true",
+        help="Filter nightly comparison to XPU failures only. When enabled, only test suites containing 'XPU' will be included in delta comparison.",
     )
     return parser.parse_args()
 
@@ -436,6 +454,14 @@ def pick_error_message(lines: list[ParsedLine]) -> str | None:
 
 def classify_failure(lines: list[ParsedLine], failed_cases: list[str]) -> str:
     joined = "\n".join(line.text for line in lines[-400:])
+    if AGENT_IO_ERROR_RE.search(joined):
+        return "infra_agent_io_error"
+    if TLS_CERT_BUNDLE_RE.search(joined):
+        return "env_tls_cert_error"
+    if EXIT_127_RE.search(joined):
+        return "env_command_not_found"
+    if TRITON_CUBIN_MISSING_RE.search(joined):
+        return "triton_cubin_missing"
     if DOCKER_FAIL_RE.search(joined):
         return "docker_pull_fail"
     if failed_cases:
@@ -597,9 +623,16 @@ def collect_failed_rows_for_build(client: BuildkiteClient, build: dict[str, Any]
     return collapse_build_level_failures(build_rows)
 
 
-def case_signatures(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def case_signatures(rows: list[dict[str, Any]], xpu_only: bool = False) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
+    # XPU only: failures where test actually ran (not infra/env issues at startup)
+    xpu_ran_reasons = {"test_case_fail", "runtime_error", "runtime_crash", "timeout"}
+    
     for row in rows:
+        fail_reason = str(row.get("fail_reason") or "unknown").lower()
+        if xpu_only and fail_reason not in xpu_ran_reasons:
+            continue
+        
         suite = str(row.get("test_suite_name") or "unknown")
         specific = str(row.get("specific_case_name") or "").strip()
         fail_cases = [item.strip() for item in str(row.get("fail_case_name") or "").split(";") if item.strip()]
@@ -625,6 +658,7 @@ def compute_nightly_comparison(
     nightly_name: str,
     nightly_source: str,
     lookback_days: int,
+    xpu_only: bool = False,
 ) -> dict[str, Any] | None:
     start = end - timedelta(days=max(1, lookback_days))
     builds = client.list_builds(start, end)
@@ -643,8 +677,8 @@ def compute_nightly_comparison(
     latest_rows = collect_failed_rows_for_build(client, latest, output_dir, "nightly_latest")
     previous_rows = collect_failed_rows_for_build(client, previous, output_dir, "nightly_previous")
 
-    latest_cases = case_signatures(latest_rows)
-    previous_cases = case_signatures(previous_rows)
+    latest_cases = case_signatures(latest_rows, xpu_only=xpu_only)
+    previous_cases = case_signatures(previous_rows, xpu_only=xpu_only)
 
     new_fail_keys = sorted(set(latest_cases.keys()) - set(previous_cases.keys()))
     new_pass_keys = sorted(set(previous_cases.keys()) - set(latest_cases.keys()))
@@ -683,6 +717,7 @@ def compute_nightly_comparison(
     return {
         "nightly_name": nightly_name,
         "nightly_source": nightly_source,
+        "xpu_only": xpu_only,
         "latest": {
             "build_id": latest.get("number"),
             "build_url": latest.get("web_url") or "",
@@ -1325,6 +1360,7 @@ def main() -> int:
             nightly_name=args.nightly_name,
             nightly_source=args.nightly_source,
             lookback_days=args.nightly_lookback_days,
+            xpu_only=args.xpu_only,
         )
     except requests.RequestException as exc:
         print(f"Nightly comparison skipped due to API error: {exc}")

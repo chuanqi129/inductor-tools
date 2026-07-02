@@ -83,9 +83,10 @@ pipeline {
 
                         python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \\
                           --days 1 \\
-                              --nightly-name "Full intel CI-daily" \\
-                              --nightly-source "scheduled,schedule" \\
-                              --nightly-lookback-days 30 \\
+                          --nightly-name "Full intel CI-daily" \\
+                          --nightly-source "scheduled,schedule" \\
+                          --nightly-lookback-days 30 \\
+                          --xpu-only \\
                           --output-dir \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}\"
 
                         cp \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}/summary.html\" \"${WORKSPACE}/output/latest_summary.html\"
