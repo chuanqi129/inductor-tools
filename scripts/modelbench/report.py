@@ -108,6 +108,11 @@ if args.suite == "all":
 else:
     suite_list = [args.suite]
 
+BACKEND_RUNTIME_MAP = {
+    'aot_max_autotune': 'aot_inductor',
+    'triton_cpu': 'inductor',
+}
+
 def filter_df_by_threshold(df, interval_start,interval_end):
     df = df[df['inductor_new'] > 0]
     filtered_data_small = df[df['inductor_old'] <= interval_start]
@@ -131,19 +136,34 @@ def percentage(part, whole, decimals=2):
 
 def update_passrate_csv(df, target_path, backend):
     new_df = df.copy()
+    backend_str = str(backend).strip()
+    backend_runtime = BACKEND_RUNTIME_MAP.get(backend_str, backend_str)
+
+    if backend_runtime in new_df.index:
+        backend_key = backend_runtime
+    elif backend_str in new_df.index:
+        backend_key = backend_str
+    elif backend_runtime == 'aot_inductor' and 'inductor' in new_df.index:
+        backend_key = 'inductor'
+    else:
+        if len(new_df.index) == 0:
+            raise KeyError(f"Backend '{backend}' not found and passrate table is empty")
+        available = [str(idx).strip() for idx in new_df.index]
+        raise KeyError(f"Backend '{backend}' not found in passrate.csv; runtime='{backend_runtime}', available={available}")
+
     precision = "amp" if args.precision == "amp_fp16" else args.precision
     for suite_name in suite_list:
-        passrate_str = new_df.loc[backend][suite_name]
+        passrate_str = new_df.loc[backend_key, suite_name]
         passed_num = int(passrate_str.split(', ')[1].split('/')[0])
-        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
-        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend, suite_name, precision, args.infer_or_train)
+        perf_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(target_path, backend_runtime, suite_name, precision, args.infer_or_train)
+        acc_path = '{0}/{1}_{2}_{3}_{4}_cpu_accuracy.csv'.format(target_path, backend_runtime, suite_name, precision, args.infer_or_train)
         perf_df = pd.read_csv(perf_path)
         acc_df = pd.read_csv(acc_path)
         acc_df = acc_df.drop(acc_df[(acc_df['accuracy'] == 'model_fail_to_load') | (acc_df['accuracy'] == 'eager_fail_to_run')].index)
         name_union_df = pd.merge(acc_df['name'], perf_df['name'], how='left')
         perc = int(percentage(passed_num, len(name_union_df), decimals=0))
         passrate_str_new = '{0}%, {1}/{2}'.format(perc, passed_num, len(name_union_df))
-        new_df.loc[backend][suite_name] = passrate_str_new
+        new_df.loc[backend_key, suite_name] = passrate_str_new
     new_df.to_csv(target_path + '/passrate_new.csv')
 
 def update_passrate(reference):
@@ -456,10 +476,12 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
     global new_failures_model_list
     global new_fixed_failures_model_list
     global target_thread_failures
-    target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=args.backend)
+    target_backend = BACKEND_RUNTIME_MAP.get(args.backend, args.backend)
+    ref_backend = BACKEND_RUNTIME_MAP.get(args.ref_backend, args.ref_backend)
+    target_thread_failures = get_failures(target_thread, thread_mode, backend_pattern=target_backend)
     # new failures compare with reference logs
     if args.reference is not None:
-        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=args.ref_backend)
+        refer_thread_failures = get_failures(refer_thread, thread_mode, backend_pattern=ref_backend)
         # New Failures
         failure_regression_compare = datacompy.Compare(target_thread_failures, refer_thread_failures, join_columns='name')
         failure_regression = failure_regression_compare.df1_unq_rows.copy()
@@ -514,14 +536,16 @@ def update_failures(excel, target_thread, refer_thread, thread_mode):
 
 def process_suite(suite, thread):
     precision = "amp" if args.precision == "amp_fp16" else args.precision
-    target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), args.backend, suite, precision, args.infer_or_train)
+    target_backend = BACKEND_RUNTIME_MAP.get(args.backend, args.backend)
+    ref_backend = BACKEND_RUNTIME_MAP.get(args.ref_backend, args.ref_backend)
+    target_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.target, thread), target_backend, suite, precision, args.infer_or_train)
     target_ori_data=pd.read_csv(target_file_path,index_col=0)
     target_data=target_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
     target_data=target_data.copy()
     target_data.sort_values(by=['name'], key=lambda col: col.str.lower(),inplace=True)
 
     if args.reference is not None:
-        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), args.ref_backend, suite, precision, args.infer_or_train)
+        reference_file_path = '{0}/{1}_{2}_{3}_{4}_cpu_performance.csv'.format(getfolder(args.reference, thread), ref_backend, suite, precision, args.infer_or_train)
         reference_ori_data=pd.read_csv(reference_file_path,index_col=0)
         reference_data=reference_ori_data[['name','batch_size','speedup','abs_latency','compilation_latency']]
         reference_data=reference_data.copy()
