@@ -759,12 +759,20 @@ def parse_case_count_table_from_log(raw_log: str) -> dict[str, dict[str, int]] |
 
 
 def parse_pytest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
-    # Prefer the last summary-like line that carries passed/skipped/failed tokens.
+    # Prefer the last pytest summary line that carries passed/skipped/failed counts.
+    # Avoid matching arbitrary log lines that happen to contain these words.
     summary_lines = [ANSI_RE.sub("", line).strip() for line in raw_log.splitlines()]
     for line in reversed(summary_lines):
         if not line:
             continue
-        if "passed" not in line and "failed" not in line and "skipped" not in line:
+        lowered = line.lower()
+        if "passed" not in lowered and "failed" not in lowered and "skipped" not in lowered:
+            continue
+        if not (
+            line.startswith("=")
+            or " in " in lowered
+            or "collected " in lowered
+        ):
             continue
 
         counts = {"passed": 0, "skipped": 0, "failed": 0}
@@ -777,12 +785,42 @@ def parse_pytest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
     return None
 
 
+def parse_unittest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
+    cleaned_lines = [ANSI_RE.sub("", line).strip() for line in raw_log.splitlines()]
+    for idx, line in enumerate(cleaned_lines):
+        ran = re.search(r"Ran\s+(\d+)\s+tests?\s+in\s+[\d.]+s", line, flags=re.IGNORECASE)
+        if not ran:
+            continue
+
+        total = int(ran.group(1))
+        window = " ".join(cleaned_lines[idx : min(idx + 5, len(cleaned_lines))])
+
+        failed = 0
+        skipped = 0
+        failure_match = re.search(r"failures?=(\d+)", window, flags=re.IGNORECASE)
+        error_match = re.search(r"errors?=(\d+)", window, flags=re.IGNORECASE)
+        skipped_match = re.search(r"skipped=(\d+)", window, flags=re.IGNORECASE)
+
+        if failure_match:
+            failed += int(failure_match.group(1))
+        if error_match:
+            failed += int(error_match.group(1))
+        if skipped_match:
+            skipped += int(skipped_match.group(1))
+
+        passed = max(0, total - failed - skipped)
+        if total > 0:
+            return passed, skipped, failed
+
+    return None
+
+
 def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, Any]) -> dict[str, dict[str, int]]:
     build_number = int(build["number"])
     build_details = client.get_build(build_number)
     jobs = build_details.get("jobs") or []
     stats: dict[str, dict[str, int]] = {}
-    fallback_stats: dict[str, dict[str, int]] = {}
+    fallback_best: tuple[str, int, int, int] | None = None
     table_rows_found = 0
 
     for job in jobs:
@@ -809,20 +847,27 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
                 table_rows_found += 1
             continue
 
-        # Fallback: derive per-label counts from pytest summary in each nightly job log.
-        parsed_counts = parse_pytest_case_counts(raw_log)
+        # Fallback: pick one nightly job-level case summary (largest case total),
+        # so we still represent case counts instead of counting jobs.
+        parsed_counts = parse_pytest_case_counts(raw_log) or parse_unittest_case_counts(raw_log)
         if not parsed_counts:
             continue
         passed, skipped, failed = parsed_counts
-        label = safe_suite_name(job).strip() or "unknown"
-        item = fallback_stats.setdefault(label, {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
-        item["passed"] += int(passed)
-        item["skipped"] += int(skipped)
-        item["failed"] += int(failed)
-        item["total"] = item["passed"] + item["skipped"] + item["failed"]
+        label = safe_suite_name(job).strip() or "nightly"
+        total = int(passed) + int(skipped) + int(failed)
+        if not fallback_best or total > (fallback_best[1] + fallback_best[2] + fallback_best[3]):
+            fallback_best = (label, int(passed), int(skipped), int(failed))
 
-    if table_rows_found == 0 and fallback_stats:
-        stats = fallback_stats
+    if table_rows_found == 0 and fallback_best:
+        label, passed, skipped, failed = fallback_best
+        stats = {
+            label: {
+                "passed": passed,
+                "skipped": skipped,
+                "failed": failed,
+                "total": passed + skipped + failed,
+            }
+        }
 
     if not stats:
         return {}
