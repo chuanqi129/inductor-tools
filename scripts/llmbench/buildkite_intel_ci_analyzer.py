@@ -651,6 +651,167 @@ def case_signatures(rows: list[dict[str, Any]], xpu_only: bool = False) -> dict[
     return result
 
 
+def normalize_case_count_cell(value: str) -> str:
+    cleaned = ANSI_RE.sub("", str(value or "")).strip()
+    cleaned = cleaned.replace("`", "")
+    cleaned = re.sub(r"\*+", "", cleaned)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def parse_case_count_row(line: str) -> tuple[str, int, int, int] | None:
+    normalized_line = ANSI_RE.sub("", line).strip()
+    if not normalized_line:
+        return None
+
+    if "|" in normalized_line:
+        cells = [normalize_case_count_cell(cell) for cell in normalized_line.strip("|").split("|")]
+        cells = [cell for cell in cells if cell]
+        if len(cells) >= 4 and all(re.fullmatch(r"\d+", item) for item in cells[1:4]):
+            return cells[0], int(cells[1]), int(cells[2]), int(cells[3])
+
+    match = re.match(r"^(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s*$", normalized_line)
+    if not match:
+        return None
+
+    group = normalize_case_count_cell(match.group(1))
+    if not group:
+        return None
+    return group, int(match.group(2)), int(match.group(3)), int(match.group(4))
+
+
+def parse_case_count_table_from_log(raw_log: str) -> dict[str, dict[str, int]] | None:
+    rows: list[tuple[str, int, int, int]] = []
+    in_table = False
+
+    for raw_line in raw_log.splitlines():
+        plain = ANSI_RE.sub("", raw_line).strip()
+        if not plain:
+            if in_table and rows:
+                break
+            continue
+
+        header_key = re.sub(r"[^a-z]", "", plain.lower())
+        if "grouppassedskippedfailed" in header_key:
+            in_table = True
+            continue
+
+        if not in_table:
+            continue
+
+        if re.fullmatch(r"[|\-:\s]+", plain):
+            continue
+
+        parsed = parse_case_count_row(plain)
+        if parsed:
+            rows.append(parsed)
+            continue
+
+        if rows:
+            break
+
+    if not rows:
+        return None
+
+    stats: dict[str, dict[str, int]] = {}
+    for group, passed, skipped, failed in rows:
+        key = "TOTAL" if group.upper() == "TOTAL" else group
+        stats[key] = {
+            "passed": int(passed),
+            "skipped": int(skipped),
+            "failed": int(failed),
+            "total": int(passed + skipped + failed),
+        }
+
+    if "TOTAL" not in stats:
+        total_passed = sum(item["passed"] for item in stats.values())
+        total_skipped = sum(item["skipped"] for item in stats.values())
+        total_failed = sum(item["failed"] for item in stats.values())
+        stats["TOTAL"] = {
+            "passed": total_passed,
+            "skipped": total_skipped,
+            "failed": total_failed,
+            "total": total_passed + total_skipped + total_failed,
+        }
+
+    ordered = [item for item in stats.items() if item[0] != "TOTAL"]
+    ordered.sort(key=lambda pair: (-int(pair[1].get("total") or 0), pair[0].lower()))
+    ordered.append(("TOTAL", stats["TOTAL"]))
+    return {label: values for label, values in ordered}
+
+
+def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, Any]) -> dict[str, dict[str, int]]:
+    build_number = int(build["number"])
+    build_details = client.get_build(build_number)
+    jobs = build_details.get("jobs") or []
+    best_table: dict[str, dict[str, int]] | None = None
+    best_total = -1
+
+    for job in jobs:
+        if job.get("type") and job.get("type") != "script":
+            continue
+        job_uuid = job.get("uuid") or job.get("id")
+        if not job_uuid:
+            continue
+        try:
+            raw_log = client.download_job_log(build_number, str(job_uuid))
+        except requests.RequestException:
+            continue
+
+        parsed = parse_case_count_table_from_log(raw_log)
+        if not parsed:
+            continue
+        total = int((parsed.get("TOTAL") or {}).get("total") or 0)
+        if total > best_total:
+            best_total = total
+            best_table = parsed
+
+    return best_table or {}
+
+
+def build_case_count_trend_svg(latest_total: int, previous_total: int, latest_label: str, previous_label: str) -> str:
+    width = 720
+    height = 220
+    left = 56
+    right = 24
+    top = 28
+    bottom = 42
+    plot_width = width - left - right
+    plot_height = height - top - bottom
+    max_value = max(1, latest_total, previous_total)
+
+    def y_pos(value: int) -> float:
+        return top + plot_height - (plot_height * value / max_value)
+
+    points = [
+        (left + 20, previous_total, previous_label, "#c2410c"),
+        (left + plot_width - 20, latest_total, latest_label, "#0f766e"),
+    ]
+
+    svg_parts = [
+        f'<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Case run count trend">',
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="#fffdf8"/>',
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{height - bottom}" stroke="#c5b8a6" stroke-width="1.2"/>',
+        f'<line x1="{left}" y1="{height - bottom}" x2="{width - right}" y2="{height - bottom}" stroke="#c5b8a6" stroke-width="1.2"/>',
+    ]
+
+    for label_value in sorted({0, max_value}):
+        y = y_pos(label_value)
+        svg_parts.append(f'<line x1="{left}" y1="{y:.2f}" x2="{width - right}" y2="{y:.2f}" stroke="#eadfce" stroke-width="1"/>')
+        svg_parts.append(f'<text x="{left - 8}" y="{y + 4:.2f}" text-anchor="end" font-size="11" fill="#5f6b7a">{label_value}</text>')
+
+    if latest_total or previous_total:
+        path_points = " ".join(f"{x:.2f},{y_pos(value):.2f}" for x, value, _, _ in points)
+        svg_parts.append(f'<polyline points="{path_points}" fill="none" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>')
+
+    for x, value, label, color in points:
+        svg_parts.append(f'<circle cx="{x:.2f}" cy="{y_pos(value):.2f}" r="5" fill="{color}"/>')
+        svg_parts.append(f'<text x="{x:.2f}" y="{height - 16}" text-anchor="middle" font-size="11" fill="#334155">{escape(label)}</text>')
+        svg_parts.append(f'<text x="{x:.2f}" y="{y_pos(value) - 10:.2f}" text-anchor="middle" font-size="11" fill="#334155">{value}</text>')
+
+    svg_parts.append('</svg>')
+    return "".join(svg_parts)
+
+
 def compute_nightly_comparison(
     client: BuildkiteClient,
     end: datetime,
@@ -1028,6 +1189,37 @@ def write_html_report(
             ]
             for item in (nightly_comparison.get("unchanged_fails") or [])
         ]
+
+        latest_case_count_stats = nightly_comparison.get("latest_case_count_stats") or {}
+        previous_case_count_stats = nightly_comparison.get("previous_case_count_stats") or {}
+        latest_case_count_rows = [
+            [
+                group,
+                str(int((counts or {}).get("passed") or 0)),
+                str(int((counts or {}).get("skipped") or 0)),
+                str(int((counts or {}).get("failed") or 0)),
+                str(int((counts or {}).get("total") or 0)),
+            ]
+            for group, counts in latest_case_count_stats.items()
+        ]
+        previous_case_count_rows = [
+            [
+                group,
+                str(int((counts or {}).get("passed") or 0)),
+                str(int((counts or {}).get("skipped") or 0)),
+                str(int((counts or {}).get("failed") or 0)),
+                str(int((counts or {}).get("total") or 0)),
+            ]
+            for group, counts in previous_case_count_stats.items()
+        ]
+        latest_case_total = int((latest_case_count_stats.get("TOTAL") or {}).get("total") or 0)
+        previous_case_total = int((previous_case_count_stats.get("TOTAL") or {}).get("total") or 0)
+        case_count_trend_svg = build_case_count_trend_svg(
+            latest_case_total,
+            previous_case_total,
+            "Latest",
+            "Previous",
+        )
 
         nightly_section_html = f"""
         <section class=\"section\">
