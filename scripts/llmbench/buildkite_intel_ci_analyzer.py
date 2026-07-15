@@ -369,7 +369,7 @@ def send_html_report_email(summary: dict[str, Any], html_path: Path, args: argpa
         html_body,
     )
     html_body = re.sub(
-        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count Trend\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))',
+        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Passed Trend\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))',
         "",
         html_body,
     )
@@ -940,17 +940,17 @@ def load_case_count_trend_history(path: Path) -> list[dict[str, Any]]:
         if not isinstance(item, dict):
             continue
         date_value = str(item.get("date") or "").strip()
-        total_value = int(item.get("total") or 0)
+        passed_value = int(item.get("passed") or item.get("total") or 0)
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
             continue
-        history.append({"date": date_value, "total": total_value})
+        history.append({"date": date_value, "passed": passed_value})
     history.sort(key=lambda row: row["date"])
     return history
 
 
-def update_case_count_trend_history(history: list[dict[str, Any]], date_value: str, total: int) -> list[dict[str, Any]]:
+def update_case_count_trend_history(history: list[dict[str, Any]], date_value: str, passed: int) -> list[dict[str, Any]]:
     updated = [row for row in history if str(row.get("date") or "") != date_value]
-    updated.append({"date": date_value, "total": int(total)})
+    updated.append({"date": date_value, "passed": int(passed)})
     updated.sort(key=lambda row: row["date"])
     # Keep a reasonable retention window for chart readability.
     return updated[-120:]
@@ -968,7 +968,7 @@ def build_case_count_trend_svg(history: list[dict[str, Any]]) -> str:
     if not history:
         return '<svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg"><text x="24" y="84" font-size="13" fill="#64748b">No trend data yet</text></svg>'
 
-    values = [int(row.get("total") or 0) for row in history]
+    values = [int(row.get("passed") or row.get("total") or 0) for row in history]
     labels = [str(row.get("date") or "") for row in history]
     max_value = max(1, max(values))
     count = len(values)
@@ -984,7 +984,7 @@ def build_case_count_trend_svg(history: list[dict[str, Any]]) -> str:
     points = [(x_pos(i), values[i]) for i in range(count)]
 
     svg_parts = [
-        f'<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Case run count trend">',
+        f'<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Case passed trend">',
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="#fffdf8"/>',
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{height - bottom}" stroke="#c5b8a6" stroke-width="1.2"/>',
         f'<line x1="{left}" y1="{height - bottom}" x2="{width - right}" y2="{height - bottom}" stroke="#c5b8a6" stroke-width="1.2"/>',
@@ -1430,7 +1430,7 @@ def write_html_report(
                     {render_html_table(["Job", "Passed", "Skipped", "Failed", "Total"], latest_case_count_rows)}
                 </div>
                 <div class="nightly-card">
-                    <h3>Case Run Count Trend</h3>
+                    <h3>Case Passed Trend</h3>
                     <div class="trend-wrap">{case_count_trend_svg}</div>
                 </div>
             </div>
@@ -1776,10 +1776,10 @@ def main() -> int:
     if nightly_comparison:
         latest_build = nightly_comparison.get("latest") or {}
         latest_case_stats = nightly_comparison.get("latest_case_count_stats") or {}
-        latest_total = int((latest_case_stats.get("TOTAL") or {}).get("total") or 0)
+        latest_passed = int((latest_case_stats.get("TOTAL") or {}).get("passed") or 0)
         latest_date = str(latest_build.get("created_at") or "")[:10]
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}", latest_date):
-            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_total)
+            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_passed)
             history_path.write_text(json.dumps(case_count_trend_history, indent=2), encoding="utf-8")
 
     write_html_report(
