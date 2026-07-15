@@ -29,6 +29,7 @@ DONE_STATES = PASS_STATES | FAIL_STATES | {"finished", "skipped", "broken"}
 TERMINAL_BUILD_STATES = PASS_STATES | FAIL_STATES | {"finished", "skipped", "broken"}
 BUILDKITE_TS_RE = re.compile(r"\x1b_bk;t=(\d+)\x07")
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+BUILDKITE_CONTROL_RE = re.compile(r"\x1b_bk;.*?\x07", re.DOTALL)
 FAILED_CASE_RE = re.compile(r"(?:^|\s)FAILED\s+([^\s|]+::[^\s|]+)")
 SUMMARY_RE = re.compile(r"=+\s+(\d+)\s+failed,.*?in\s+([0-9:.]+)\s+=+")
 TEST_START_RE = re.compile(
@@ -133,6 +134,17 @@ class BuildkiteClient:
     def get_build(self, build_number: int) -> dict[str, Any]:
         url = f"https://api.buildkite.com/v2/organizations/{self.org}/pipelines/{self.pipeline}/builds/{build_number}"
         return self._request("GET", url)
+
+    def get_build_jobs_data(self, build_number: int) -> list[dict[str, Any]]:
+        url = (
+            f"https://buildkite.com/{self.org}/{self.pipeline}/builds/"
+            f"{build_number}/data/jobs?include_retried_jobs=true&paginate=false"
+        )
+        response = self.session.get(url, timeout=self.timeout)
+        response.raise_for_status()
+        payload = response.json()
+        records = payload.get("records") if isinstance(payload, dict) else None
+        return [item for item in (records or []) if isinstance(item, dict)]
 
     def download_job_log(self, build_number: int, job_uuid: str) -> str:
         url = (
@@ -664,10 +676,35 @@ def case_signatures(rows: list[dict[str, Any]], xpu_only: bool = False) -> dict[
 
 
 def normalize_case_count_cell(value: str) -> str:
-    cleaned = ANSI_RE.sub("", str(value or "")).strip()
+    cleaned = BUILDKITE_CONTROL_RE.sub("", str(value or ""))
+    cleaned = ANSI_RE.sub("", cleaned).strip()
     cleaned = cleaned.replace("`", "")
     cleaned = re.sub(r"\*+", "", cleaned)
     return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def should_skip_case_count_job(job: dict[str, Any]) -> bool:
+    if job.get("type") and job.get("type") != "script":
+        return True
+
+    name = str(job.get("name") or job.get("label") or "").strip().lower()
+    if name == "bootstrap":
+        return True
+    if "build xpu image" in name:
+        return True
+
+    state = str(job.get("state") or "").strip().lower()
+    if state == "skipped":
+        return True
+
+    return False
+
+
+def case_count_group_name(job: dict[str, Any]) -> str:
+    value = str(job.get("group_label") or "").strip()
+    if value:
+        return value
+    return safe_suite_name(job).strip() or "unknown"
 
 
 def parse_case_count_row(line: str) -> tuple[str, int, int, int] | None:
@@ -759,28 +796,30 @@ def parse_case_count_table_from_log(raw_log: str) -> dict[str, dict[str, int]] |
 
 
 def parse_pytest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
-    # Prefer the last pytest summary line that carries passed/skipped/failed counts.
-    # Avoid matching arbitrary log lines that happen to contain these words.
-    summary_lines = [ANSI_RE.sub("", line).strip() for line in raw_log.splitlines()]
-    for line in reversed(summary_lines):
-        if not line:
-            continue
-        lowered = line.lower()
-        if "passed" not in lowered and "failed" not in lowered and "skipped" not in lowered:
-            continue
-        if not (
-            line.startswith("=")
-            or " in " in lowered
-            or "collected " in lowered
-        ):
-            continue
+    cleaned = normalize_case_count_cell(raw_log)
+    passed = 0
+    skipped = 0
+    failed = 0
 
-        counts = {"passed": 0, "skipped": 0, "failed": 0}
-        for value, key in re.findall(r"(\d+)\s+(passed|skipped|failed)", line, flags=re.IGNORECASE):
-            counts[key.lower()] += int(value)
+    summary_matches = re.findall(
+        r"=+\s+[^=\n]*?(?:passed|failed|skipped|error)[^=\n]*?in\s+\d[\d.:]*s[^=\n]*=+",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    for item in summary_matches:
+        passed += sum(int(value) for value in re.findall(r"(\d+)\s+passed", item, flags=re.IGNORECASE))
+        skipped += sum(int(value) for value in re.findall(r"(\d+)\s+skipped", item, flags=re.IGNORECASE))
+        failed += sum(int(value) for value in re.findall(r"(\d+)\s+failed", item, flags=re.IGNORECASE))
+        failed += sum(int(value) for value in re.findall(r"(\d+)\s+errors?", item, flags=re.IGNORECASE))
 
-        if counts["passed"] or counts["skipped"] or counts["failed"]:
-            return counts["passed"], counts["skipped"], counts["failed"]
+    if passed or skipped or failed:
+        return passed, skipped, failed
+
+    passed = len(re.findall(r"\bPASSED\b", cleaned))
+    skipped = len(re.findall(r"\bSKIPPED\b", cleaned))
+    failed = len(re.findall(r"\bFAILED\b", cleaned))
+    if passed or skipped or failed:
+        return passed, skipped, failed
 
     return None
 
@@ -817,14 +856,17 @@ def parse_unittest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
 
 def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, Any]) -> dict[str, dict[str, int]]:
     build_number = int(build["number"])
-    build_details = client.get_build(build_number)
-    jobs = build_details.get("jobs") or []
+    try:
+        jobs = client.get_build_jobs_data(build_number)
+    except (requests.RequestException, ValueError, json.JSONDecodeError):
+        build_details = client.get_build(build_number)
+        jobs = [item for item in (build_details.get("jobs") or []) if isinstance(item, dict)]
+
     stats: dict[str, dict[str, int]] = {}
-    fallback_best: tuple[str, int, int, int] | None = None
     table_rows_found = 0
 
     for job in jobs:
-        if job.get("type") and job.get("type") != "script":
+        if should_skip_case_count_job(job):
             continue
         job_uuid = job.get("uuid") or job.get("id")
         if not job_uuid:
@@ -847,27 +889,19 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
                 table_rows_found += 1
             continue
 
-        # Fallback: pick one nightly job-level case summary (largest case total),
-        # so we still represent case counts instead of counting jobs.
         parsed_counts = parse_pytest_case_counts(raw_log) or parse_unittest_case_counts(raw_log)
         if not parsed_counts:
             continue
         passed, skipped, failed = parsed_counts
-        label = safe_suite_name(job).strip() or "nightly"
-        total = int(passed) + int(skipped) + int(failed)
-        if not fallback_best or total > (fallback_best[1] + fallback_best[2] + fallback_best[3]):
-            fallback_best = (label, int(passed), int(skipped), int(failed))
+        if table_rows_found > 0:
+            continue
 
-    if table_rows_found == 0 and fallback_best:
-        label, passed, skipped, failed = fallback_best
-        stats = {
-            label: {
-                "passed": passed,
-                "skipped": skipped,
-                "failed": failed,
-                "total": passed + skipped + failed,
-            }
-        }
+        label = case_count_group_name(job)
+        item = stats.setdefault(label, {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
+        item["passed"] += int(passed)
+        item["skipped"] += int(skipped)
+        item["failed"] += int(failed)
+        item["total"] = item["passed"] + item["skipped"] + item["failed"]
 
     if not stats:
         return {}
