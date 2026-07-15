@@ -350,6 +350,17 @@ def send_html_report_email(summary: dict[str, Any], html_path: Path, args: argpa
     smtp_username = os.getenv(args.smtp_user_env, "")
     smtp_password = os.getenv(args.smtp_password_env, "")
     html_body = html_path.read_text(encoding="utf-8")
+    # Keep Case Run Count and Trend in the archived HTML page, but hide them in email body.
+    html_body = re.sub(
+        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*</h3>.*?</div>',
+        "",
+        html_body,
+    )
+    html_body = re.sub(
+        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count Trend\s*</h3>.*?</div>\s*</div>',
+        "</div>",
+        html_body,
+    )
 
     message = EmailMessage()
     message["Subject"] = subject
@@ -780,18 +791,18 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
         except requests.RequestException:
             continue
 
-        parsed_counts = parse_pytest_case_counts(raw_log)
-        if not parsed_counts:
+        parsed_table = parse_case_count_table_from_log(raw_log)
+        if not parsed_table:
             continue
 
-        passed, skipped, failed = parsed_counts
-        job_label = safe_suite_name(job).strip() or "unknown"
-        stats[job_label] = {
-            "passed": int(passed),
-            "skipped": int(skipped),
-            "failed": int(failed),
-            "total": int(passed + skipped + failed),
-        }
+        for label, counts in parsed_table.items():
+            if str(label).upper() == "TOTAL":
+                continue
+            item = stats.setdefault(str(label), {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
+            item["passed"] += int((counts or {}).get("passed") or 0)
+            item["skipped"] += int((counts or {}).get("skipped") or 0)
+            item["failed"] += int((counts or {}).get("failed") or 0)
+            item["total"] = item["passed"] + item["skipped"] + item["failed"]
 
     if not stats:
         return {}
