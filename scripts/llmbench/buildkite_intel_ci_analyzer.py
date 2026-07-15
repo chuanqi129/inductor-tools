@@ -782,6 +782,8 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
     build_details = client.get_build(build_number)
     jobs = build_details.get("jobs") or []
     stats: dict[str, dict[str, int]] = {}
+    fallback_stats: dict[str, dict[str, int]] = {}
+    table_rows_found = 0
 
     for job in jobs:
         if job.get("type") and job.get("type") != "script":
@@ -795,17 +797,32 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
             continue
 
         parsed_table = parse_case_count_table_from_log(raw_log)
-        if not parsed_table:
+        if parsed_table:
+            for label, counts in parsed_table.items():
+                if str(label).upper() == "TOTAL":
+                    continue
+                item = stats.setdefault(str(label), {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
+                item["passed"] += int((counts or {}).get("passed") or 0)
+                item["skipped"] += int((counts or {}).get("skipped") or 0)
+                item["failed"] += int((counts or {}).get("failed") or 0)
+                item["total"] = item["passed"] + item["skipped"] + item["failed"]
+                table_rows_found += 1
             continue
 
-        for label, counts in parsed_table.items():
-            if str(label).upper() == "TOTAL":
-                continue
-            item = stats.setdefault(str(label), {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
-            item["passed"] += int((counts or {}).get("passed") or 0)
-            item["skipped"] += int((counts or {}).get("skipped") or 0)
-            item["failed"] += int((counts or {}).get("failed") or 0)
-            item["total"] = item["passed"] + item["skipped"] + item["failed"]
+        # Fallback: derive per-label counts from pytest summary in each nightly job log.
+        parsed_counts = parse_pytest_case_counts(raw_log)
+        if not parsed_counts:
+            continue
+        passed, skipped, failed = parsed_counts
+        label = safe_suite_name(job).strip() or "unknown"
+        item = fallback_stats.setdefault(label, {"passed": 0, "skipped": 0, "failed": 0, "total": 0})
+        item["passed"] += int(passed)
+        item["skipped"] += int(skipped)
+        item["failed"] += int(failed)
+        item["total"] = item["passed"] + item["skipped"] + item["failed"]
+
+    if table_rows_found == 0 and fallback_stats:
+        stats = fallback_stats
 
     if not stats:
         return {}
