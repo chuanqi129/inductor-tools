@@ -1027,20 +1027,20 @@ def write_html_report(
                 <h2>Nightly Delta</h2>
                 <span class=\"hint\">Latest vs previous scheduled nightly (Full intel CI-daily)</span>
             </div>
-            <div class=\"grid\">
-                <div>
+            <div class="nightly-stack">
+                <div class="nightly-card">
                     <h3>Overview</h3>
                     {render_html_table(["Field", "Value"], overview_rows)}
                 </div>
-                <div>
+                <div class="nightly-card">
                     <h3>New Fail</h3>
                     {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={4})}
                 </div>
-                <div>
+                <div class="nightly-card">
                     <h3>New Pass</h3>
                     {render_html_table(["Case", "Suite", "Previous Reason", "Candidate Fix Commit", "Candidate Build"], new_pass_rows, raw_html_columns={4})}
                 </div>
-                <div>
+                <div class="nightly-card">
                     <h3>Unchanged Fail</h3>
                     {render_html_table(["Case", "Suite", "Latest Reason", "Previous Reason", "Latest Commit", "Latest Build"], unchanged_fail_rows, raw_html_columns={5})}
                 </div>
@@ -1083,6 +1083,9 @@ def write_html_report(
         .metric-value {{ font-size: 24px; font-weight: 700; }}
         .section {{ margin-top: 28px; padding: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 10px 30px rgba(27, 36, 48, 0.05); }}
         .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }}
+        .nightly-stack {{ display: grid; grid-template-columns: 1fr; gap: 18px; }}
+        .nightly-card {{ border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fffaf2; }}
+        .nightly-card h3 {{ margin-bottom: 10px; }}
         .section-header {{ display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }}
         .hint {{ font-size: 13px; color: var(--muted); }}
         table {{ width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }}
@@ -1224,9 +1227,9 @@ def validate_buildkite_token(token: str, env_name: str) -> str | None:
     except UnicodeEncodeError:
         return (
             f"{env_name} contains non-ASCII characters. "
-            "It looks like a placeholder such as '你的_bkua_token' was exported instead of a real Buildkite token."
+            "It looks like a placeholder such as 'Σ╜áτÜä_bkua_token' was exported instead of a real Buildkite token."
         )
-    if candidate in {"your_bkua_token", "你的_bkua_token", "<your_bkua_token>"}:
+    if candidate in {"your_bkua_token", "Σ╜áτÜä_bkua_token", "<your_bkua_token>"}:
         return f"{env_name} is still set to a placeholder. Replace it with a real token that starts with 'bkua_'."
     return None
 
