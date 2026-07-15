@@ -722,12 +722,14 @@ def compute_nightly_comparison(
             "build_id": latest.get("number"),
             "build_url": latest.get("web_url") or "",
             "commit_id": latest.get("commit") or "",
+            "created_at": latest.get("created_at") or "",
             "state": latest.get("state") or "",
         },
         "previous": {
             "build_id": previous.get("number"),
             "build_url": previous.get("web_url") or "",
             "commit_id": previous.get("commit") or "",
+            "created_at": previous.get("created_at") or "",
             "state": previous.get("state") or "",
         },
         "new_fails": [
@@ -967,8 +969,10 @@ def write_html_report(
             ["Nightly Name", str(nightly_comparison.get("nightly_name") or "")],
             ["Nightly Source", str(nightly_comparison.get("nightly_source") or "")],
             ["Latest Build", str(latest.get("build_id") or "")],
+            ["Latest Date", str(latest.get("created_at") or "")[:10]],
             ["Latest Commit", str(latest.get("commit_id") or "")],
             ["Previous Build", str(previous.get("build_id") or "")],
+            ["Previous Date", str(previous.get("created_at") or "")[:10]],
             ["Previous Commit", str(previous.get("commit_id") or "")],
             ["New Fail", str(len(nightly_comparison.get("new_fails") or []))],
             ["New Pass", str(len(nightly_comparison.get("new_passes") or []))],
@@ -1227,9 +1231,9 @@ def validate_buildkite_token(token: str, env_name: str) -> str | None:
     except UnicodeEncodeError:
         return (
             f"{env_name} contains non-ASCII characters. "
-            "It looks like a placeholder such as 'Σ╜áτÜä_bkua_token' was exported instead of a real Buildkite token."
+            "It looks like a placeholder token was exported instead of a real Buildkite token."
         )
-    if candidate in {"your_bkua_token", "Σ╜áτÜä_bkua_token", "<your_bkua_token>"}:
+    if candidate in {"your_bkua_token", "<your_bkua_token>"}:
         return f"{env_name} is still set to a placeholder. Replace it with a real token that starts with 'bkua_'."
     return None
 
