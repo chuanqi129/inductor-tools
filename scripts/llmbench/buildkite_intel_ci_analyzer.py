@@ -676,6 +676,8 @@ def compute_nightly_comparison(
     previous = candidates[1]
     latest_rows = collect_failed_rows_for_build(client, latest, output_dir, "nightly_latest")
     previous_rows = collect_failed_rows_for_build(client, previous, output_dir, "nightly_previous")
+    latest_case_count_stats = collect_nightly_case_count_stats(client, latest)
+    previous_case_count_stats = collect_nightly_case_count_stats(client, previous)
 
     latest_cases = case_signatures(latest_rows, xpu_only=xpu_only)
     previous_cases = case_signatures(previous_rows, xpu_only=xpu_only)
@@ -732,6 +734,8 @@ def compute_nightly_comparison(
             "created_at": previous.get("created_at") or "",
             "state": previous.get("state") or "",
         },
+        "latest_case_count_stats": latest_case_count_stats,
+        "previous_case_count_stats": previous_case_count_stats,
         "new_fails": [
             {
                 "signature": key,
@@ -1037,6 +1041,18 @@ def write_html_report(
                     {render_html_table(["Field", "Value"], overview_rows)}
                 </div>
                 <div class="nightly-card">
+                    <h3>Case Run Count (Latest)</h3>
+                    {render_html_table(["Group", "Passed", "Skipped", "Failed", "Total"], latest_case_count_rows)}
+                </div>
+                <div class="nightly-card">
+                    <h3>Case Run Count (Previous)</h3>
+                    {render_html_table(["Group", "Passed", "Skipped", "Failed", "Total"], previous_case_count_rows)}
+                </div>
+                <div class="nightly-card">
+                    <h3>Case Run Count Trend</h3>
+                    <div class="trend-wrap">{case_count_trend_svg}</div>
+                </div>
+                <div class="nightly-card">
                     <h3>New Fail</h3>
                     {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={4})}
                 </div>
@@ -1090,6 +1106,8 @@ def write_html_report(
         .nightly-stack {{ display: grid; grid-template-columns: 1fr; gap: 18px; }}
         .nightly-card {{ border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fffaf2; }}
         .nightly-card h3 {{ margin-bottom: 10px; }}
+        .trend-wrap {{ width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: #fffdf9; }}
+        .trend-wrap svg {{ width: 100%; min-width: 680px; height: auto; display: block; }}
         .section-header {{ display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }}
         .hint {{ font-size: 13px; color: var(--muted); }}
         table {{ width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }}
