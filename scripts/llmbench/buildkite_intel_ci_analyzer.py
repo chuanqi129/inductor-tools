@@ -352,13 +352,13 @@ def send_html_report_email(summary: dict[str, Any], html_path: Path, args: argpa
     html_body = html_path.read_text(encoding="utf-8")
     # Keep Case Run Count and Trend in the archived HTML page, but hide them in email body.
     html_body = re.sub(
-        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*</h3>.*?</div>',
+        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))',
         "",
         html_body,
     )
     html_body = re.sub(
-        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count Trend\s*</h3>.*?</div>\s*</div>',
-        "</div>",
+        r'(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count Trend\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))',
+        "",
         html_body,
     )
 
@@ -707,6 +707,9 @@ def parse_case_count_table_from_log(raw_log: str) -> dict[str, dict[str, int]] |
             continue
 
         header_key = re.sub(r"[^a-z]", "", plain.lower())
+        if "caseruncount" in header_key:
+            in_table = True
+            continue
         if "grouppassedskippedfailed" in header_key:
             in_table = True
             continue
