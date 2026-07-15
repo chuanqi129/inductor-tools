@@ -76,6 +76,7 @@ TRITON_CUBIN_MISSING_RE = re.compile(
     r"cubin\s+file\s+saved\s+by\s+tritonbundler\s+not\s+found|\.zebin",
     re.IGNORECASE,
 )
+CASE_COUNT_TREND_HISTORY_FILE = "nightly_case_count_trend_history.json"
 
 
 @dataclass
@@ -659,7 +660,7 @@ def normalize_case_count_cell(value: str) -> str:
 
 
 def parse_case_count_row(line: str) -> tuple[str, int, int, int] | None:
-    normalized_line = ANSI_RE.sub("", line).strip()
+    normalized_line = normalize_case_count_cell(ANSI_RE.sub("", line).strip())
     if not normalized_line:
         return None
 
@@ -671,7 +672,11 @@ def parse_case_count_row(line: str) -> tuple[str, int, int, int] | None:
 
     match = re.match(r"^(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s*$", normalized_line)
     if not match:
-        return None
+        # Some logs collapse the first boundary between group text and the first number
+        # (e.g. "Basic Correctness200 0 0"). Accept optional whitespace there.
+        match = re.match(r"^(.+?)(\d+)\s+(\d+)\s+(\d+)\s*$", normalized_line)
+        if not match:
+            return None
 
     group = normalize_case_count_cell(match.group(1))
     if not group:
@@ -739,12 +744,30 @@ def parse_case_count_table_from_log(raw_log: str) -> dict[str, dict[str, int]] |
     return {label: values for label, values in ordered}
 
 
+def parse_pytest_case_counts(raw_log: str) -> tuple[int, int, int] | None:
+    # Prefer the last summary-like line that carries passed/skipped/failed tokens.
+    summary_lines = [ANSI_RE.sub("", line).strip() for line in raw_log.splitlines()]
+    for line in reversed(summary_lines):
+        if not line:
+            continue
+        if "passed" not in line and "failed" not in line and "skipped" not in line:
+            continue
+
+        counts = {"passed": 0, "skipped": 0, "failed": 0}
+        for value, key in re.findall(r"(\d+)\s+(passed|skipped|failed)", line, flags=re.IGNORECASE):
+            counts[key.lower()] += int(value)
+
+        if counts["passed"] or counts["skipped"] or counts["failed"]:
+            return counts["passed"], counts["skipped"], counts["failed"]
+
+    return None
+
+
 def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, Any]) -> dict[str, dict[str, int]]:
     build_number = int(build["number"])
     build_details = client.get_build(build_number)
     jobs = build_details.get("jobs") or []
-    best_table: dict[str, dict[str, int]] | None = None
-    best_total = -1
+    stats: dict[str, dict[str, int]] = {}
 
     for job in jobs:
         if job.get("type") and job.get("type") != "script":
@@ -757,35 +780,98 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
         except requests.RequestException:
             continue
 
-        parsed = parse_case_count_table_from_log(raw_log)
-        if not parsed:
+        parsed_counts = parse_pytest_case_counts(raw_log)
+        if not parsed_counts:
             continue
-        total = int((parsed.get("TOTAL") or {}).get("total") or 0)
-        if total > best_total:
-            best_total = total
-            best_table = parsed
 
-    return best_table or {}
+        passed, skipped, failed = parsed_counts
+        job_label = safe_suite_name(job).strip() or "unknown"
+        stats[job_label] = {
+            "passed": int(passed),
+            "skipped": int(skipped),
+            "failed": int(failed),
+            "total": int(passed + skipped + failed),
+        }
+
+    if not stats:
+        return {}
+
+    ordered = [item for item in stats.items() if item[0] != "TOTAL"]
+    ordered.sort(key=lambda pair: (-int(pair[1].get("total") or 0), pair[0].lower()))
+
+    total_passed = sum(item["passed"] for _, item in ordered)
+    total_skipped = sum(item["skipped"] for _, item in ordered)
+    total_failed = sum(item["failed"] for _, item in ordered)
+    ordered.append((
+        "TOTAL",
+        {
+            "passed": total_passed,
+            "skipped": total_skipped,
+            "failed": total_failed,
+            "total": total_passed + total_skipped + total_failed,
+        },
+    ))
+
+    return {label: values for label, values in ordered}
 
 
-def build_case_count_trend_svg(latest_total: int, previous_total: int, latest_label: str, previous_label: str) -> str:
+def load_case_count_trend_history(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if not isinstance(payload, list):
+        return []
+
+    history: list[dict[str, Any]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        date_value = str(item.get("date") or "").strip()
+        total_value = int(item.get("total") or 0)
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
+            continue
+        history.append({"date": date_value, "total": total_value})
+    history.sort(key=lambda row: row["date"])
+    return history
+
+
+def update_case_count_trend_history(history: list[dict[str, Any]], date_value: str, total: int) -> list[dict[str, Any]]:
+    updated = [row for row in history if str(row.get("date") or "") != date_value]
+    updated.append({"date": date_value, "total": int(total)})
+    updated.sort(key=lambda row: row["date"])
+    # Keep a reasonable retention window for chart readability.
+    return updated[-120:]
+
+
+def build_case_count_trend_svg(history: list[dict[str, Any]]) -> str:
     width = 720
-    height = 220
+    height = 260
     left = 56
     right = 24
-    top = 28
-    bottom = 42
+    top = 24
+    bottom = 64
     plot_width = width - left - right
     plot_height = height - top - bottom
-    max_value = max(1, latest_total, previous_total)
+    if not history:
+        return '<svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg"><text x="24" y="84" font-size="13" fill="#64748b">No trend data yet</text></svg>'
+
+    values = [int(row.get("total") or 0) for row in history]
+    labels = [str(row.get("date") or "") for row in history]
+    max_value = max(1, max(values))
+    count = len(values)
 
     def y_pos(value: int) -> float:
         return top + plot_height - (plot_height * value / max_value)
 
-    points = [
-        (left + 20, previous_total, previous_label, "#c2410c"),
-        (left + plot_width - 20, latest_total, latest_label, "#0f766e"),
-    ]
+    def x_pos(index: int) -> float:
+        if count <= 1:
+            return left + plot_width / 2
+        return left + (plot_width * index / (count - 1))
+
+    points = [(x_pos(i), values[i]) for i in range(count)]
 
     svg_parts = [
         f'<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Case run count trend">',
@@ -799,14 +885,16 @@ def build_case_count_trend_svg(latest_total: int, previous_total: int, latest_la
         svg_parts.append(f'<line x1="{left}" y1="{y:.2f}" x2="{width - right}" y2="{y:.2f}" stroke="#eadfce" stroke-width="1"/>')
         svg_parts.append(f'<text x="{left - 8}" y="{y + 4:.2f}" text-anchor="end" font-size="11" fill="#5f6b7a">{label_value}</text>')
 
-    if latest_total or previous_total:
-        path_points = " ".join(f"{x:.2f},{y_pos(value):.2f}" for x, value, _, _ in points)
+    if any(values):
+        path_points = " ".join(f"{x:.2f},{y_pos(value):.2f}" for x, value in points)
         svg_parts.append(f'<polyline points="{path_points}" fill="none" stroke="#0f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>')
 
-    for x, value, label, color in points:
-        svg_parts.append(f'<circle cx="{x:.2f}" cy="{y_pos(value):.2f}" r="5" fill="{color}"/>')
-        svg_parts.append(f'<text x="{x:.2f}" y="{height - 16}" text-anchor="middle" font-size="11" fill="#334155">{escape(label)}</text>')
-        svg_parts.append(f'<text x="{x:.2f}" y="{y_pos(value) - 10:.2f}" text-anchor="middle" font-size="11" fill="#334155">{value}</text>')
+    step = 1 if count <= 10 else max(2, count // 10)
+    for idx, (x, value) in enumerate(points):
+        svg_parts.append(f'<circle cx="{x:.2f}" cy="{y_pos(value):.2f}" r="3.5" fill="#0f766e"/>')
+        if idx % step == 0 or idx == count - 1:
+            svg_parts.append(f'<text x="{x:.2f}" y="{height - 18}" text-anchor="middle" font-size="10" fill="#334155">{escape(labels[idx])}</text>')
+            svg_parts.append(f'<text x="{x:.2f}" y="{y_pos(value) - 8:.2f}" text-anchor="middle" font-size="10" fill="#334155">{value}</text>')
 
     svg_parts.append('</svg>')
     return "".join(svg_parts)
@@ -1064,6 +1152,7 @@ def write_html_report(
     rows: list[dict[str, Any]],
     path: Path,
     nightly_comparison: dict[str, Any] | None = None,
+    case_count_trend_history: list[dict[str, Any]] | None = None,
 ) -> None:
     state_counts = Counter(str(row.get("job_state") or "unknown") for row in rows)
     reason_counts = Counter(str(row.get("fail_reason") or "unknown") for row in rows)
@@ -1191,7 +1280,6 @@ def write_html_report(
         ]
 
         latest_case_count_stats = nightly_comparison.get("latest_case_count_stats") or {}
-        previous_case_count_stats = nightly_comparison.get("previous_case_count_stats") or {}
         latest_case_count_rows = [
             [
                 group,
@@ -1202,24 +1290,7 @@ def write_html_report(
             ]
             for group, counts in latest_case_count_stats.items()
         ]
-        previous_case_count_rows = [
-            [
-                group,
-                str(int((counts or {}).get("passed") or 0)),
-                str(int((counts or {}).get("skipped") or 0)),
-                str(int((counts or {}).get("failed") or 0)),
-                str(int((counts or {}).get("total") or 0)),
-            ]
-            for group, counts in previous_case_count_stats.items()
-        ]
-        latest_case_total = int((latest_case_count_stats.get("TOTAL") or {}).get("total") or 0)
-        previous_case_total = int((previous_case_count_stats.get("TOTAL") or {}).get("total") or 0)
-        case_count_trend_svg = build_case_count_trend_svg(
-            latest_case_total,
-            previous_case_total,
-            "Latest",
-            "Previous",
-        )
+        case_count_trend_svg = build_case_count_trend_svg(case_count_trend_history or [])
 
         nightly_section_html = f"""
         <section class=\"section\">
@@ -1233,18 +1304,6 @@ def write_html_report(
                     {render_html_table(["Field", "Value"], overview_rows)}
                 </div>
                 <div class="nightly-card">
-                    <h3>Case Run Count (Latest)</h3>
-                    {render_html_table(["Group", "Passed", "Skipped", "Failed", "Total"], latest_case_count_rows)}
-                </div>
-                <div class="nightly-card">
-                    <h3>Case Run Count (Previous)</h3>
-                    {render_html_table(["Group", "Passed", "Skipped", "Failed", "Total"], previous_case_count_rows)}
-                </div>
-                <div class="nightly-card">
-                    <h3>Case Run Count Trend</h3>
-                    <div class="trend-wrap">{case_count_trend_svg}</div>
-                </div>
-                <div class="nightly-card">
                     <h3>New Fail</h3>
                     {render_html_table(["Case", "Suite", "Reason", "Guilty Commit", "Guilty Build"], new_fail_rows, raw_html_columns={4})}
                 </div>
@@ -1255,6 +1314,14 @@ def write_html_report(
                 <div class="nightly-card">
                     <h3>Unchanged Fail</h3>
                     {render_html_table(["Case", "Suite", "Latest Reason", "Previous Reason", "Latest Commit", "Latest Build"], unchanged_fail_rows, raw_html_columns={5})}
+                </div>
+                <div class="nightly-card">
+                    <h3>Case Run Count (Current Week)</h3>
+                    {render_html_table(["Job", "Passed", "Skipped", "Failed", "Total"], latest_case_count_rows)}
+                </div>
+                <div class="nightly-card">
+                    <h3>Case Run Count Trend</h3>
+                    <div class="trend-wrap">{case_count_trend_svg}</div>
                 </div>
             </div>
         </section>
@@ -1594,7 +1661,24 @@ def main() -> int:
     write_summary_csv(summary, output_dir / "summary.csv")
     write_csv(rows, output_dir / "failed_jobs.csv")
     write_markdown(summary, rows, output_dir / "summary.md")
-    write_html_report(summary, rows, output_dir / "summary.html", nightly_comparison=nightly_comparison)
+    history_path = output_dir.parent / CASE_COUNT_TREND_HISTORY_FILE
+    case_count_trend_history = load_case_count_trend_history(history_path)
+    if nightly_comparison:
+        latest_build = nightly_comparison.get("latest") or {}
+        latest_case_stats = nightly_comparison.get("latest_case_count_stats") or {}
+        latest_total = int((latest_case_stats.get("TOTAL") or {}).get("total") or 0)
+        latest_date = str(latest_build.get("created_at") or "")[:10]
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", latest_date):
+            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_total)
+            history_path.write_text(json.dumps(case_count_trend_history, indent=2), encoding="utf-8")
+
+    write_html_report(
+        summary,
+        rows,
+        output_dir / "summary.html",
+        nightly_comparison=nightly_comparison,
+        case_count_trend_history=case_count_trend_history,
+    )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     (output_dir / "failed_jobs.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
     if nightly_comparison:
