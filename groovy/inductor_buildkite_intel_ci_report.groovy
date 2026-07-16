@@ -115,14 +115,14 @@ pipeline {
                     summaryMap = parseSummaryJson(readFile(file: summaryJsonPath))
                 }
                 String embeddedReportHtml = reportHtml
-                        .replaceAll('(?is)<section\s+class=["\']hero["\'][^>]*>.*?</section>', '')
-                        .replaceAll('(?is)<style[^>]*>.*?</style>', '')
-                        .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
+                        .replaceAll(/(?is)<section\s+class=["']hero["'][^>]*>.*?<\/section>/, '')
+                        .replaceAll(/(?is)<style[^>]*>.*?<\/style>/, '')
+                        .replaceAll(/(?is)<\/?(html|head|body)[^>]*>/, '')
                 Map nightlyParts = splitNightlySection(embeddedReportHtml)
                 String nightlySectionHtml = String.valueOf(nightlyParts.nightly ?: '')
                     .replace('Nightly Delta', 'Nightly Comparison')
-                    .replaceAll('(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))', '')
-                    .replaceAll('(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Passed Trend\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))', '')
+                    .replaceAll(/(?is)<div\s+class=["']nightly-card["'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*<\/h3>.*?<\/div>\s*(?=(?:<div\s+class=["']nightly-card["'])|(?:<\/div>\s*<\/section>))/, '')
+                    .replaceAll(/(?is)<div\s+class=["']nightly-card["'][^>]*>\s*<h3>\s*Case Passed Trend\s*<\/h3>.*?<\/div>\s*(?=(?:<div\s+class=["']nightly-card["'])|(?:<\/div>\s*<\/section>))/, '')
                 String reportWithoutNightly = String.valueOf(nightlyParts.rest ?: embeddedReportHtml)
                 String buildUrl = env.BUILD_URL ?: ''
                 String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
