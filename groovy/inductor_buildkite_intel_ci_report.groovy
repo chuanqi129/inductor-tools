@@ -77,28 +77,28 @@ pipeline {
         stage('Run Analyzer And Send Mail') {
             steps {
                 script {
-                    sh """
+                    sh '''
                         set -eux
-                        mkdir -p \"${WORKSPACE}/output\"
+                        mkdir -p "$WORKSPACE/output"
 
-                                                HISTORY_FILE="${WORKSPACE}/output/nightly_case_count_trend_history.json"
-                                                HISTORY_URL="${JOB_URL}lastSuccessfulBuild/artifact/output/nightly_case_count_trend_history.json"
-                                                if curl -fsSL --max-time 60 "$HISTORY_URL" -o "$HISTORY_FILE"; then
-                                                    echo "Restored trend history from last successful build"
-                                                else
-                                                    echo "No prior trend history artifact found"
-                                                fi
+                        HISTORY_FILE="$WORKSPACE/output/nightly_case_count_trend_history.json"
+                        HISTORY_URL="${JOB_URL}lastSuccessfulBuild/artifact/output/nightly_case_count_trend_history.json"
+                        if curl -fsSL --max-time 60 "$HISTORY_URL" -o "$HISTORY_FILE"; then
+                            echo "Restored trend history from last successful build"
+                        else
+                            echo "No prior trend history artifact found"
+                        fi
 
-                        python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \\
-                          --days 1 \\
-                          --nightly-name "Full intel CI-daily" \\
-                          --nightly-source "scheduled,schedule" \\
-                          --nightly-lookback-days 30 \\
-                          --xpu-only \\
-                          --output-dir \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}\"
+                        python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \
+                          --days 1 \
+                          --nightly-name "Full intel CI-daily" \
+                          --nightly-source "scheduled,schedule" \
+                          --nightly-lookback-days 30 \
+                          --xpu-only \
+                          --output-dir "$WORKSPACE/output/buildkite_intel_ci_$BUILD_NUMBER"
 
-                        cp \"${WORKSPACE}/output/buildkite_intel_ci_${BUILD_NUMBER}/summary.html\" \"${WORKSPACE}/output/latest_summary.html\"
-                    """
+                        cp "$WORKSPACE/output/buildkite_intel_ci_$BUILD_NUMBER/summary.html" "$WORKSPACE/output/latest_summary.html"
+                    '''
                 }
             }
         }
@@ -106,95 +106,95 @@ pipeline {
 
     post {
         success {
-                        script {
-                                String reportPath = 'output/latest_summary.html'
-                                String reportHtml = fileExists(reportPath) ? readFile(file: reportPath) : '<html><body><p>Report file not found.</p></body></html>'
-                                String summaryJsonPath = "output/buildkite_intel_ci_${env.BUILD_NUMBER}/summary.json"
-                                def summaryMap = [:]
-                                if (fileExists(summaryJsonPath)) {
-                                    summaryMap = parseSummaryJson(readFile(file: summaryJsonPath))
-                                }
-                                String embeddedReportHtml = reportHtml
-                                        .replaceAll('(?is)<section\\s+class=["\']hero["\'][^>]*>.*?</section>', '')
-                                        .replaceAll('(?is)<style[^>]*>.*?</style>', '')
-                                        .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
-                                Map nightlyParts = splitNightlySection(embeddedReportHtml)
-                                String nightlySectionHtml = String.valueOf(nightlyParts.nightly ?: '')
-                                    .replace('Nightly Delta', 'Nightly Comparison')
-                                    .replaceAll('(?is)<div\\s+class=["\']nightly-card["\'][^>]*>\\s*<h3>\\s*Case Run Count \\(Current Week\\)\\s*</h3>.*?</div>\\s*(?=(?:<div\\s+class=["\']nightly-card["\'])|(?:</div>\\s*</section>))', '')
-                                    .replaceAll('(?is)<div\\s+class=["\']nightly-card["\'][^>]*>\\s*<h3>\\s*Case Passed Trend\\s*</h3>.*?</div>\\s*(?=(?:<div\\s+class=["\']nightly-card["\'])|(?:</div>\\s*</section>))', '')
-                                String reportWithoutNightly = String.valueOf(nightlyParts.rest ?: embeddedReportHtml)
-                                String buildUrl = env.BUILD_URL ?: ''
-                                String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
+            script {
+                String reportPath = 'output/latest_summary.html'
+                String reportHtml = fileExists(reportPath) ? readFile(file: reportPath) : '<html><body><p>Report file not found.</p></body></html>'
+                String summaryJsonPath = "output/buildkite_intel_ci_${env.BUILD_NUMBER}/summary.json"
+                def summaryMap = [:]
+                if (fileExists(summaryJsonPath)) {
+                    summaryMap = parseSummaryJson(readFile(file: summaryJsonPath))
+                }
+                String embeddedReportHtml = reportHtml
+                        .replaceAll('(?is)<section\s+class=["\']hero["\'][^>]*>.*?</section>', '')
+                        .replaceAll('(?is)<style[^>]*>.*?</style>', '')
+                        .replaceAll('(?is)</?(html|head|body)[^>]*>', '')
+                Map nightlyParts = splitNightlySection(embeddedReportHtml)
+                String nightlySectionHtml = String.valueOf(nightlyParts.nightly ?: '')
+                    .replace('Nightly Delta', 'Nightly Comparison')
+                    .replaceAll('(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Run Count \(Current Week\)\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))', '')
+                    .replaceAll('(?is)<div\s+class=["\']nightly-card["\'][^>]*>\s*<h3>\s*Case Passed Trend\s*</h3>.*?</div>\s*(?=(?:<div\s+class=["\']nightly-card["\'])|(?:</div>\s*</section>))', '')
+                String reportWithoutNightly = String.valueOf(nightlyParts.rest ?: embeddedReportHtml)
+                String buildUrl = env.BUILD_URL ?: ''
+                String artifactUrl = buildUrl ? "${buildUrl}artifact/output/latest_summary.html" : ''
 
-                                String summaryTableHtml = """
-                                <table class=\"summary-table\">
-                                    <tr><th colspan=\"2\">Daily Summary</th></tr>
-                                    <tr><td>Window Start</td><td>${String.valueOf(summaryMap.get('window_start', '-')).take(10)}</td></tr>
-                                    <tr><td>Window End</td><td>${String.valueOf(summaryMap.get('window_end', '-')).take(10)}</td></tr>
-                                    <tr><td>Build Scope</td><td>${summaryMap.get('build_scope', '-')}</td></tr>
-                                    <tr><td>Total Builds</td><td>${summaryMap.get('total_builds', '-')}</td></tr>
-                                    <tr><td>Passed Builds</td><td>${summaryMap.get('passed_builds', '-')}</td></tr>
-                                    <tr><td>Failed Builds</td><td>${summaryMap.get('failed_builds', '-')}</td></tr>
-                                    <tr><td>Failed Job Rows</td><td>${summaryMap.get('failed_job_rows', '-')}</td></tr>
-                                    <tr><td>Log Download Errors</td><td>${summaryMap.get('log_download_errors', '-')}</td></tr>
-                                </table>
-                                """.stripIndent()
+                String summaryTableHtml = """
+                <table class="summary-table">
+                    <tr><th colspan="2">Daily Summary</th></tr>
+                    <tr><td>Window Start</td><td>${String.valueOf(summaryMap.get('window_start', '-')).take(10)}</td></tr>
+                    <tr><td>Window End</td><td>${String.valueOf(summaryMap.get('window_end', '-')).take(10)}</td></tr>
+                    <tr><td>Build Scope</td><td>${summaryMap.get('build_scope', '-')}</td></tr>
+                    <tr><td>Total Builds</td><td>${summaryMap.get('total_builds', '-')}</td></tr>
+                    <tr><td>Passed Builds</td><td>${summaryMap.get('passed_builds', '-')}</td></tr>
+                    <tr><td>Failed Builds</td><td>${summaryMap.get('failed_builds', '-')}</td></tr>
+                    <tr><td>Failed Job Rows</td><td>${summaryMap.get('failed_job_rows', '-')}</td></tr>
+                    <tr><td>Log Download Errors</td><td>${summaryMap.get('log_download_errors', '-')}</td></tr>
+                </table>
+                """.stripIndent()
 
-                                String mailHtml = """
-                                <html>
-                                    <head>
-                                        <style>
-                                            .email-report { font-family: Arial, Helvetica, sans-serif; color: #1f2937; }
-                                            .email-report p { margin: 0 0 8px 0; line-height: 1.35; }
-                                            .email-report h1, .email-report h2, .email-report h3 { margin: 0 0 8px 0 !important; line-height: 1.2 !important; }
-                                            .email-report hr { margin: 10px 0; border: 0; border-top: 1px solid #d1d5db; }
-                                            .email-report .page { max-width: 1200px !important; padding: 8px !important; }
-                                            .email-report .hero, .email-report .section { padding: 12px !important; margin-top: 10px !important; border-radius: 8px !important; }
-                                            .email-report .metrics, .email-report .grid { gap: 8px !important; margin-top: 8px !important; }
-                                            .email-report .metric-card { padding: 10px !important; }
-                                            .email-report table { width: 100%; border-collapse: collapse !important; table-layout: fixed; margin: 6px 0 !important; font-size: 13px !important; }
-                                            .email-report th, .email-report td { padding: 6px 8px !important; border: 1px solid #d1d5db !important; vertical-align: top; line-height: 1.25 !important; word-break: break-word; }
-                                            .email-report th { background: #f3f4f6; }
-                                            .email-report .table-wrap { overflow: visible !important; }
-                                            .email-report .summary-table { width: 100%; max-width: 760px; margin: 4px 0 10px 0 !important; table-layout: auto !important; }
-                                            .email-report .summary-table th { text-align: left; font-size: 14px; background: #e5e7eb; }
-                                            .email-report .summary-table td:first-child { width: 36%; font-weight: 600; background: #f9fafb; }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <div class=\"email-report\">
-                                            ${nightlySectionHtml}
+                String mailHtml = """
+                <html>
+                    <head>
+                        <style>
+                            .email-report { font-family: Arial, Helvetica, sans-serif; color: #1f2937; }
+                            .email-report p { margin: 0 0 8px 0; line-height: 1.35; }
+                            .email-report h1, .email-report h2, .email-report h3 { margin: 0 0 8px 0 !important; line-height: 1.2 !important; }
+                            .email-report hr { margin: 10px 0; border: 0; border-top: 1px solid #d1d5db; }
+                            .email-report .page { max-width: 1200px !important; padding: 8px !important; }
+                            .email-report .hero, .email-report .section { padding: 12px !important; margin-top: 10px !important; border-radius: 8px !important; }
+                            .email-report .metrics, .email-report .grid { gap: 8px !important; margin-top: 8px !important; }
+                            .email-report .metric-card { padding: 10px !important; }
+                            .email-report table { width: 100%; border-collapse: collapse !important; table-layout: fixed; margin: 6px 0 !important; font-size: 13px !important; }
+                            .email-report th, .email-report td { padding: 6px 8px !important; border: 1px solid #d1d5db !important; vertical-align: top; line-height: 1.25 !important; word-break: break-word; }
+                            .email-report th { background: #f3f4f6; }
+                            .email-report .table-wrap { overflow: visible !important; }
+                            .email-report .summary-table { width: 100%; max-width: 760px; margin: 4px 0 10px 0 !important; table-layout: auto !important; }
+                            .email-report .summary-table th { text-align: left; font-size: 14px; background: #e5e7eb; }
+                            .email-report .summary-table td:first-child { width: 36%; font-weight: 600; background: #f9fafb; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="email-report">
+                            ${nightlySectionHtml}
 
-                                            <h2>Full Intel CI status</h2>
-                                            <p>Daily report generated by Jenkins.</p>
-                                            <hr/>
-                                            ${summaryTableHtml}
-                                            ${reportWithoutNightly}
-                                            <hr/>
-                                            <p>
-                                                Jenkins Build: <a href=\"${buildUrl}\">${buildUrl}</a><br/>
-                                                Archived Report: <a href=\"${artifactUrl}\">${artifactUrl}</a>
-                                            </p>
-                                        </div>
-                                    </body>
-                                </html>
-                                """.stripIndent()
+                            <h2>Full Intel CI status</h2>
+                            <p>Daily report generated by Jenkins.</p>
+                            <hr/>
+                            ${summaryTableHtml}
+                            ${reportWithoutNightly}
+                            <hr/>
+                            <p>
+                                Jenkins Build: <a href="${buildUrl}">${buildUrl}</a><br/>
+                                Archived Report: <a href="${artifactUrl}">${artifactUrl}</a>
+                            </p>
+                        </div>
+                    </body>
+                </html>
+                """.stripIndent()
 
-                                emailext(
-                                        subject: "[DAILY] Buildkite Intel CI Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                                        to: params.EMAIL_TO,
-                                        from: params.EMAIL_FROM,
-                                        mimeType: 'text/html; charset=UTF-8',
-                                    body: mailHtml,
-                                    attachmentsPattern: 'output/latest_summary.html'
-                                )
-                        }
+                emailext(
+                    subject: "[DAILY] Buildkite Intel CI Report - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    to: params.EMAIL_TO,
+                    from: params.EMAIL_FROM,
+                    mimeType: 'text/html; charset=UTF-8',
+                    body: mailHtml,
+                    attachmentsPattern: 'output/latest_summary.html'
+                )
+            }
         }
         always {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/failed_jobs.*', allowEmptyArchive: true
-                archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/nightly_comparison.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/nightly_comparison.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/nightly_case_count_trend_history.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/latest_summary.html', allowEmptyArchive: true
         }
