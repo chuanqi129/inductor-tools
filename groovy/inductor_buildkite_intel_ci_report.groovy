@@ -81,6 +81,14 @@ pipeline {
                         set -eux
                         mkdir -p \"${WORKSPACE}/output\"
 
+                                                HISTORY_FILE="${WORKSPACE}/output/nightly_case_count_trend_history.json"
+                                                HISTORY_URL="${JOB_URL}lastSuccessfulBuild/artifact/output/nightly_case_count_trend_history.json"
+                                                if curl -fsSL --max-time 60 "$HISTORY_URL" -o "$HISTORY_FILE"; then
+                                                    echo "Restored trend history from last successful build"
+                                                else
+                                                    echo "No prior trend history artifact found"
+                                                fi
+
                         python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \\
                           --days 1 \\
                           --nightly-name "Full intel CI-daily" \\
@@ -187,6 +195,7 @@ pipeline {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/failed_jobs.*', allowEmptyArchive: true
                 archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/nightly_comparison.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'output/nightly_case_count_trend_history.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/latest_summary.html', allowEmptyArchive: true
         }
         failure {

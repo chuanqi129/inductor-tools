@@ -1047,26 +1047,6 @@ def compute_nightly_comparison(
     latest_case_count_stats = collect_nightly_case_count_stats(client, latest)
     previous_case_count_stats = collect_nightly_case_count_stats(client, previous)
 
-    trend_history_points: list[dict[str, Any]] = []
-    trend_builds = sorted(candidates, key=lambda item: int(item.get("number") or 0))
-    for build in trend_builds:
-        created_at = str(build.get("created_at") or "")
-        date_value = created_at[:10]
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
-            continue
-        if int(build.get("number") or 0) == int(latest.get("number") or 0):
-            case_stats = latest_case_count_stats
-        elif int(build.get("number") or 0) == int(previous.get("number") or 0):
-            case_stats = previous_case_count_stats
-        else:
-            case_stats = collect_nightly_case_count_stats(client, build)
-        trend_history_points.append(
-            {
-                "date": date_value,
-                "passed": int((case_stats.get("TOTAL") or {}).get("passed") or 0),
-            }
-        )
-
     latest_cases = case_signatures(latest_rows, xpu_only=xpu_only)
     previous_cases = case_signatures(previous_rows, xpu_only=xpu_only)
 
@@ -1124,7 +1104,6 @@ def compute_nightly_comparison(
         },
         "latest_case_count_stats": latest_case_count_stats,
         "previous_case_count_stats": previous_case_count_stats,
-        "trend_history_points": trend_history_points,
         "new_fails": [
             {
                 "signature": key,
@@ -1804,15 +1783,12 @@ def main() -> int:
     history_path = output_dir.parent / CASE_COUNT_TREND_HISTORY_FILE
     case_count_trend_history = load_case_count_trend_history(history_path)
     if nightly_comparison:
-        for point in nightly_comparison.get("trend_history_points") or []:
-            date_value = str(point.get("date") or "")
-            passed_value = int(point.get("passed") or 0)
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
-                case_count_trend_history = update_case_count_trend_history(case_count_trend_history, date_value, passed_value)
-
         latest_build = nightly_comparison.get("latest") or {}
+        latest_case_stats = nightly_comparison.get("latest_case_count_stats") or {}
+        latest_passed = int((latest_case_stats.get("TOTAL") or {}).get("passed") or 0)
         latest_date = str(latest_build.get("created_at") or "")[:10]
         if re.fullmatch(r"\d{4}-\d{2}-\d{2}", latest_date):
+            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_passed)
             history_path.write_text(json.dumps(case_count_trend_history, indent=2), encoding="utf-8")
 
     write_html_report(
