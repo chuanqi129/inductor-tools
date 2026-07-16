@@ -122,8 +122,8 @@ pipeline {
                                 String summaryTableHtml = """
                                 <table class=\"summary-table\">
                                     <tr><th colspan=\"2\">Daily Summary</th></tr>
-                                    <tr><td>Window Start</td><td>${summaryMap.get('window_start', '-')}</td></tr>
-                                    <tr><td>Window End</td><td>${summaryMap.get('window_end', '-')}</td></tr>
+                                    <tr><td>Window Start</td><td>${String.valueOf(summaryMap.get('window_start', '-')).take(10)}</td></tr>
+                                    <tr><td>Window End</td><td>${String.valueOf(summaryMap.get('window_end', '-')).take(10)}</td></tr>
                                     <tr><td>Build Scope</td><td>${summaryMap.get('build_scope', '-')}</td></tr>
                                     <tr><td>Total Builds</td><td>${summaryMap.get('total_builds', '-')}</td></tr>
                                     <tr><td>Passed Builds</td><td>${summaryMap.get('passed_builds', '-')}</td></tr>
