@@ -34,12 +34,13 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
     # Fix conda install issue
     ~/miniforge.sh -b -p /opt/conda && \
     rm ~/miniforge.sh && \
-    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} \
+    /opt/conda/bin/conda config --system --prepend channels conda-forge && \
+    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} mamba && \
+    /opt/conda/bin/mamba install -y --solver=libmamba \
         astunparse \
         cffi \
         cython \
         cmake=3.27 \
-        mamba=1.5.8 \
         dataclasses \
         future \
         git-lfs \
@@ -57,8 +58,8 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         pyyaml \
         setuptools==81.0.0 \
         jemalloc \
-        openssl \      
-        weasyprint && \
+        openssl && \
+    /opt/conda/bin/mamba install -y --solver=libmamba weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
