@@ -81,11 +81,11 @@ ARG TORCH_TEXT_COMMIT=default
 ARG TORCH_AUDIO_COMMIT=default
 RUN git clone https://github.com/pytorch/vision.git && \
     cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
-    python setup.py bdist_wheel && \
+    CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/data.git && \
     cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
-    python setup.py bdist_wheel && \
+    CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/text.git && \
     cd text && if [ "${TORCH_TEXT_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
@@ -93,7 +93,7 @@ RUN git clone https://github.com/pytorch/vision.git && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/audio.git && \
     cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
-    python setup.py bdist_wheel && \
+    CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
     pip install dist/*.whl && cd ..
 ARG TORCH_BENCH_COMMIT=default
 ARG TRANSFORMERS_VERSION=default
