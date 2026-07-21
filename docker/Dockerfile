@@ -70,7 +70,7 @@ ARG PT_REPO=https://github.com/pytorch/pytorch
 ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
-ENV CXXFLAGS="-std=c++20" CFLAGS="-std=c99" CC=gcc CXX=g++
+ENV CXXFLAGS="-std=c++20" CFLAGS="-std=c99" CC=gcc CXX=g++ TORCH_CXX_FLAGS="-std=c++20" CMAKE_CXX_FLAGS="-std=c++20"
 RUN pip install intel-openmp mpmath==1.3.0
 RUN git clone ${PT_REPO} pytorch && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
@@ -89,7 +89,7 @@ RUN git clone https://github.com/pytorch/vision.git && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/text.git && \
     cd text && if [ "${TORCH_TEXT_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
-    python setup.py bdist_wheel && \
+    CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/audio.git && \
     cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
