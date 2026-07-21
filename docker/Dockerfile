@@ -35,8 +35,9 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
     ~/miniforge.sh -b -p /opt/conda && \
     rm ~/miniforge.sh && \
     /opt/conda/bin/conda config --system --prepend channels conda-forge && \
+    /opt/conda/bin/conda config --system --set solver libmamba && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} mamba && \
-    /opt/conda/bin/mamba install -y --solver=libmamba \
+    /opt/conda/bin/mamba install -y \
         astunparse \
         cffi \
         cython \
@@ -59,7 +60,7 @@ RUN curl -fsSL -v -k -o ~/miniforge.sh -O https://github.com/conda-forge/minifor
         setuptools==81.0.0 \
         jemalloc \
         openssl && \
-    /opt/conda/bin/mamba install -y --solver=libmamba weasyprint && \
+    /opt/conda/bin/mamba install -y weasyprint && \
     /opt/conda/bin/conda clean -ya && \
     # Fix GLIBCXX version issue
     rm -f /opt/conda/lib/libstdc++.so.6
