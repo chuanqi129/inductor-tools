@@ -10,6 +10,8 @@ RUN apt-get update && \
         cmake \
         curl \
         ffmpeg \
+        g++ \
+        gcc \
         git \
         libtcmalloc-minimal4 \
         libjpeg-dev \
@@ -66,6 +68,7 @@ ARG PT_REPO=https://github.com/pytorch/pytorch
 ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
+ENV CXXFLAGS="-std=c++20" CFLAGS="-std=c99" CC=gcc CXX=g++
 RUN pip install intel-openmp mpmath==1.3.0
 RUN git clone ${PT_REPO} pytorch && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
