@@ -77,7 +77,6 @@ RUN git clone ${PT_REPO} pytorch && \
     python setup.py develop && cd ..
 ARG TORCH_VISION_COMMIT=default
 ARG TORCH_DATA_COMMIT=default
-ARG TORCH_TEXT_COMMIT=default
 ARG TORCH_AUDIO_COMMIT=default
 RUN git clone https://github.com/pytorch/vision.git && \
     cd vision && if [ "${TORCH_VISION_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/vision.txt`; else git checkout ${TORCH_VISION_COMMIT}; fi && \
@@ -86,10 +85,6 @@ RUN git clone https://github.com/pytorch/vision.git && \
     git clone https://github.com/pytorch/data.git && \
     cd data && if [ "${TORCH_DATA_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/data.txt`; else git checkout ${TORCH_DATA_COMMIT}; fi && \
     CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
-    pip install dist/*.whl && cd .. && \
-    git clone https://github.com/pytorch/text.git && \
-    cd text && if [ "${TORCH_TEXT_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/text.txt`; else git checkout ${TORCH_TEXT_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
-    CMAKE_ARGS="-DCMAKE_CXX_STANDARD=20 -DCMAKE_CXX_STANDARD_REQUIRED=ON" CXXFLAGS="-std=c++20" python setup.py bdist_wheel && \
     pip install dist/*.whl && cd .. && \
     git clone https://github.com/pytorch/audio.git && \
     cd audio && if [ "${TORCH_AUDIO_COMMIT}" = "default" ]; then git checkout `cat /workspace/pytorch/.github/ci_commit_pins/audio.txt`; else git checkout ${TORCH_AUDIO_COMMIT}; fi && git submodule sync && git submodule update --init --recursive && \
@@ -124,7 +119,6 @@ COPY --from=build /opt/conda /opt/conda
 COPY --from=build /workspace/pytorch /workspace/pytorch
 COPY --from=build /workspace/vision /workspace/vision
 COPY --from=build /workspace/data /workspace/data
-COPY --from=build /workspace/text /workspace/text
 COPY --from=build /workspace/audio /workspace/audio
 COPY --from=build /workspace/benchmark /workspace/benchmark
 WORKDIR /workspace/pytorch
