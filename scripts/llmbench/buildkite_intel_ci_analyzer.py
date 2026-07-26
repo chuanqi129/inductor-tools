@@ -948,19 +948,36 @@ def load_case_count_trend_history(path: Path) -> list[dict[str, Any]]:
     for item in payload:
         if not isinstance(item, dict):
             continue
-        date_value = str(item.get("date") or "").strip()
+        build_id_value = str(item.get("build_id") or "").strip()
+        if not build_id_value:
+            # Backward compatibility for old date-keyed history.
+            build_id_value = str(item.get("date") or "").strip()
         passed_value = int(item.get("passed") or item.get("total") or 0)
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
+        if not build_id_value:
             continue
-        history.append({"date": date_value, "passed": passed_value})
-    history.sort(key=lambda row: row["date"])
+        history.append({"build_id": build_id_value, "passed": passed_value})
+
+    def _history_sort_key(row: dict[str, Any]) -> tuple[int, str]:
+        text = str(row.get("build_id") or "")
+        return (int(text), text) if text.isdigit() else (10**18, text)
+
+    history.sort(key=_history_sort_key)
     return history
 
 
-def update_case_count_trend_history(history: list[dict[str, Any]], date_value: str, passed: int) -> list[dict[str, Any]]:
-    updated = [row for row in history if str(row.get("date") or "") != date_value]
-    updated.append({"date": date_value, "passed": int(passed)})
-    updated.sort(key=lambda row: row["date"])
+def update_case_count_trend_history(history: list[dict[str, Any]], build_id: str, passed: int) -> list[dict[str, Any]]:
+    key = str(build_id or "").strip()
+    if not key:
+        return history
+
+    updated = [row for row in history if str(row.get("build_id") or "") != key]
+    updated.append({"build_id": key, "passed": int(passed)})
+
+    def _history_sort_key(row: dict[str, Any]) -> tuple[int, str]:
+        text = str(row.get("build_id") or "")
+        return (int(text), text) if text.isdigit() else (10**18, text)
+
+    updated.sort(key=_history_sort_key)
     # Keep a reasonable retention window for chart readability.
     return updated[-120:]
 
@@ -978,7 +995,7 @@ def build_case_count_trend_svg(history: list[dict[str, Any]]) -> str:
         return '<svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg"><text x="24" y="84" font-size="13" fill="#64748b">No trend data yet</text></svg>'
 
     values = [int(row.get("passed") or row.get("total") or 0) for row in history]
-    labels = [str(row.get("date") or "") for row in history]
+    labels = [str(row.get("build_id") or row.get("date") or "") for row in history]
     max_value = max(1, max(values))
     count = len(values)
 
@@ -1027,6 +1044,7 @@ def compute_nightly_comparison(
     nightly_source: str,
     lookback_days: int,
     xpu_only: bool = False,
+    seed_trend_history: bool = False,
 ) -> dict[str, Any] | None:
     start = end - timedelta(days=max(1, lookback_days))
     builds = client.list_builds(start, end)
@@ -1040,12 +1058,37 @@ def compute_nightly_comparison(
     if len(candidates) < 2:
         return None
 
+    if seed_trend_history:
+        print(f"Trend bootstrap enabled: nightly candidates in lookback = {len(candidates)}")
+
     latest = candidates[0]
     previous = candidates[1]
     latest_rows = collect_failed_rows_for_build(client, latest, output_dir, "nightly_latest")
     previous_rows = collect_failed_rows_for_build(client, previous, output_dir, "nightly_previous")
     latest_case_count_stats = collect_nightly_case_count_stats(client, latest)
     previous_case_count_stats = collect_nightly_case_count_stats(client, previous)
+
+    trend_history_points: list[dict[str, Any]] = []
+    if seed_trend_history:
+        by_build_id: dict[str, int] = {}
+        trend_builds = sorted(candidates, key=lambda item: int(item.get("number") or 0))
+        for build in trend_builds:
+            build_id_value = str(build.get("number") or "").strip()
+            if not build_id_value:
+                continue
+            if int(build.get("number") or 0) == int(latest.get("number") or 0):
+                case_stats = latest_case_count_stats
+            elif int(build.get("number") or 0) == int(previous.get("number") or 0):
+                case_stats = previous_case_count_stats
+            else:
+                case_stats = collect_nightly_case_count_stats(client, build)
+            by_build_id[build_id_value] = int((case_stats.get("TOTAL") or {}).get("passed") or 0)
+
+        trend_history_points = [
+            {"build_id": bid, "passed": by_build_id[bid]}
+            for bid in sorted(by_build_id.keys(), key=lambda x: int(x) if str(x).isdigit() else 10**18)
+        ]
+        print(f"Trend bootstrap produced {len(trend_history_points)} daily points")
 
     latest_cases = case_signatures(latest_rows, xpu_only=xpu_only)
     previous_cases = case_signatures(previous_rows, xpu_only=xpu_only)
@@ -1104,6 +1147,7 @@ def compute_nightly_comparison(
         },
         "latest_case_count_stats": latest_case_count_stats,
         "previous_case_count_stats": previous_case_count_stats,
+        "trend_history_points": trend_history_points,
         "new_fails": [
             {
                 "signature": key,
@@ -1650,6 +1694,13 @@ def main() -> int:
 
     branch_re = re.compile(args.branch_regex)
     output_dir = ensure_output_dir(args.output_dir)
+    history_path = output_dir.parent / CASE_COUNT_TREND_HISTORY_FILE
+    case_count_trend_history = load_case_count_trend_history(history_path)
+    seed_trend_history = len(case_count_trend_history) <= 1
+    print(
+        f"Loaded trend history entries: {len(case_count_trend_history)}"
+        f"; bootstrap={'on' if seed_trend_history else 'off'}"
+    )
     client = BuildkiteClient(args.org, args.pipeline, token, timeout=args.request_timeout)
 
     print(f"Fetching builds for {args.org}/{args.pipeline} from {start.isoformat()} to {end.isoformat()}...")
@@ -1764,6 +1815,7 @@ def main() -> int:
             nightly_source=args.nightly_source,
             lookback_days=args.nightly_lookback_days,
             xpu_only=args.xpu_only,
+            seed_trend_history=seed_trend_history,
         )
     except requests.RequestException as exc:
         print(f"Nightly comparison skipped due to API error: {exc}")
@@ -1780,16 +1832,33 @@ def main() -> int:
     write_summary_csv(summary, output_dir / "summary.csv")
     write_csv(rows, output_dir / "failed_jobs.csv")
     write_markdown(summary, rows, output_dir / "summary.md")
-    history_path = output_dir.parent / CASE_COUNT_TREND_HISTORY_FILE
-    case_count_trend_history = load_case_count_trend_history(history_path)
     if nightly_comparison:
+        history_changed = False
+
+        for point in nightly_comparison.get("trend_history_points") or []:
+            build_id_value = str(point.get("build_id") or "")
+            passed_value = int(point.get("passed") or 0)
+            if build_id_value:
+                before = list(case_count_trend_history)
+                case_count_trend_history = update_case_count_trend_history(case_count_trend_history, build_id_value, passed_value)
+                if case_count_trend_history != before:
+                    history_changed = True
+
         latest_build = nightly_comparison.get("latest") or {}
         latest_case_stats = nightly_comparison.get("latest_case_count_stats") or {}
         latest_passed = int((latest_case_stats.get("TOTAL") or {}).get("passed") or 0)
-        latest_date = str(latest_build.get("created_at") or "")[:10]
-        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", latest_date):
-            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_passed)
+        latest_build_id = str(latest_build.get("build_id") or "").strip()
+        if latest_build_id:
+            before = list(case_count_trend_history)
+            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_build_id, latest_passed)
+            if case_count_trend_history != before:
+                history_changed = True
+
+        if history_changed or seed_trend_history:
             history_path.write_text(json.dumps(case_count_trend_history, indent=2), encoding="utf-8")
+            print(f"Trend history persisted: {len(case_count_trend_history)} entries")
+        else:
+            print(f"Trend history unchanged: {len(case_count_trend_history)} entries")
 
     write_html_report(
         summary,
