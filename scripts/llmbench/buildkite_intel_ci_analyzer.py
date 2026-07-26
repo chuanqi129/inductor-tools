@@ -948,36 +948,27 @@ def load_case_count_trend_history(path: Path) -> list[dict[str, Any]]:
     for item in payload:
         if not isinstance(item, dict):
             continue
-        build_id_value = str(item.get("build_id") or "").strip()
-        if not build_id_value:
-            # Backward compatibility for old date-keyed history.
-            build_id_value = str(item.get("date") or "").strip()
+        date_value = str(item.get("date") or "").strip()
+        if not date_value:
+            # Backward compatibility for temporary build-id keyed history.
+            date_value = str(item.get("build_id") or "").strip()
         passed_value = int(item.get("passed") or item.get("total") or 0)
-        if not build_id_value:
+        if not date_value:
             continue
-        history.append({"build_id": build_id_value, "passed": passed_value})
+        history.append({"date": date_value, "passed": passed_value})
 
-    def _history_sort_key(row: dict[str, Any]) -> tuple[int, str]:
-        text = str(row.get("build_id") or "")
-        return (int(text), text) if text.isdigit() else (10**18, text)
-
-    history.sort(key=_history_sort_key)
+    history.sort(key=lambda row: str(row.get("date") or ""))
     return history
 
 
-def update_case_count_trend_history(history: list[dict[str, Any]], build_id: str, passed: int) -> list[dict[str, Any]]:
-    key = str(build_id or "").strip()
+def update_case_count_trend_history(history: list[dict[str, Any]], date_value: str, passed: int) -> list[dict[str, Any]]:
+    key = str(date_value or "").strip()
     if not key:
         return history
 
-    updated = [row for row in history if str(row.get("build_id") or "") != key]
-    updated.append({"build_id": key, "passed": int(passed)})
-
-    def _history_sort_key(row: dict[str, Any]) -> tuple[int, str]:
-        text = str(row.get("build_id") or "")
-        return (int(text), text) if text.isdigit() else (10**18, text)
-
-    updated.sort(key=_history_sort_key)
+    updated = [row for row in history if str(row.get("date") or "") != key]
+    updated.append({"date": key, "passed": int(passed)})
+    updated.sort(key=lambda row: str(row.get("date") or ""))
     # Keep a reasonable retention window for chart readability.
     return updated[-120:]
 
@@ -995,7 +986,7 @@ def build_case_count_trend_svg(history: list[dict[str, Any]]) -> str:
         return '<svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg"><text x="24" y="84" font-size="13" fill="#64748b">No trend data yet</text></svg>'
 
     values = [int(row.get("passed") or row.get("total") or 0) for row in history]
-    labels = [str(row.get("build_id") or row.get("date") or "") for row in history]
+    labels = [str(row.get("date") or row.get("build_id") or "") for row in history]
     max_value = max(1, max(values))
     count = len(values)
 
@@ -1806,10 +1797,10 @@ def main() -> int:
         latest_build = nightly_comparison.get("latest") or {}
         latest_case_stats = nightly_comparison.get("latest_case_count_stats") or {}
         latest_passed = int((latest_case_stats.get("TOTAL") or {}).get("passed") or 0)
-        latest_build_id = str(latest_build.get("build_id") or "").strip()
-        if latest_build_id:
+        latest_date = str(latest_build.get("created_at") or "")[:10]
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", latest_date):
             before = list(case_count_trend_history)
-            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_build_id, latest_passed)
+            case_count_trend_history = update_case_count_trend_history(case_count_trend_history, latest_date, latest_passed)
             if case_count_trend_history != before:
                 history_changed = True
 
