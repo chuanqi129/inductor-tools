@@ -77,16 +77,51 @@ pipeline {
         stage('Run Analyzer And Send Mail') {
             steps {
                 script {
+                    try {
+                        copyArtifacts(
+                            projectName: env.JOB_NAME,
+                            selector: lastSuccessful(),
+                            filter: 'output/nightly_case_count_trend_history.json',
+                            optional: true,
+                            fingerprintArtifacts: false
+                        )
+                        echo 'Attempted to restore trend history via copyArtifacts(lastSuccessful).'
+                    } catch (Exception ex) {
+                        echo "copyArtifacts unavailable or failed: ${ex.message}"
+                    }
+
                     sh '''
                         set -eux
                         mkdir -p "$WORKSPACE/output"
 
                         HISTORY_FILE="$WORKSPACE/output/nightly_case_count_trend_history.json"
                         HISTORY_URL="${JOB_URL}lastSuccessfulBuild/artifact/output/nightly_case_count_trend_history.json"
-                        if curl -fsSL --max-time 60 "$HISTORY_URL" -o "$HISTORY_FILE"; then
-                            echo "Restored trend history from last successful build"
+                        if [ ! -s "$HISTORY_FILE" ]; then
+                            if curl -fsSL --max-time 60 "$HISTORY_URL" -o "$HISTORY_FILE.tmp"; then
+                                if python3 - "$HISTORY_FILE.tmp" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+try:
+    with open(path, encoding='utf-8') as f:
+        data = json.load(f)
+    ok = isinstance(data, list)
+except Exception:
+    ok = False
+sys.exit(0 if ok else 1)
+PY
+                                then
+                                    mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+                                    echo "Restored trend history from last successful build (curl fallback)"
+                                else
+                                    rm -f "$HISTORY_FILE.tmp"
+                                    echo "Downloaded history artifact is not valid JSON; skip restore"
+                                fi
+                            else
+                                echo "No prior trend history artifact found"
+                            fi
                         else
-                            echo "No prior trend history artifact found"
+                            echo "Trend history already restored via copyArtifacts"
                         fi
 
                         python3 scripts/llmbench/buildkite_intel_ci_analyzer.py \
