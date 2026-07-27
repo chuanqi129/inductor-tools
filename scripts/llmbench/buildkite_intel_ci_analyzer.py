@@ -949,11 +949,9 @@ def load_case_count_trend_history(path: Path) -> list[dict[str, Any]]:
         if not isinstance(item, dict):
             continue
         date_value = str(item.get("date") or "").strip()
-        if not date_value:
-            # Backward compatibility for temporary build-id keyed history.
-            date_value = str(item.get("build_id") or "").strip()
         passed_value = int(item.get("passed") or item.get("total") or 0)
-        if not date_value:
+        # Only keep entries with a valid YYYY-MM-DD date; discard legacy build-id entries.
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
             continue
         history.append({"date": date_value, "passed": passed_value})
 
