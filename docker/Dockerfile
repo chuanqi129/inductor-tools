@@ -71,7 +71,7 @@ ARG PT_COMMIT=main
 COPY --from=conda /opt/conda /opt/conda
 WORKDIR /workspace
 ENV CXXFLAGS="-std=c++20" CFLAGS="-std=c99" CC=gcc CXX=g++ TORCH_CXX_FLAGS="-std=c++20" CMAKE_CXX_FLAGS="-std=c++20"
-RUN pip install intel-openmp mpmath==1.3.0
+RUN pip install intel-openmp mpmath==1.3.0 scikit-build-core
 RUN git clone ${PT_REPO} pytorch && \
     cd pytorch && git checkout ${PT_COMMIT} && git submodule sync && git submodule update --init --recursive && \
     python setup.py develop && cd ..
