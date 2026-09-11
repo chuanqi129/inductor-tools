@@ -51,20 +51,14 @@ List<Map> collectIntelTests(List<Map> yamlDocuments) {
 
             List<String> commands = rawStep.commands instanceof List ? rawStep.commands : [rawStep.commands]
             String testCommand = commands.collect { unwrapIntelCommand(String.valueOf(it)) }.join(' && ')
-            int configuredShardCount = (rawStep.parallelism ?: 1) as int
-            int shardCount = configuredShardCount > 0 ? configuredShardCount : 1
-            (0..<shardCount).each { shardIndex ->
-                tests << [
-                    yamlName: yamlName,
-                    label: String.valueOf(rawStep.label ?: "step-${stepIndex + 1}"),
-                    command: testCommand,
-                    env: rawStep.env instanceof Map ? rawStep.env : [:],
-                    timeoutMinutes: (rawStep.timeout_in_minutes ?: 60) as int,
-                    retryAttempts: retryAttempts(rawStep),
-                    shardIndex: shardIndex,
-                    shardCount: shardCount
-                ]
-            }
+            tests << [
+                yamlName: yamlName,
+                label: String.valueOf(rawStep.label ?: "step-${stepIndex + 1}"),
+                command: testCommand,
+                env: rawStep.env instanceof Map ? rawStep.env : [:],
+                timeoutMinutes: (rawStep.timeout_in_minutes ?: 60) as int,
+                retryAttempts: retryAttempts(rawStep)
+            ]
         }
     }
     return tests
@@ -119,12 +113,11 @@ node(params.TEST_NODE) {
             if (!intelTests) {
                 error('No Intel GPU tests were found in .buildkite/intel_jobs/*.yaml')
             }
-            echo "Discovered ${intelTests.size()} Intel CI test executions from ${yamlDocuments.size()} YAML files"
+            echo "Discovered ${intelTests.size()} Intel CI test steps from ${yamlDocuments.size()} YAML files; YAML parallelism is ignored"
         }
 
         intelTests.eachWithIndex { test, testIndex ->
-            String shardSuffix = test.shardCount > 1 ? " [${test.shardIndex + 1}/${test.shardCount}]" : ''
-            String stageName = "${testIndex + 1}. ${test.label}${shardSuffix}".take(120)
+            String stageName = "${testIndex + 1}. ${test.label}".take(120)
             String logName = String.format('%03d-%s.log', testIndex + 1, test.yamlName.replace('.yaml', ''))
 
             stage(stageName) {
@@ -137,9 +130,7 @@ node(params.TEST_NODE) {
                                 HF_HUB_VERBOSITY: 'info',
                                 PYTHONUNBUFFERED: '1',
                                 VLLM_TEST_DEVICE: 'xpu',
-                                VLLM_DISABLE_COMPILE_CACHE: '1',
-                                BUILDKITE_PARALLEL_JOB: String.valueOf(test.shardIndex),
-                                BUILDKITE_PARALLEL_JOB_COUNT: String.valueOf(test.shardCount)
+                                VLLM_DISABLE_COMPILE_CACHE: '1'
                             ]
                             test.env.each { key, value ->
                                 containerEnv[String.valueOf(key)] = String.valueOf(value)
@@ -154,7 +145,7 @@ node(params.TEST_NODE) {
                             String envArgs = containerEnv.collect { key, value ->
                                 "--env ${shellQuote("${key}=${value}")}"
                             }.join(' ')
-                            String containerName = "vllm-intel-${env.BUILD_NUMBER}-${testIndex}-${test.shardIndex}"
+                            String containerName = "vllm-intel-${env.BUILD_NUMBER}-${testIndex}"
                             activeContainer = containerName
                             String commandFile = "logs/${logName}.command.sh"
                             String preflight = testIndex == 0 ? '''
@@ -173,7 +164,7 @@ du -sh "${HF_HOME}" 2>/dev/null || true
 label=${test.label}
 timeout_minutes=${test.timeoutMinutes}
 retry_attempts=${test.retryAttempts}
-shard=${test.shardIndex + 1}/${test.shardCount}
+parallelism=ignored
 """
                             )
                             writeFile(
