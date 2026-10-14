@@ -138,7 +138,7 @@ class BuildkiteClient:
     def get_build_jobs_data(self, build_number: int) -> list[dict[str, Any]]:
         url = (
             f"https://buildkite.com/{self.org}/{self.pipeline}/builds/"
-            f"{build_number}/data/jobs?include_retried_jobs=true&paginate=false"
+            f"{build_number}/data/jobs?include_retried_jobs=false&paginate=false"
         )
         response = self.session.get(url, timeout=self.timeout)
         response.raise_for_status()
