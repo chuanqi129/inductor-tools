@@ -716,6 +716,10 @@ def case_count_group_name(job: dict[str, Any]) -> str:
     return safe_suite_name(job).strip() or "unknown"
 
 
+def is_superseded_retry_job(job: dict[str, Any]) -> bool:
+    return bool(job.get("retried_in_job_uuid") or job.get("retried_in_job_id"))
+
+
 def parse_case_count_row(line: str) -> tuple[str, int, int, int] | None:
     normalized_line = normalize_case_count_cell(ANSI_RE.sub("", line).strip())
     if not normalized_line:
@@ -875,6 +879,8 @@ def collect_nightly_case_count_stats(client: BuildkiteClient, build: dict[str, A
     table_rows_found = 0
 
     for job in jobs:
+        if is_superseded_retry_job(job):
+            continue
         if should_skip_case_count_job(job):
             continue
         job_uuid = job.get("uuid") or job.get("id")
