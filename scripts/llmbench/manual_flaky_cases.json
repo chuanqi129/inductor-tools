@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "test_suite": ":intel: (BMG) Multi-Modal Models (Standard) 3: llava + qwen2_vl",
+      "test_case": "models/multimodal/generation/test_common.py::test_custom_inputs_models[llava-test_case3]",
+      "reason": "Manually marked flaky"
+    },
+    {
+      "test_suite": ":intel: (BMG) Multi-Modal Models (Standard) 3: llava + qwen2_vl",
+      "test_case": "models/multimodal/generation/test_common.py::test_image_embedding_models[llava-test_case0]",
+      "reason": "Manually marked flaky"
+    },
+    {
+      "test_suite": ":intel: (BMG) Multi-Modal Models (Standard) 3: llava + qwen2_vl",
+      "test_case": "models/multimodal/generation/test_common.py::test_multi_image_models[idefics3-transformers-test_case3]",
+      "reason": "Manually marked flaky"
+    },
+    {
+      "test_suite": ":intel: (BMG) Multi-Modal Models (Standard) 3: llava + qwen2_vl",
+      "test_case": "models/multimodal/generation/test_common.py::test_single_image_models[llava-onevision-transformers-test_case29]",
+      "reason": "Manually marked flaky"
+    }
+  ]
+}

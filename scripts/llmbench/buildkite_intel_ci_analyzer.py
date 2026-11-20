@@ -726,6 +726,8 @@ def collect_flaky_failures_for_build(
                     "test_node": format_test_node(failed_job),
                     "test_suite_name": suite,
                     "case_name": str(case_name),
+                    "classification": "Retry-confirmed",
+                    "manual_reason": "",
                     "build_url": build.get("web_url") or "",
                     "failed_job_url": failed_job.get("web_url") or "",
                     "passed_job_url": retry_job.get("web_url") or "",
@@ -740,6 +742,96 @@ def collect_flaky_failures_for_build(
         rows.append(row)
     rows.sort(key=lambda row: (str(row.get("trigger_time") or ""), str(row.get("case_name") or "")))
     return rows
+
+
+def load_manual_flaky_cases(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    cases = payload.get("cases") if isinstance(payload, dict) else None
+    if not isinstance(cases, list):
+        raise ValueError(f"Manual flaky config must contain a 'cases' list: {path}")
+
+    normalized = []
+    for item in cases:
+        if not isinstance(item, dict):
+            continue
+        test_suite = str(item.get("test_suite") or "").strip()
+        test_case = str(item.get("test_case") or "").strip()
+        if not test_suite or not test_case:
+            raise ValueError(f"Each manual flaky case needs test_suite and test_case: {path}")
+        normalized.append({
+            "test_suite": test_suite,
+            "test_case": test_case,
+            "reason": str(item.get("reason") or "Manually marked flaky").strip(),
+        })
+    return normalized
+
+
+def apply_manual_flaky_marks(
+    retry_confirmed: list[dict[str, Any]],
+    failed_rows: list[dict[str, Any]],
+    manual_cases: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    manual_index = {
+        (item["test_suite"], item["test_case"]): item["reason"]
+        for item in manual_cases
+    }
+    result = list(retry_confirmed)
+    retry_keys: set[tuple[str, str, str]] = set()
+
+    for item in retry_confirmed:
+        key = (str(item.get("build_id") or ""), str(item.get("test_suite_name") or ""), str(item.get("case_name") or ""))
+        retry_keys.add(key)
+        reason = manual_index.get((key[1], key[2]))
+        if reason is not None:
+            item["classification"] = "Manual + Retry-confirmed"
+            item["manual_reason"] = reason
+
+    manual_rows: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for failed_row in failed_rows:
+        suite = str(failed_row.get("test_suite_name") or "")
+        cases = {
+            str(case).strip()
+            for case in str(failed_row.get("fail_case_name") or "").split(";")
+            if str(case).strip()
+        }
+        specific_case = str(failed_row.get("specific_case_name") or "").strip()
+        if specific_case:
+            cases.add(specific_case)
+
+        for case_name in cases:
+            reason = manual_index.get((suite, case_name))
+            if reason is None:
+                continue
+            key = (str(failed_row.get("build_id") or ""), suite, case_name)
+            if key in retry_keys:
+                continue
+            row = manual_rows.setdefault(
+                key,
+                {
+                    "build_id": failed_row.get("build_id"),
+                    "trigger_time": failed_row.get("trigger_time") or "",
+                    "commit_id": failed_row.get("commit_id") or "",
+                    "test_node": failed_row.get("test_node") or "",
+                    "test_suite_name": suite,
+                    "case_name": case_name,
+                    "classification": "Manual",
+                    "manual_reason": reason,
+                    "build_url": failed_row.get("build_url") or "",
+                    "failed_job_url": failed_row.get("job_url") or "",
+                    "passed_job_url": "",
+                    "_failed_job_ids": set(),
+                },
+            )
+            row["_failed_job_ids"].add(str(failed_row.get("job_id") or failed_row.get("job_url") or ""))
+
+    for row in manual_rows.values():
+        row["failed_attempts"] = len(row.pop("_failed_job_ids"))
+        result.append(row)
+
+    result.sort(key=lambda row: (str(row.get("trigger_time") or ""), str(row.get("test_suite_name") or ""), str(row.get("case_name") or "")))
+    return result
 
 
 def case_signatures(rows: list[dict[str, Any]], xpu_only: bool = False) -> dict[str, dict[str, Any]]:
@@ -1343,6 +1435,8 @@ def write_flaky_csv(rows: list[dict[str, Any]], path: Path) -> None:
         "test_node",
         "test_suite_name",
         "case_name",
+        "classification",
+        "manual_reason",
         "failed_attempts",
         "build_url",
         "failed_job_url",
@@ -1396,17 +1490,17 @@ def write_markdown(summary: dict[str, Any], rows: list[dict[str, Any]], path: Pa
         "",
         "## Flaky Failures (Retry Passed)",
         "",
-        "| Build | Suite | Case | Failed Attempts | Node | Failed Job | Passed Retry |",
-        "|---|---|---|---:|---|---|---|",
+        "| Build | Suite | Case | Classification | Manual Reason | Failed Attempts | Node | Failed Job | Passed Retry |",
+        "|---|---|---|---|---|---:|---|---|---|",
     ])
     for row in summary.get("flaky_failures", []):
         lines.append(
-            "| {build_id} | {test_suite_name} | {case_name} | {failed_attempts} | {test_node} | {failed_job_url} | {passed_job_url} |".format(
+            "| {build_id} | {test_suite_name} | {case_name} | {classification} | {manual_reason} | {failed_attempts} | {test_node} | {failed_job_url} | {passed_job_url} |".format(
                 **row
             )
         )
     if not summary.get("flaky_failures"):
-        lines.append("| - | - | - | - | - | - | - |")
+        lines.append("| - | - | - | - | - | - | - | - | - |")
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -1519,6 +1613,8 @@ def write_html_report(
             str(row.get("test_node") or ""),
             str(row.get("test_suite_name") or ""),
             str(row.get("case_name") or ""),
+            str(row.get("classification") or "Retry-confirmed"),
+            str(row.get("manual_reason") or ""),
             str(row.get("failed_attempts") or 0),
         ]
         for row in flaky_failures
@@ -1530,7 +1626,7 @@ def write_html_report(
             <span class="hint">Failed pytest cases whose Buildkite retry eventually passed</span>
         </div>
         <p>{len(flaky_failures)} testcase failure(s) recovered by retry in this report window.</p>
-        <div class="table-wrap">{render_html_table(["Build", "Failed Attempt", "Passed Retry", "Build Time", "Node", "Suite", "Test Case", "Failed Attempts"], flaky_failure_rows, raw_html_columns={0, 1, 2})}</div>
+        <div class="table-wrap">{render_html_table(["Build", "Failed Attempt", "Passed Retry", "Build Time", "Node", "Suite", "Test Case", "Classification", "Manual Reason", "Failed Attempts"], flaky_failure_rows, raw_html_columns={0, 1, 2})}</div>
     </section>
     """
 
@@ -1867,6 +1963,9 @@ def main() -> int:
 
     branch_re = re.compile(args.branch_regex)
     output_dir = ensure_output_dir(args.output_dir)
+    manual_flaky_config = Path(__file__).with_name("manual_flaky_cases.json")
+    manual_flaky_cases = load_manual_flaky_cases(manual_flaky_config)
+    print(f"Loaded manual flaky testcase marks: {len(manual_flaky_cases)}")
     history_path = output_dir.parent / CASE_COUNT_TREND_HISTORY_FILE
     case_count_trend_history = load_case_count_trend_history(history_path)
     print(f"Loaded trend history entries: {len(case_count_trend_history)}")
@@ -2000,6 +2099,7 @@ def main() -> int:
     except requests.RequestException as exc:
         print(f"Nightly comparison skipped due to API error: {exc}")
 
+    flaky_failures = apply_manual_flaky_marks(flaky_failures, rows, manual_flaky_cases)
     summary = summarize(rows, selected_builds, args, start, end, flaky_failures)
     if nightly_comparison:
         summary["nightly_comparison"] = {
