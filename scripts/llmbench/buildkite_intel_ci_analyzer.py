@@ -768,6 +768,25 @@ def load_manual_flaky_cases(path: Path) -> list[dict[str, str]]:
     return normalized
 
 
+def exclude_known_flaky_signatures(
+    failure_signatures: list[str],
+    manual_cases: list[dict[str, str]],
+    automatic_flaky_failures: list[dict[str, Any]],
+) -> tuple[list[str], list[str]]:
+    flaky_signatures = {
+        f"{item['test_suite']}::{item['test_case']}"
+        for item in manual_cases
+    }
+    flaky_signatures.update(
+        f"{item.get('test_suite_name', '')}::{item.get('case_name', '')}"
+        for item in automatic_flaky_failures
+        if item.get("test_suite_name") and item.get("case_name")
+    )
+    excluded = sorted(set(failure_signatures) & flaky_signatures)
+    remaining = sorted(set(failure_signatures) - flaky_signatures)
+    return remaining, excluded
+
+
 def apply_manual_flaky_marks(
     retry_confirmed: list[dict[str, Any]],
     failed_rows: list[dict[str, Any]],
@@ -1249,6 +1268,8 @@ def compute_nightly_comparison(
     nightly_source: str,
     lookback_days: int,
     xpu_only: bool = False,
+    manual_flaky_cases: list[dict[str, str]] | None = None,
+    automatic_flaky_failures: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     start = end - timedelta(days=max(1, lookback_days))
     builds = client.list_builds(start, end)
@@ -1264,6 +1285,7 @@ def compute_nightly_comparison(
 
     latest = candidates[0]
     previous = candidates[1]
+    known_automatic_flaky_failures = list(automatic_flaky_failures or [])
     latest_rows = collect_failed_rows_for_build(client, latest, output_dir, "nightly_latest")
     previous_rows = collect_failed_rows_for_build(client, previous, output_dir, "nightly_previous")
     latest_case_count_stats = collect_nightly_case_count_stats(client, latest)
@@ -1272,7 +1294,11 @@ def compute_nightly_comparison(
     latest_cases = case_signatures(latest_rows, xpu_only=xpu_only)
     previous_cases = case_signatures(previous_rows, xpu_only=xpu_only)
 
-    new_fail_keys = sorted(set(latest_cases.keys()) - set(previous_cases.keys()))
+    new_fail_keys, excluded_flaky_keys = exclude_known_flaky_signatures(
+        sorted(set(latest_cases.keys()) - set(previous_cases.keys())),
+        manual_flaky_cases or [],
+        known_automatic_flaky_failures,
+    )
     new_pass_keys = sorted(set(previous_cases.keys()) - set(latest_cases.keys()))
     unchanged_fail_keys = sorted(set(previous_cases.keys()) & set(latest_cases.keys()))
 
@@ -1326,6 +1352,7 @@ def compute_nightly_comparison(
         },
         "latest_case_count_stats": latest_case_count_stats,
         "previous_case_count_stats": previous_case_count_stats,
+        "excluded_flaky_fail_count": len(excluded_flaky_keys),
         "new_fails": [
             {
                 "signature": key,
@@ -1488,7 +1515,7 @@ def write_markdown(summary: dict[str, Any], rows: list[dict[str, Any]], path: Pa
 
     lines.extend([
         "",
-        "## Flaky Failures (Retry Passed)",
+        "## Flaky Failures",
         "",
         "| Build | Suite | Case | Classification | Manual Reason | Failed Attempts | Node | Failed Job | Passed Retry |",
         "|---|---|---|---|---|---:|---|---|---|",
@@ -1533,9 +1560,8 @@ def write_html_report(
     path: Path,
     nightly_comparison: dict[str, Any] | None = None,
     case_count_trend_history: list[dict[str, Any]] | None = None,
-    flaky_failures: list[dict[str, Any]] | None = None,
 ) -> None:
-    flaky_failures = flaky_failures or []
+    flaky_failures = summary.get("flaky_failures") or []
     state_counts = Counter(str(row.get("job_state") or "unknown") for row in rows)
     reason_counts = Counter(str(row.get("fail_reason") or "unknown") for row in rows)
     suite_counts = Counter(str(row.get("test_suite_name") or "unknown") for row in rows)
@@ -1623,13 +1649,12 @@ def write_html_report(
     <section class="section">
         <div class="section-header">
             <h2>Flaky Failures</h2>
-            <span class="hint">Failed pytest cases whose Buildkite retry eventually passed</span>
+            <span class="hint">Retry-confirmed and manually marked pytest cases</span>
         </div>
-        <p>{len(flaky_failures)} testcase failure(s) recovered by retry in this report window.</p>
+        <p>{len(flaky_failures)} testcase failure(s) marked flaky in this report window.</p>
         <div class="table-wrap">{render_html_table(["Build", "Failed Attempt", "Passed Retry", "Build Time", "Node", "Suite", "Test Case", "Classification", "Manual Reason", "Failed Attempts"], flaky_failure_rows, raw_html_columns={0, 1, 2})}</div>
     </section>
     """
-
     nightly_section_html = (
         "<section class=\"section\">"
         "<div class=\"section-header\"><h2>Nightly Delta</h2>"
@@ -1650,6 +1675,7 @@ def write_html_report(
             ["Previous Date", str(previous.get("created_at") or "")[:10]],
             ["Previous Commit", str(previous.get("commit_id") or "")],
             ["New Fail", str(len(nightly_comparison.get("new_fails") or []))],
+            ["Known Flaky Excluded", str(nightly_comparison.get("excluded_flaky_fail_count") or 0)],
             ["New Pass", str(len(nightly_comparison.get("new_passes") or []))],
             ["Unchanged Fail", str(len(nightly_comparison.get("unchanged_fails") or []))],
         ]
@@ -2095,6 +2121,8 @@ def main() -> int:
             nightly_source=args.nightly_source,
             lookback_days=args.nightly_lookback_days,
             xpu_only=args.xpu_only,
+            manual_flaky_cases=manual_flaky_cases,
+            automatic_flaky_failures=flaky_failures,
         )
     except requests.RequestException as exc:
         print(f"Nightly comparison skipped due to API error: {exc}")
@@ -2106,6 +2134,7 @@ def main() -> int:
             "latest_build_id": (nightly_comparison.get("latest") or {}).get("build_id"),
             "previous_build_id": (nightly_comparison.get("previous") or {}).get("build_id"),
             "new_fail_count": len(nightly_comparison.get("new_fails") or []),
+            "excluded_flaky_fail_count": int(nightly_comparison.get("excluded_flaky_fail_count") or 0),
             "new_pass_count": len(nightly_comparison.get("new_passes") or []),
             "unchanged_fail_count": len(nightly_comparison.get("unchanged_fails") or []),
         }
@@ -2147,7 +2176,6 @@ def main() -> int:
         output_dir / "summary.html",
         nightly_comparison=nightly_comparison,
         case_count_trend_history=case_count_trend_history,
-        flaky_failures=flaky_failures,
     )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     (output_dir / "failed_jobs.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
