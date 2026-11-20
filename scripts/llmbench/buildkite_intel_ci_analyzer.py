@@ -135,10 +135,10 @@ class BuildkiteClient:
         url = f"https://api.buildkite.com/v2/organizations/{self.org}/pipelines/{self.pipeline}/builds/{build_number}"
         return self._request("GET", url)
 
-    def get_build_jobs_data(self, build_number: int) -> list[dict[str, Any]]:
+    def get_build_jobs_data(self, build_number: int, include_retried_jobs: bool = False) -> list[dict[str, Any]]:
         url = (
             f"https://buildkite.com/{self.org}/{self.pipeline}/builds/"
-            f"{build_number}/data/jobs?include_retried_jobs=false&paginate=false"
+            f"{build_number}/data/jobs?include_retried_jobs={str(include_retried_jobs).lower()}&paginate=false"
         )
         response = self.session.get(url, timeout=self.timeout)
         response.raise_for_status()
@@ -645,6 +645,101 @@ def collect_failed_rows_for_build(client: BuildkiteClient, build: dict[str, Any]
         build_rows.append(flatten_row(build_details, job, log_analysis, saved_log_path))
 
     return collapse_build_level_failures(build_rows)
+
+
+def collect_flaky_failures_for_build(
+    client: BuildkiteClient,
+    build: dict[str, Any],
+    output_dir: Path,
+    log_cache: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    build_number = int(build["number"])
+    try:
+        jobs = client.get_build_jobs_data(build_number, include_retried_jobs=True)
+    except (requests.RequestException, ValueError, json.JSONDecodeError):
+        jobs = [item for item in (build.get("jobs") or []) if isinstance(item, dict)]
+
+    jobs_by_id: dict[str, dict[str, Any]] = {}
+    for job in jobs:
+        for value in (job.get("uuid"), job.get("id")):
+            if value:
+                jobs_by_id[str(value)] = job
+
+    flaky_by_case: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for failed_job in jobs:
+        if failed_job.get("state") not in FAILED_JOB_STATES:
+            continue
+        if failed_job.get("type") and failed_job.get("type") != "script":
+            continue
+
+        current_job = failed_job
+        seen_ids: set[str] = set()
+        retry_job: dict[str, Any] | None = None
+        has_retry = False
+        while True:
+            current_id = str(current_job.get("uuid") or current_job.get("id") or "")
+            if not current_id or current_id in seen_ids:
+                retry_job = None
+                break
+            seen_ids.add(current_id)
+            next_id = current_job.get("retried_in_job_uuid") or current_job.get("retried_in_job_id")
+            if not next_id:
+                retry_job = current_job if has_retry else None
+                break
+            retry_job = jobs_by_id.get(str(next_id))
+            if retry_job is None:
+                break
+            current_job = retry_job
+            has_retry = True
+
+        if not retry_job or retry_job.get("state") not in PASS_STATES:
+            continue
+
+        failed_job_id = str(failed_job.get("uuid") or failed_job.get("id") or "")
+        if not failed_job_id:
+            continue
+        if failed_job_id not in log_cache:
+            try:
+                raw_log = client.download_job_log(build_number, failed_job_id)
+                log_path = output_dir / "logs" / f"flaky_build_{build_number}_job_{failed_job_id}.log"
+                log_path.write_text(raw_log, encoding="utf-8")
+                log_cache[failed_job_id] = analyze_log(
+                    raw_log,
+                    failed_job.get("started_at"),
+                    failed_job.get("finished_at"),
+                )
+            except requests.RequestException:
+                log_cache[failed_job_id] = {"fail_case_names": []}
+
+        analysis = log_cache[failed_job_id]
+        case_names = analysis.get("fail_case_names") or []
+        for case_name in case_names:
+            suite = safe_suite_name(failed_job)
+            retry_id = str(retry_job.get("uuid") or retry_job.get("id") or "")
+            key = (suite, str(case_name), retry_id)
+            row = flaky_by_case.setdefault(
+                key,
+                {
+                    "build_id": build.get("number"),
+                    "trigger_time": build.get("created_at") or "",
+                    "commit_id": build.get("commit") or "",
+                    "test_node": format_test_node(failed_job),
+                    "test_suite_name": suite,
+                    "case_name": str(case_name),
+                    "build_url": build.get("web_url") or "",
+                    "failed_job_url": failed_job.get("web_url") or "",
+                    "passed_job_url": retry_job.get("web_url") or "",
+                    "_failed_job_ids": set(),
+                },
+            )
+            row["_failed_job_ids"].add(failed_job_id)
+
+    rows = []
+    for row in flaky_by_case.values():
+        row["failed_attempts"] = len(row.pop("_failed_job_ids"))
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get("trigger_time") or ""), str(row.get("case_name") or "")))
+    return rows
 
 
 def case_signatures(rows: list[dict[str, Any]], xpu_only: bool = False) -> dict[str, dict[str, Any]]:
@@ -1230,6 +1325,7 @@ def write_summary_csv(summary: dict[str, Any], path: Path) -> None:
         "passed_builds",
         "failed_builds",
         "failed_job_rows",
+        "flaky_failure_rows",
         "build_errors",
         "log_download_errors",
     ]
@@ -1237,6 +1333,25 @@ def write_summary_csv(summary: dict[str, Any], path: Path) -> None:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerow({key: summary.get(key, "") for key in fieldnames})
+
+
+def write_flaky_csv(rows: list[dict[str, Any]], path: Path) -> None:
+    fieldnames = [
+        "build_id",
+        "trigger_time",
+        "commit_id",
+        "test_node",
+        "test_suite_name",
+        "case_name",
+        "failed_attempts",
+        "build_url",
+        "failed_job_url",
+        "passed_job_url",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def write_markdown(summary: dict[str, Any], rows: list[dict[str, Any]], path: Path) -> None:
@@ -1248,6 +1363,7 @@ def write_markdown(summary: dict[str, Any], rows: list[dict[str, Any]], path: Pa
         f"- Build scope: {summary['build_scope']}",
         f"- Builds: {summary['total_builds']} total, {summary['passed_builds']} passed, {summary['failed_builds']} failed",
         f"- Failed job rows: {summary['failed_job_rows']}",
+        f"- Flaky failure rows: {summary['flaky_failure_rows']}",
         f"- Build detail fetch errors: {summary['build_errors']}",
         f"- Log download errors: {summary['log_download_errors']}",
         "",
@@ -1275,6 +1391,22 @@ def write_markdown(summary: dict[str, Any], rows: list[dict[str, Any]], path: Pa
 
     if not failed_rows:
         lines.append("| - | - | - | - | - | - | - | - | - | - |")
+
+    lines.extend([
+        "",
+        "## Flaky Failures (Retry Passed)",
+        "",
+        "| Build | Suite | Case | Failed Attempts | Node | Failed Job | Passed Retry |",
+        "|---|---|---|---:|---|---|---|",
+    ])
+    for row in summary.get("flaky_failures", []):
+        lines.append(
+            "| {build_id} | {test_suite_name} | {case_name} | {failed_attempts} | {test_node} | {failed_job_url} | {passed_job_url} |".format(
+                **row
+            )
+        )
+    if not summary.get("flaky_failures"):
+        lines.append("| - | - | - | - | - | - | - |")
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -1307,7 +1439,9 @@ def write_html_report(
     path: Path,
     nightly_comparison: dict[str, Any] | None = None,
     case_count_trend_history: list[dict[str, Any]] | None = None,
+    flaky_failures: list[dict[str, Any]] | None = None,
 ) -> None:
+    flaky_failures = flaky_failures or []
     state_counts = Counter(str(row.get("job_state") or "unknown") for row in rows)
     reason_counts = Counter(str(row.get("fail_reason") or "unknown") for row in rows)
     suite_counts = Counter(str(row.get("test_suite_name") or "unknown") for row in rows)
@@ -1320,6 +1454,7 @@ def write_html_report(
         ("Passed Builds", str(summary["passed_builds"])),
         ("Failed Builds", str(summary["failed_builds"])),
         ("Failed Job Rows", str(summary["failed_job_rows"])),
+        ("Flaky Failures", str(summary["flaky_failure_rows"])),
         ("Log Download Errors", str(summary["log_download_errors"])),
     ]
 
@@ -1362,6 +1497,42 @@ def write_html_report(
         ]
         for row in rows
     ]
+    flaky_failure_rows = [
+        [
+            (
+                f'<a href="{escape(str(row.get("build_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">'
+                f'{escape(str(row.get("build_id") or ""))}</a>'
+                if row.get("build_url")
+                else escape(str(row.get("build_id") or ""))
+            ),
+            (
+                f'<a href="{escape(str(row.get("failed_job_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">Failed attempt</a>'
+                if row.get("failed_job_url")
+                else ""
+            ),
+            (
+                f'<a href="{escape(str(row.get("passed_job_url") or ""), quote=True)}" target="_blank" rel="noopener noreferrer">Passed retry</a>'
+                if row.get("passed_job_url")
+                else ""
+            ),
+            str(row.get("trigger_time") or ""),
+            str(row.get("test_node") or ""),
+            str(row.get("test_suite_name") or ""),
+            str(row.get("case_name") or ""),
+            str(row.get("failed_attempts") or 0),
+        ]
+        for row in flaky_failures
+    ]
+    flaky_section_html = f"""
+    <section class="section">
+        <div class="section-header">
+            <h2>Flaky Failures</h2>
+            <span class="hint">Failed pytest cases whose Buildkite retry eventually passed</span>
+        </div>
+        <p>{len(flaky_failures)} testcase failure(s) recovered by retry in this report window.</p>
+        <div class="table-wrap">{render_html_table(["Build", "Failed Attempt", "Passed Retry", "Build Time", "Node", "Suite", "Test Case", "Failed Attempts"], flaky_failure_rows, raw_html_columns={0, 1, 2})}</div>
+    </section>
+    """
 
     nightly_section_html = (
         "<section class=\"section\">"
@@ -1564,6 +1735,8 @@ def write_html_report(
 
         {nightly_section_html}
 
+        {flaky_section_html}
+
         <section class=\"section\">
             <div class=\"section-header\">
                 <h2>Failed Job Summary</h2>
@@ -1579,7 +1752,14 @@ def write_html_report(
     path.write_text(html, encoding="utf-8")
 
 
-def summarize(rows: list[dict[str, Any]], selected_builds: list[dict[str, Any]], args: argparse.Namespace, start: datetime, end: datetime) -> dict[str, Any]:
+def summarize(
+    rows: list[dict[str, Any]],
+    selected_builds: list[dict[str, Any]],
+    args: argparse.Namespace,
+    start: datetime,
+    end: datetime,
+    flaky_failures: list[dict[str, Any]],
+) -> dict[str, Any]:
     passed_builds = sum(1 for build in selected_builds if build.get("state") in PASS_STATES)
     failed_builds = sum(1 for build in selected_builds if build.get("state") in FAIL_STATES)
     return {
@@ -1591,6 +1771,8 @@ def summarize(rows: list[dict[str, Any]], selected_builds: list[dict[str, Any]],
         "passed_builds": passed_builds,
         "failed_builds": failed_builds,
         "failed_job_rows": len(rows),
+        "flaky_failure_rows": len(flaky_failures),
+        "flaky_failures": flaky_failures,
         "build_errors": sum(1 for row in rows if row.get("fail_reason") == "build_detail_fetch_failed"),
         "log_download_errors": sum(1 for row in rows if row.get("fail_reason") == "log_download_failed"),
     }
@@ -1705,6 +1887,8 @@ def main() -> int:
     )
 
     rows: list[dict[str, Any]] = []
+    flaky_failures: list[dict[str, Any]] = []
+    flaky_log_cache: dict[str, dict[str, Any]] = {}
     total_builds = len(selected_builds)
     for index, build in enumerate(selected_builds, start=1):
         build_number = build["number"]
@@ -1741,6 +1925,16 @@ def main() -> int:
             )
             print(f"  build detail fetch failed: {exc}")
             continue
+
+        flaky_rows = collect_flaky_failures_for_build(
+            client,
+            build_details,
+            output_dir,
+            flaky_log_cache,
+        )
+        flaky_failures.extend(flaky_rows)
+        if flaky_rows:
+            print(f"  found {len(flaky_rows)} retry-recovered testcase failures")
 
         jobs = build_details.get("jobs") or []
         build_failed = build_details.get("state") in FAIL_STATES
@@ -1806,7 +2000,7 @@ def main() -> int:
     except requests.RequestException as exc:
         print(f"Nightly comparison skipped due to API error: {exc}")
 
-    summary = summarize(rows, selected_builds, args, start, end)
+    summary = summarize(rows, selected_builds, args, start, end, flaky_failures)
     if nightly_comparison:
         summary["nightly_comparison"] = {
             "latest_build_id": (nightly_comparison.get("latest") or {}).get("build_id"),
@@ -1817,6 +2011,7 @@ def main() -> int:
         }
     write_summary_csv(summary, output_dir / "summary.csv")
     write_csv(rows, output_dir / "failed_jobs.csv")
+    write_flaky_csv(flaky_failures, output_dir / "flaky_failures.csv")
     write_markdown(summary, rows, output_dir / "summary.md")
     if nightly_comparison:
         history_changed = False
@@ -1852,9 +2047,11 @@ def main() -> int:
         output_dir / "summary.html",
         nightly_comparison=nightly_comparison,
         case_count_trend_history=case_count_trend_history,
+        flaky_failures=flaky_failures,
     )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     (output_dir / "failed_jobs.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    (output_dir / "flaky_failures.json").write_text(json.dumps(flaky_failures, indent=2), encoding="utf-8")
     if nightly_comparison:
         (output_dir / "nightly_comparison.json").write_text(json.dumps(nightly_comparison, indent=2), encoding="utf-8")
 

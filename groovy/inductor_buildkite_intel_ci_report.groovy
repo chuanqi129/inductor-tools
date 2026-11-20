@@ -172,6 +172,7 @@ PY
                     <tr><td>Passed Builds</td><td>${summaryMap.get('passed_builds', '-')}</td></tr>
                     <tr><td>Failed Builds</td><td>${summaryMap.get('failed_builds', '-')}</td></tr>
                     <tr><td>Failed Job Rows</td><td>${summaryMap.get('failed_job_rows', '-')}</td></tr>
+                    <tr><td>Flaky Failures</td><td>${summaryMap.get('flaky_failure_rows', '-')}</td></tr>
                     <tr><td>Log Download Errors</td><td>${summaryMap.get('log_download_errors', '-')}</td></tr>
                 </table>
                 """.stripIndent()
@@ -229,6 +230,7 @@ PY
         always {
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/summary.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/failed_jobs.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/flaky_failures.*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/buildkite_intel_ci_*/nightly_comparison.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/nightly_case_count_trend_history.json', allowEmptyArchive: true
             archiveArtifacts artifacts: 'output/latest_summary.html', allowEmptyArchive: true
